@@ -36,6 +36,7 @@ FROM base AS development
 # Copy only requirements files first for better caching
 COPY pyproject.toml .
 COPY uv.lock* ./
+COPY README.md .
 
 # Install dependencies with dev extras
 RUN uv pip install -e ".[dev]" --system
