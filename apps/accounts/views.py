@@ -4,8 +4,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.utils import timezone
-from ratelimit.decorators import ratelimit
-from ratelimit.core import get_usage
+from django_ratelimit.decorators import ratelimit
 from .tokens import short_code_token_generator
 from .utils import parse_flexible_date
 from .models import AuthAttempt
@@ -66,21 +65,18 @@ class PatientAuthSession:
 
 
 @require_http_methods(["GET"])
-@ratelimit(key='ip', rate='20/h', method=['GET'])
+@ratelimit(key='ip', rate='20/h', method=['GET'], block=True)
 def start_view(request):
     """Handle start URL with token.
     
     Validates the token and shows DOB entry form.
+    URL format: /start/?code=A3B9K2&token=xxx&patient_id=123
     """
-    # Check rate limit
-    usage = get_usage(request, key='ip', rate='20/h', method=['GET'])
-    if usage and usage['should_limit']:
-        return render(request, 'accounts/rate_limited.html', status=429)
-    
     code = request.GET.get('code')
     token_string = request.GET.get('token')
+    patient_id = request.GET.get('patient_id')
     
-    if not code or not token_string:
+    if not code or not token_string or not patient_id:
         messages.error(request, "Invalid link. Please check your SMS or contact your care team.")
         return redirect('accounts:token_expired')
     
@@ -88,13 +84,11 @@ def start_view(request):
     
     # Validate token
     try:
-        # Extract patient ID from token (format: patient_id-timestamp-hash)
-        patient_id = token_string.split('-')[0]
         patient = Patient.objects.get(id=patient_id)
-    except (IndexError, Patient.DoesNotExist):
+    except (ValueError, Patient.DoesNotExist):
         return redirect('accounts:token_expired')
     
-    # Verify token is valid
+    # Verify token is valid for this patient
     if not short_code_token_generator.check_token(patient, token_string):
         return redirect('accounts:token_expired')
     
@@ -119,17 +113,12 @@ def token_expired_view(request):
 
 
 @require_http_methods(["POST"])
-@ratelimit(key='ip', rate='5/h', method=['POST'])
+@ratelimit(key='ip', rate='5/h', method=['POST'], block=True)
 def verify_dob_view(request):
     """Handle DOB verification.
     
     Validates DOB and creates patient session.
     """
-    # Check rate limit
-    usage = get_usage(request, key='ip', rate='5/h', method=['POST'])
-    if usage and usage['should_limit']:
-        return render(request, 'accounts/rate_limited.html', status=429)
-    
     # Get pending auth info from session
     pending_auth = PatientAuthSession.get_pending_auth(request)
     token_string = pending_auth['token']
@@ -208,14 +197,9 @@ def verify_dob_view(request):
 
 
 @require_http_methods(["POST"])
-@ratelimit(key='post:phone_number', rate='3/h', method=['POST'])
+@ratelimit(key='post:phone_number', rate='3/h', method=['POST'], block=True)
 def resend_link_view(request):
     """Handle resending auth link via SMS."""
-    # Check rate limit
-    usage = get_usage(request, key='post:phone_number', rate='3/h', method=['POST'])
-    if usage and usage['should_limit']:
-        return render(request, 'accounts/rate_limited.html', status=429)
-    
     phone_number = request.POST.get('phone_number', '').strip()
     
     if not phone_number:
@@ -229,14 +213,9 @@ def resend_link_view(request):
 
 
 @require_http_methods(["POST"])
-@ratelimit(key='ip', rate='10/h', method=['POST'])
+@ratelimit(key='ip', rate='10/h', method=['POST'], block=True)
 def manual_entry_view(request):
     """Handle manual code + DOB entry for expired tokens."""
-    # Check rate limit
-    usage = get_usage(request, key='ip', rate='10/h', method=['POST'])
-    if usage and usage['should_limit']:
-        return render(request, 'accounts/rate_limited.html', status=429)
-    
     code = request.POST.get('code', '').strip().upper()
     dob_input = request.POST.get('dob', '').strip()
     

@@ -28,8 +28,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", TemplateView.as_view(template_name="home.html"), name="home"),
     # path("api/", api.urls),  # Django Ninja API
-    # path("accounts/", include("apps.accounts.urls")),
-    # path("patients/", include("apps.patients.urls")),
+    path("accounts/", include("apps.accounts.urls", namespace="accounts")),
+    path("patient/", include("apps.patients.urls", namespace="patients")),
     # path("clinicians/", include("apps.clinicians.urls")),
     # path("caregivers/", include("apps.caregivers.urls")),
 ]

@@ -37,11 +37,12 @@ PASSWORD_HASHERS = [
 # MIGRATION_MODULES = DisableMigrations()
 
 # =============================================================================
-# CACHING - Use dummy cache in tests
+# CACHING - Use local memory cache for rate limiting tests
 # =============================================================================
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
     }
 }
 
