@@ -30,3 +30,33 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
+
+
+class AuthAttempt(models.Model):
+    """Audit log for patient authentication attempts."""
+
+    METHOD_CHOICES = [
+        ("sms_link", "SMS Link"),
+        ("manual", "Manual Entry"),
+        ("magic_link", "Magic Link"),
+    ]
+
+    patient = models.ForeignKey(
+        "patients.Patient",
+        on_delete=models.CASCADE,
+        related_name="auth_attempts",
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField()
+    success = models.BooleanField()
+    method = models.CharField(max_length=20, choices=METHOD_CHOICES)
+    failure_reason = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        db_table = "accounts_auth_attempt"
+        ordering = ["-timestamp"]
+
+    def __str__(self):
+        status = "success" if self.success else "failed"
+        return f"Auth {status} for {self.patient} at {self.timestamp}"
