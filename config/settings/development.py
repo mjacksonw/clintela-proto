@@ -31,7 +31,7 @@ MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa:
 INTERNAL_IPS = [
     "127.0.0.1",
     "localhost",
-    "0.0.0.0",
+    "0.0.0.0",  # noqa: S104  # nosec B104 - Required for Docker internal
     "10.0.2.2",  # Docker internal
 ]
 

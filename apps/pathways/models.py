@@ -5,6 +5,7 @@ from django.db import models
 
 class ClinicalPathway(models.Model):
     """Post-surgical recovery pathway template."""
+
     name = models.CharField(max_length=100)
     surgery_type = models.CharField(max_length=100)
     description = models.TextField()
@@ -21,6 +22,7 @@ class ClinicalPathway(models.Model):
 
 class PatientPathway(models.Model):
     """Assigned pathway for a specific patient."""
+
     patient = models.ForeignKey(
         "patients.Patient",
         on_delete=models.CASCADE,
@@ -45,3 +47,6 @@ class PatientPathway(models.Model):
     class Meta:
         db_table = "pathways_patient_pathway"
         unique_together = ["patient", "pathway"]
+
+    def __str__(self):
+        return f"{self.patient} - {self.pathway}"

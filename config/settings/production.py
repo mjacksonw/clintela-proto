@@ -35,7 +35,7 @@ SECURE_HSTS_PRELOAD = True
 # DATABASE
 # =============================================================================
 # Use connection pooling in production
-DATABASES["default"]["CONN_MAX_AGE"] = 600  # 10 minutes
+DATABASES["default"]["CONN_MAX_AGE"] = 600  # noqa: F405
 
 # =============================================================================
 # STATIC FILES - Whitenoise for production

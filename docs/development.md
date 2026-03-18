@@ -618,7 +618,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -703,7 +703,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -727,7 +727,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     environment: production
-    
+
     steps:
       - uses: actions/checkout@v4
 

@@ -29,3 +29,6 @@ class AgentConversation(models.Model):
     class Meta:
         db_table = "agents_conversation"
         ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.agent_type} - {self.created_at}"

@@ -8,7 +8,7 @@
 
 Clintela handles Protected Health Information (PHI) and must comply with HIPAA (Health Insurance Portability and Accountability Act) regulations. This document outlines our security architecture, data handling practices, and compliance measures.
 
-**Compliance Target:** HIPAA Security Rule, Privacy Rule, and Breach Notification Rule  
+**Compliance Target:** HIPAA Security Rule, Privacy Rule, and Breach Notification Rule
 **Certification Roadmap:** HITRUST, ISO 27001, SOC 2 Type 2
 
 ---

@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 
 from apps.patients.models import Hospital, Patient
 
-
 User = get_user_model()
 
 
@@ -38,7 +37,7 @@ def test_create_hospital(hospital):
 def test_create_patient(user, hospital):
     """Test creating a patient."""
     from datetime import date
-    
+
     patient = Patient.objects.create(
         user=user,
         hospital=hospital,
@@ -47,7 +46,7 @@ def test_create_patient(user, hospital):
         surgery_type="Knee Replacement",
         surgery_date=date(2024, 1, 1),
     )
-    
+
     assert patient.user == user
     assert patient.hospital == hospital
     assert patient.leaflet_code == "ABC123"
@@ -65,7 +64,7 @@ def test_hospital_str(hospital):
 def test_patient_str(user, hospital):
     """Test patient string representation."""
     from datetime import date
-    
+
     patient = Patient.objects.create(
         user=user,
         hospital=hospital,
@@ -79,7 +78,7 @@ def test_patient_str(user, hospital):
 def test_patient_days_post_op(user, hospital):
     """Test days_post_op calculation."""
     from datetime import date, timedelta
-    
+
     patient = Patient.objects.create(
         user=user,
         hospital=hospital,
@@ -94,7 +93,7 @@ def test_patient_days_post_op(user, hospital):
 def test_patient_days_post_op_no_surgery(user, hospital):
     """Test days_post_op returns None when no surgery date."""
     from datetime import date
-    
+
     patient = Patient.objects.create(
         user=user,
         hospital=hospital,

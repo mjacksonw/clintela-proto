@@ -2,14 +2,13 @@
 Test settings for Clintela project.
 """
 
-from .base import *  # noqa: F401, F403
-
 # =============================================================================
 # TEST-SPECIFIC SETTINGS
 # =============================================================================
-
 # Use test database with environment overrides
 import os
+
+from .base import *  # noqa: F401, F403
 
 DATABASES = {
     "default": {
@@ -72,9 +71,9 @@ ENABLE_CELERY = False
 ENABLE_SMS = False
 ENABLE_VOICE = False
 
-# Mock external API keys for tests
-TWILIO_ACCOUNT_SID = "test_account_sid"
-TWILIO_AUTH_TOKEN = "test_auth_token"
+# Mock external API keys for tests (nosec: test-only credentials)
+TWILIO_ACCOUNT_SID = "test_account_sid"  # nosec B105
+TWILIO_AUTH_TOKEN = "test_auth_token"  # nosec B105
 TWILIO_PHONE_NUMBER = "+15555555555"
 
 OLLAMA_API_KEY = "test_ollama_key"

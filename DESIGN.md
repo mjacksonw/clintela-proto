@@ -2,7 +2,7 @@
 
 **AI-powered post-surgical patient recovery support**
 
-*Created: 2026-03-17*  
+*Created: 2026-03-17*
 *For: Patients, Clinicians, and Healthcare Administrators*
 
 ---

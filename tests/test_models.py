@@ -1,13 +1,14 @@
 """Test all app models for coverage."""
 
-import pytest
 from datetime import date
+
+import pytest
 from django.contrib.auth import get_user_model
 
 from apps.caregivers.models import Caregiver, CaregiverRelationship
 from apps.clinicians.models import Clinician
-from apps.patients.models import Hospital, Patient
 from apps.pathways.models import ClinicalPathway
+from apps.patients.models import Hospital, Patient
 
 User = get_user_model()
 

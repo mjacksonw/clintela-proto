@@ -282,7 +282,7 @@ Response Format:
 
 *Patient:* "I have some pain around my incision. It's about 4 out of 10."
 
-*Nurse Triage:* "Thank you for letting me know. Some discomfort around the incision is normal at this stage of your recovery. A pain level of 4/10 falls into the expected range. 
+*Nurse Triage:* "Thank you for letting me know. Some discomfort around the incision is normal at this stage of your recovery. A pain level of 4/10 falls into the expected range.
 
 Here's what to watch for:
 - Pain that increases rather than decreases

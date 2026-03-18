@@ -30,6 +30,7 @@ class Caregiver(models.Model):
 
 class CaregiverRelationship(models.Model):
     """Link between caregiver and patient."""
+
     caregiver = models.ForeignKey(Caregiver, on_delete=models.CASCADE)
     patient = models.ForeignKey("patients.Patient", on_delete=models.CASCADE)
     relationship = models.CharField(max_length=50)

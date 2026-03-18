@@ -1,6 +1,5 @@
 """Test Django configuration."""
 
-import pytest
 from django.conf import settings
 
 

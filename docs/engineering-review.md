@@ -10,9 +10,9 @@
 
 This document captures the engineering review of the Clintela Foundation project, including architectural decisions, system diagrams, test plans, and implementation guidance. All major architectural decisions have been resolved and are ready for implementation.
 
-**Review Status:** ✅ Complete  
-**Architecture Decisions:** 7 resolved  
-**Critical Gaps:** 0  
+**Review Status:** ✅ Complete
+**Architecture Decisions:** 7 resolved
+**Critical Gaps:** 0
 **Unresolved Issues:** 0
 
 ---
@@ -390,38 +390,38 @@ Invalid transitions prevented by:
 ## Key Architectural Decisions
 
 ### Decision 1: Agent State Management
-**Status:** ✅ Resolved  
-**Decision:** PostgreSQL with conversation state table  
+**Status:** ✅ Resolved
+**Decision:** PostgreSQL with conversation state table
 **Rationale:** Provides durability, auditability, and scales horizontally—critical for healthcare compliance. Enables conversation recovery after server restart and supports horizontal scaling of agent workers.
 
 ### Decision 2: Real-Time Updates Architecture
-**Status:** ✅ Resolved  
-**Decision:** WebSockets + persistent notification queue  
+**Status:** ✅ Resolved
+**Decision:** WebSockets + persistent notification queue
 **Rationale:** Ensures no critical alerts are missed even if WebSocket disconnects. Notifications queue in PostgreSQL and retry until acknowledged, essential for patient safety.
 
 ### Decision 3: LLM Response Time & Timeouts
-**Status:** ✅ Resolved  
-**Decision:** Typing indicator with synchronous responses  
+**Status:** ✅ Resolved
+**Decision:** Typing indicator with synchronous responses
 **Rationale:** Provides immediate feedback to patients, feels more human, and allows time for tool invocation in background. Better for elderly patients who expect conversational flow.
 
 ### Decision 4: Multi-Tenancy (Hospital Isolation)
-**Status:** ✅ Resolved  
-**Decision:** Row-level tenancy with hospital_id  
+**Status:** ✅ Resolved
+**Decision:** Row-level tenancy with hospital_id
 **Rationale:** Allows shared infrastructure with data isolation. Easier operations than separate databases per hospital while maintaining strict data boundaries.
 
 ### Decision 5: Audit Logging Strategy
-**Status:** ✅ Resolved  
-**Decision:** Structured audit events table + append-only log  
+**Status:** ✅ Resolved
+**Decision:** Structured audit events table + append-only log
 **Rationale:** Captures clinically significant actions for compliance while avoiding noise from routine queries. Tamper-evident storage meets HIPAA requirements.
 
 ### Decision 6: File Upload Security (Voice Memos)
-**Status:** ✅ Resolved  
-**Decision:** Strict validation + isolated storage + scanning  
+**Status:** ✅ Resolved
+**Decision:** Strict validation + isolated storage + scanning
 **Rationale:** Healthcare data requires defense in depth. Audio uploads are validated for type and size, stored in isolated bucket, and scanned for malware.
 
 ### Decision 7: Database Schema for Agent Conversations
-**Status:** ✅ Resolved  
-**Decision:** Hybrid: normalized core + JSONB for agent metadata  
+**Status:** ✅ Resolved
+**Decision:** Hybrid: normalized core + JSONB for agent metadata
 **Rationale:** Balances queryability for common operations with flexibility for agent-specific data that changes frequently. Messages table is normalized; agent context and tool calls stored in JSONB.
 
 ---
@@ -507,11 +507,11 @@ CREATE TABLE agent_conversations (
     patient_id UUID REFERENCES patients(id),
     agent_type VARCHAR(50) NOT NULL,
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'paused', 'completed')),
-    
+
     -- JSONB for flexible agent context
     context JSONB DEFAULT '{}',
     -- Example: {"patient_summary": "...", "recent_symptoms": [...], "tools_invoked": [...]}
-    
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -521,14 +521,14 @@ CREATE TABLE agent_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     message_id UUID REFERENCES messages(id),
     conversation_id UUID REFERENCES agent_conversations(id),
-    
+
     -- JSONB for agent-specific data
     metadata JSONB DEFAULT '{}',
     -- Example: {"llm_prompt": "...", "llm_response": "...", "tokens_used": 150, "latency_ms": 2500}
-    
+
     tool_invocations JSONB DEFAULT '[]',
     -- Example: [{"tool": "symptom_checker", "input": {...}, "output": {...}}]
-    
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```

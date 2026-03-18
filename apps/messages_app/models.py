@@ -35,3 +35,6 @@ class Message(models.Model):
     class Meta:
         db_table = "messages_message"
         ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.channel} {self.direction} - {self.created_at}"

@@ -5,6 +5,7 @@ from django.db import models
 
 class DailyMetrics(models.Model):
     """Aggregated daily metrics."""
+
     date = models.DateField(unique=True, db_index=True)
 
     # Patient metrics
@@ -29,3 +30,6 @@ class DailyMetrics(models.Model):
         db_table = "analytics_daily_metrics"
         verbose_name_plural = "Daily metrics"
         ordering = ["-date"]
+
+    def __str__(self):
+        return f"Daily Metrics - {self.date}"

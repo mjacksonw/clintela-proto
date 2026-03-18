@@ -21,7 +21,9 @@ django_asgi_app = get_asgi_application()
 # Import routing after Django setup
 # from apps.notifications import routing as notifications_routing
 
-application = ProtocolTypeRouter({
-    "http": django_asgi_app,
-    # "websocket": URLRouter(notifications_routing.websocket_urlpatterns),
-})
+application = ProtocolTypeRouter(
+    {
+        "http": django_asgi_app,
+        # "websocket": URLRouter(notifications_routing.websocket_urlpatterns),
+    }
+)

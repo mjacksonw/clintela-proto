@@ -102,7 +102,7 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/clintela_test
       SECRET_KEY: test-secret-key-not-for-production
       DEBUG: True
-    
+
     services:
       postgres:
         image: postgres:16-alpine
@@ -149,7 +149,7 @@ jobs:
       SECRET_KEY: test-secret-key-not-for-production
       DEBUG: True
       REDIS_URL: redis://localhost:6379/0
-    
+
     services:
       postgres:
         image: postgres:16-alpine
@@ -164,7 +164,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-      
+
       redis:
         image: redis:7-alpine
         options: >-

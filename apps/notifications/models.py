@@ -44,3 +44,6 @@ class Notification(models.Model):
     class Meta:
         db_table = "notifications_notification"
         ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.severity} - {self.title}"

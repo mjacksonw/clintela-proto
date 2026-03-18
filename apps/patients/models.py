@@ -5,6 +5,7 @@ from django.db import models
 
 class Hospital(models.Model):
     """Hospital/Healthcare organization."""
+
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=50, unique=True)
     address = models.TextField(blank=True)
@@ -74,6 +75,7 @@ class Patient(models.Model):
     def days_post_op(self):
         """Calculate days since surgery."""
         from datetime import date
+
         if self.surgery_date:
             return (date.today() - self.surgery_date).days
         return None
