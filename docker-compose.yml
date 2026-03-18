@@ -1,0 +1,97 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: clintela-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-clintela}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clintela}
+      POSTGRES_DB: ${POSTGRES_DB:-clintela}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-clintela} -d ${POSTGRES_DB:-clintela}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clintela-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: clintela-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - clintela-network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: clintela-web
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-not-for-production}
+      - DATABASE_URL=${DATABASE_URL:-postgres://clintela:clintela@db:5432/clintela}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - clintela-network
+    stdin_open: true
+    tty: true
+
+  # Channels worker for async tasks (future use)
+  # Uncomment when ready for WebSocket support
+  # worker:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     target: development
+  #   container_name: clintela-worker
+  #   command: python manage.py runworker
+  #   volumes:
+  #     - .:/app
+  #   environment:
+  #     - DEBUG=${DEBUG:-True}
+  #     - SECRET_KEY=${SECRET_KEY:-dev-secret-key-not-for-production}
+  #     - DATABASE_URL=${DATABASE_URL:-postgres://clintela:clintela@db:5432/clintela}
+  #     - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+  #   depends_on:
+  #     - db
+  #     - redis
+  #   networks:
+  #     - clintela-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_volume:
+  media_volume:
+
+networks:
+  clintela-network:
+    driver: bridge

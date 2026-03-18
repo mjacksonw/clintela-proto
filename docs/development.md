@@ -16,32 +16,27 @@ cd clintela
 # Copy environment file
 cp .env.example .env
 
-# Start everything with Docker
+# Install UV (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Or: pip install uv
+
+# Install dependencies and create virtual environment
+uv pip install -e ".[dev]"
+
+# Start services (PostgreSQL + Redis)
 make docker-up
-# Or: docker-compose up -d
 
 # Run migrations
-make docker-migrate
-# Or: docker-compose exec web python manage.py migrate
+make migrate
 
-# Create superuser
-make docker-shell
-# Then: python manage.py createsuperuser
-
-# View logs
-make docker-logs
-
-# Run tests
-make docker-test
-
-# Stop everything
-make docker-down
+# Start development server
+make dev
 ```
 
 **Access the application:**
 - Web: http://localhost:8000
 - Admin: http://localhost:8000/admin
-- Database: postgres://clintela:clintela@localhost:5432/clintela
+- Database: postgres://clintela:clintela@localhost:5434/clintela (port 5434 to avoid conflicts)
 
 ---
 

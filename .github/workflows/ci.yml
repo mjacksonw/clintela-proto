@@ -1,0 +1,232 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =============================================================================
+  # LINT AND FORMAT CHECKS
+  # =============================================================================
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install UV
+        run: |
+          pip install uv
+
+      - name: Install dependencies
+        run: |
+          uv pip install -e ".[dev]" --system
+
+      - name: Run Ruff Linter
+        run: ruff check .
+
+      - name: Check Ruff Formatting
+        run: ruff format --check .
+
+  # =============================================================================
+  # TYPE CHECKING
+  # =============================================================================
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install UV
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv pip install -e ".[dev]" --system
+
+      - name: Run MyPy
+        run: mypy apps config
+        continue-on-error: true  # Allow failures during early development
+
+  # =============================================================================
+  # SECURITY CHECKS
+  # =============================================================================
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install UV
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv pip install -e ".[dev]" --system
+
+      - name: Run Bandit
+        run: bandit -r apps/ -f json -o bandit-report.json || true
+
+      - name: Upload Bandit Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-report
+          path: bandit-report.json
+
+  # =============================================================================
+  # DJANGO CHECKS
+  # =============================================================================
+  django:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/clintela_test
+      SECRET_KEY: test-secret-key-not-for-production
+      DEBUG: True
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: clintela_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install UV
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv pip install -e ".[dev]" --system
+
+      - name: Run Django System Checks
+        run: python manage.py check --fail-level WARNING
+
+      - name: Check for Missing Migrations
+        run: python manage.py makemigrations --check --dry-run
+
+  # =============================================================================
+  # TESTS WITH COVERAGE
+  # =============================================================================
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/clintela_test
+      SECRET_KEY: test-secret-key-not-for-production
+      DEBUG: True
+      REDIS_URL: redis://localhost:6379/0
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: clintela_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install UV
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv pip install -e ".[dev]" --system
+
+      - name: Run Tests with Coverage
+        run: |
+          pytest --cov=apps --cov=config --cov-report=xml --cov-report=term-missing --cov-fail-under=90
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: htmlcov/
+
+  # =============================================================================
+  # DOCKER BUILD TEST
+  # =============================================================================
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image (Development)
+        run: docker build --target development -t clintela:dev .
+
+      - name: Build Docker Image (Production)
+        run: docker build --target production -t clintela:prod .
+
+      - name: Test Docker Compose
+        run: |
+          docker-compose config

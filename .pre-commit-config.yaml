@@ -1,0 +1,165 @@
+# Clintela Pre-commit Configuration
+# See https://pre-commit.com for more information
+
+# Run with: pre-commit run --all-files
+# Install with: pre-commit install
+
+default_language_version:
+  python: python3.12
+
+# Update hooks with: pre-commit autoupdate
+repos:
+  # ============================================================================
+  # Ruff - Linting and Formatting (replaces black, isort, flake8)
+  # ============================================================================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        name: Ruff Linter
+        args: [--fix, --exit-non-zero-on-fix]
+        exclude: (migrations/|static/|templates/)
+      - id: ruff-format
+        name: Ruff Formatter
+        exclude: (migrations/|static/|templates/)
+
+  # ============================================================================
+  # Django Checks
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: django-check
+        name: Django System Checks
+        entry: python manage.py check --fail-level WARNING
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: django-migrations-check
+        name: Django Migrations Check
+        entry: python manage.py makemigrations --check --dry-run
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+  # ============================================================================
+  # Security Checks
+  # ============================================================================
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        name: Bandit Security Check
+        args: ["-c", "pyproject.toml"]
+        additional_dependencies: ["bandit[toml]"]
+        exclude: 
+          - tests/
+          - test_.*.py
+          - .*_test.py
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        name: Detect Secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: 
+          - package-lock.json
+          - poetry.lock
+          - uv.lock
+
+  # ============================================================================
+  # General File Checks
+  # ============================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim Trailing Whitespace
+      - id: end-of-file-fixer
+        name: Fix End of File
+      - id: check-yaml
+        name: Check YAML Syntax
+      - id: check-toml
+        name: Check TOML Syntax
+      - id: check-json
+        name: Check JSON Syntax
+      - id: check-merge-conflict
+        name: Check Merge Conflicts
+      - id: check-added-large-files
+        name: Check Large Files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+        name: Check Case Conflicts
+      - id: check-docstring-first
+        name: Check Docstrings First
+      - id: debug-statements
+        name: Check Debug Statements
+        exclude: 
+          - scripts/
+      - id: mixed-line-ending
+        name: Check Line Endings
+
+  # ============================================================================
+  # Tests (only on push to avoid slow commits)
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run Tests (pre-push only)
+        entry: pytest -x -q --tb=line
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: pytest-coverage
+        name: Run Tests with Coverage (pre-push only)
+        entry: pytest --cov=apps --cov=config --cov-fail-under=90 -q
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+  # ============================================================================
+  # Docker Compose Validation
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: docker-compose-validate
+        name: Validate Docker Compose
+        entry: docker-compose config
+        language: system
+        pass_filenames: false
+        files: ^docker-compose\.yml$
+
+  # ============================================================================
+  # Requirements/Dependencies Validation
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: uv-lock-check
+        name: Check UV Lock File
+        entry: sh
+        args: [-c, "test -f uv.lock || echo No uv.lock found - run: make lock"]
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+# Configuration for pre-commit.ci
+# See https://pre-commit.ci
+
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit.com hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false
