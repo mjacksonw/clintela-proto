@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome to Clintela</title>
+</head>
+<body>
+    <h1>Welcome to Clintela</h1>
+    
+    <p>Your code: <strong>{{ code }}</strong> ✓</p>
+    <p>(Make sure this matches your discharge leaflet)</p>
+    
+    {% if error %}
+        <div style="color: red;">{{ error }}</div>
+    {% endif %}
+    
+    <form method="post" action="{% url 'accounts:verify_dob' %}">
+        {% csrf_token %}
+        <label for="dob">Please enter your date of birth:</label>
+        <input type="text" id="dob" name="dob" placeholder="MM/DD/YYYY" required>
+        <button type="submit">Continue</button>
+    </form>
+    
+    <p><small>Code doesn't match? <a href="#">Contact your care team</a>.</small></p>
+    <!-- TODO: Implement contact-care-team view or remove link -->
+</body>
+</html>
