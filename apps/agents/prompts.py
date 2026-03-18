@@ -154,7 +154,7 @@ Create a structured summary suitable for:
 
 Format:
 ## Patient Interaction Summary
-**Patient:** {patient_name} | **Date:** {date} | **Type:** {type}
+**Patient:** {patient_name} | **Date:** Today | **Type:** {type}
 
 ### Chief Concern
 {{one sentence summary}}
@@ -169,10 +169,10 @@ Format:
 {outcome}
 
 ### Follow-up Required
-{{follow_up_required}}
+{{yes/no and details}}
 
 ### Notes for Care Team
-{{notes_for_team}}
+{{any relevant context}}
 """
 
 # Placeholder Specialist Prompt

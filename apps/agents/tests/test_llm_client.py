@@ -39,10 +39,12 @@ class TestLLMClient:
             "model": "test-model",
         }
 
-        mock_client = AsyncMock()
+        # Create proper async mock - json() is an async method
         mock_response_obj = AsyncMock()
         mock_response_obj.json = AsyncMock(return_value=mock_response)
         mock_response_obj.raise_for_status = AsyncMock()
+
+        mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=mock_response_obj)
         llm_client._client = mock_client
 
@@ -97,10 +99,11 @@ class TestLLMClient:
     @pytest.mark.asyncio
     async def test_generate_raises_on_invalid_json(self, llm_client):
         """Test invalid JSON response raises LLMResponseError."""
-        mock_client = AsyncMock()
         mock_response_obj = AsyncMock()
         mock_response_obj.json = AsyncMock(side_effect=json.JSONDecodeError("test", "doc", 0))
         mock_response_obj.raise_for_status = AsyncMock()
+
+        mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=mock_response_obj)
         llm_client._client = mock_client
 
@@ -110,13 +113,6 @@ class TestLLMClient:
     @pytest.mark.asyncio
     async def test_generate_retries_on_failure(self, llm_client):
         """Test retry logic works."""
-        mock_client = AsyncMock()
-        mock_response_obj = AsyncMock()
-        mock_response_obj.json = AsyncMock(return_value={
-            "choices": [{"message": {"content": "Success"}}],
-        })
-        mock_response_obj.raise_for_status = AsyncMock()
-
         # Fail twice, then succeed
         call_count = 0
         async def mock_post(*args, **kwargs):
@@ -124,8 +120,15 @@ class TestLLMClient:
             call_count += 1
             if call_count < 3:
                 raise httpx.TimeoutException("Timeout")
+            # Return successful response
+            mock_response_obj = AsyncMock()
+            mock_response_obj.json = AsyncMock(return_value={
+                "choices": [{"message": {"content": "Success"}}],
+            })
+            mock_response_obj.raise_for_status = AsyncMock()
             return mock_response_obj
 
+        mock_client = AsyncMock()
         mock_client.post = mock_post
         llm_client._client = mock_client
 
@@ -137,12 +140,13 @@ class TestLLMClient:
     @pytest.mark.asyncio
     async def test_generate_json_parses_response(self, llm_client):
         """Test generate_json parses JSON from markdown."""
-        mock_client = AsyncMock()
         mock_response_obj = AsyncMock()
         mock_response_obj.json = AsyncMock(return_value={
             "choices": [{"message": {"content": '```json\n{"key": "value"}\n```'}}],
         })
         mock_response_obj.raise_for_status = AsyncMock()
+
+        mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=mock_response_obj)
         llm_client._client = mock_client
 

@@ -135,7 +135,7 @@ class LLMClient:
             raise LLMError(f"Request failed: {e}") from e
 
         try:
-            data = response.json()
+            data = await response.json()
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse LLM response: {e}")
             raise LLMResponseError("Invalid JSON response") from e
