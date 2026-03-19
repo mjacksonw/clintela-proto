@@ -34,8 +34,9 @@
              style="background-color: var(--color-surface);
                     border-color: var(--color-border);
                     color: var(--color-text);
-                    border-radius: 16px 16px 16px 4px;">
-            {{ message.content }}
+                    border-radius: 16px 16px 16px 4px;"
+             data-raw-content="{{ message.content }}">
+            {{ message.content|linebreaksbr }}
         </div>
 
         <!-- Confidence indicator -->

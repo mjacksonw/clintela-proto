@@ -165,6 +165,31 @@
             cursor: pointer;
         }
 
+        /* Markdown inside agent message bubbles */
+        .agent-message-content p {
+            margin-bottom: 0.5em;
+        }
+        .agent-message-content p:last-child {
+            margin-bottom: 0;
+        }
+        .agent-message-content ul,
+        .agent-message-content ol {
+            margin: 0.5em 0;
+            padding-left: 1.5em;
+        }
+        .agent-message-content li {
+            margin-bottom: 0.25em;
+        }
+        .agent-message-content strong {
+            font-weight: 600;
+        }
+        .agent-message-content code {
+            font-size: 0.875em;
+            padding: 0.1em 0.3em;
+            border-radius: 3px;
+            background-color: var(--color-border);
+        }
+
         /* Scrollbar styling */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;

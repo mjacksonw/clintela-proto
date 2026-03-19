@@ -153,8 +153,12 @@ const clintelaChat = (() => {
         const agentBubbles = (root || document).querySelectorAll('.agent-message-content');
         agentBubbles.forEach(el => {
             if (el.dataset.rendered) return;
-            const raw = el.textContent;
-            el.innerHTML = renderMarkdown(raw);
+            // Prefer data-raw-content (preserves newlines from Django template)
+            // Fall back to textContent for dynamically created elements
+            const raw = el.dataset.rawContent || el.textContent;
+            if (raw && raw.trim()) {
+                el.innerHTML = renderMarkdown(raw);
+            }
             el.dataset.rendered = 'true';
         });
     }
