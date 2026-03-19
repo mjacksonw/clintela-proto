@@ -7,7 +7,6 @@ from typing import Any
 import httpx
 from django.conf import settings
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -75,7 +74,7 @@ class LLMClient:
             )
         return self._client
 
-    async def generate(
+    async def generate(  # noqa: C901
         self,
         messages: list[dict[str, str]],
         temperature: float = 0.7,
@@ -103,13 +102,14 @@ class LLMClient:
 
         # Determine endpoint based on base URL
         base_url_normalized = self.base_url.rstrip("/")
-        
+
         # Check if this is Ollama Cloud (ollama.com/api) vs OpenAI-compatible
-        if "ollama.com" in base_url_normalized or ("/api" in base_url_normalized and not base_url_normalized.endswith("/v1")):
-            if base_url_normalized.endswith("/api"):
-                endpoint = "/chat"
-            else:
-                endpoint = "/api/chat"
+        is_ollama_cloud = (
+            "ollama.com" in base_url_normalized
+            or ("/api" in base_url_normalized and not base_url_normalized.endswith("/v1"))
+        )
+        if is_ollama_cloud:
+            endpoint = "/chat" if base_url_normalized.endswith("/api") else "/api/chat"
             # Ollama format doesn't use response_format in payload
             ollama_payload = {
                 "model": self.model,
@@ -138,7 +138,7 @@ class LLMClient:
             try:
                 response = await self.client.post(endpoint, json=payload)
                 response.raise_for_status()
-                
+
                 # Parse response (response.json() is async in httpx AsyncClient)
                 try:
                     data = await response.json()
@@ -169,8 +169,8 @@ class LLMClient:
                 else:
                     logger.error(f"Invalid LLM response structure: {data}")
                     raise LLMResponseError("Invalid response structure")
-                    
-            except httpx.TimeoutException as e:
+
+            except httpx.TimeoutException:
                 last_error = LLMTimeoutError(f"Request timed out after {self.timeout}s")
                 logger.warning(f"LLM request timed out (attempt {attempt + 1}/{self.max_retries})")
                 if attempt < self.max_retries - 1:
@@ -190,7 +190,7 @@ class LLMClient:
             except httpx.RequestError as e:
                 logger.error(f"LLM request error: {e}")
                 raise LLMError(f"Request failed: {e}") from e
-        
+
         # If we get here, all retries failed
         raise last_error or LLMError("All retries failed")
 

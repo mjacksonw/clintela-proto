@@ -20,7 +20,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
 django_asgi_app = get_asgi_application()
 
 # Import routing after Django setup
-from apps.agents import routing as agents_routing
+from apps.agents import routing as agents_routing  # noqa: E402
 
 application = ProtocolTypeRouter(
     {

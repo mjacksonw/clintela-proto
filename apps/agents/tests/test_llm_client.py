@@ -1,7 +1,7 @@
 """Tests for LLM client."""
 
 import json
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest

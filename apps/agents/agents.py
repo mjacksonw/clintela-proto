@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -332,8 +333,6 @@ Status: {patient.get('status', 'unknown')}
             )
 
 
-import re
-
 class NurseTriageAgent(BaseAgent):
     """Nurse Triage agent - clinical assessment and guidance."""
 
@@ -357,7 +356,11 @@ class NurseTriageAgent(BaseAgent):
         # Chest pain / cardiac
         (r'\b(chest\s+pain|heart\s+attack|cardiac\s+arrest)\b', "chest pain/cardiac"),
         # Breathing difficulties
-        (r"can't\s+breathe|cannot\s+breathe|breathing\s+difficulty|shortness\s+of\s+breath|difficulty\s+breathing|wheezing|struggling\s+to\s+breathe", "breathing difficulty"),
+        (
+            r"can't\s+breathe|cannot\s+breathe|breathing\s+difficulty|"
+            r"shortness\s+of\s+breath|difficulty\s+breathing|wheezing|struggling\s+to\s+breathe",
+            "breathing difficulty",
+        ),
         # Unconsciousness
         (r'unconscious|passed\s+out|fainted|blackout', "loss of consciousness"),
         # Vomiting blood

@@ -18,7 +18,7 @@ except ImportError:
 from django.utils import timezone
 
 from apps.agents.models import AgentConversation, AgentMessage
-from apps.agents.services import ConversationService, ContextService
+from apps.agents.services import ContextService, ConversationService
 from apps.agents.workflow import get_workflow
 from apps.pathways.models import PathwayMilestone, PatientMilestoneCheckin
 from apps.patients.models import Patient
@@ -103,7 +103,7 @@ def process_patient_message(self, patient_id: str, message: str):
     except Exception as e:
         logger.error(f"Failed to process message for patient {patient_id}: {e}")
         if self.request.retries < self.max_retries:
-            raise self.retry(countdown=2 ** self.request.retries)
+            raise self.retry(countdown=2 ** self.request.retries) from None
         return {"error": str(e)}
 
 

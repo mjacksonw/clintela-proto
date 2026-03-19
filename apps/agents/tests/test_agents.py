@@ -1,7 +1,8 @@
 """Tests for agent implementations."""
 
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, patch
 
 from apps.agents.agents import (
     AgentResult,
@@ -13,7 +14,7 @@ from apps.agents.agents import (
     calculate_confidence_score,
     get_agent,
 )
-from apps.agents.llm_client import MockLLMClient, LLMError
+from apps.agents.llm_client import LLMError, MockLLMClient
 
 
 class TestAgentResult:

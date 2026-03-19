@@ -13,7 +13,7 @@ class ChatMessageValidator(BaseModel):
     type: Literal["chat", "command", "status"] = Field(default="chat")
 
     @validator("message")
-    def validate_message_content(cls, v: str) -> str:
+    def validate_message_content(self, v: str) -> str:
         """Validate message content."""
         v = v.strip()
         if not v:

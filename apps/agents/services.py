@@ -410,8 +410,8 @@ class EscalationService:
         Returns:
             True if successful
         """
-        from apps.agents.models import Escalation
         from apps.accounts.models import User
+        from apps.agents.models import Escalation
 
         try:
             escalation = Escalation.objects.get(id=escalation_id)

@@ -1,6 +1,7 @@
 """URL patterns for patient authentication."""
 
 from django.urls import path
+
 from . import views
 
 app_name = 'accounts'

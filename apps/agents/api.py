@@ -3,7 +3,6 @@
 import json
 from typing import Any
 
-from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
 
@@ -16,8 +15,8 @@ from apps.agents.schemas import (
     EscalationResponse,
 )
 from apps.agents.services import (
-    ConversationService,
     ContextService,
+    ConversationService,
     EscalationService,
 )
 from apps.agents.workflow import get_workflow
@@ -238,7 +237,6 @@ async def resolve_escalation(request, escalation_id: str):
 
 # Async helper functions
 
-import asyncio
 
 
 async def get_patient_async(patient_id: str) -> Patient | None:
