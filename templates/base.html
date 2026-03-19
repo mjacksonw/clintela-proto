@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Clintela{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
 
     <!-- Prevent dark mode flash -->
     <script>
@@ -124,6 +125,44 @@
         h1, h2, h3, h4 {
             font-weight: 600;
             color: var(--color-text);
+        }
+
+        /* Card styling — DESIGN.md: shadow, hover lift */
+        .card {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Page load animation — DESIGN.md: fade-in + upward */
+        .animate-in {
+            animation: fadeSlideIn 400ms ease-out both;
+        }
+        .animate-in-delay-1 { animation-delay: 50ms; }
+        .animate-in-delay-2 { animation-delay: 100ms; }
+        .animate-in-delay-3 { animation-delay: 150ms; }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Suggestion chips — cursor pointer */
+        .suggestion-chip {
+            cursor: pointer;
         }
 
         /* Scrollbar styling */
