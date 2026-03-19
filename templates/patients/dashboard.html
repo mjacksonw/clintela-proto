@@ -27,12 +27,9 @@
             </p>
         </div>
 
-        <!-- Status badge -->
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium
-                    {% if patient.status == 'green' %}bg-emerald-50 text-emerald-700{% endif %}
-                    {% if patient.status == 'yellow' %}bg-amber-50 text-amber-700{% endif %}
-                    {% if patient.status == 'orange' %}bg-orange-50 text-orange-700{% endif %}
-                    {% if patient.status == 'red' %}bg-red-50 text-red-700{% endif %}">
+        <!-- Status badge (using DESIGN.md semantic badge colors) -->
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium"
+             style="{% if patient.status == 'green' %}background-color: #D1FAE5; color: #065F46;{% endif %}{% if patient.status == 'yellow' %}background-color: #FEF3C7; color: #92400E;{% endif %}{% if patient.status == 'orange' %}background-color: #FEF3C7; color: #92400E;{% endif %}{% if patient.status == 'red' %}background-color: #FEE2E2; color: #991B1B;{% endif %}">
             {% if patient.status == 'green' %}
                 <i data-lucide="check-circle" class="w-4 h-4"></i> On Track
             {% elif patient.status == 'yellow' %}
