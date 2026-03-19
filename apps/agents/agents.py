@@ -278,9 +278,9 @@ class CareCoordinatorAgent(BaseAgent):
 
         # Build patient context string
         patient_context = f"""
-Name: {patient.get('name', 'Patient')}
-Surgery: {patient.get('surgery_type', 'Unknown')} ({patient.get('days_post_op', 0)} days ago)
-Status: {patient.get('status', 'unknown')}
+Name: {patient.get("name", "Patient")}
+Surgery: {patient.get("surgery_type", "Unknown")} ({patient.get("days_post_op", 0)} days ago)
+Status: {patient.get("status", "unknown")}
 """
 
         # Build conversation history

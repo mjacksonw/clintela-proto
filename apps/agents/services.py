@@ -578,16 +578,16 @@ class EscalationService:
 **Patient:** {patient.user.first_name} {patient.user.last_name} | **Escalated:** {conversation.updated_at.isoformat()}
 
 ### Conversation Summary
-{summary[:500]}{'...' if len(summary) > 500 else ''}
+{summary[:500]}{"..." if len(summary) > 500 else ""}
 
 ### Escalation Trigger
 {escalation_reason}
 
 ### Patient Context
-- Surgery: {patient.surgery_type or 'Unknown'}
+- Surgery: {patient.surgery_type or "Unknown"}
 - Days Post-Op: {patient.days_post_op()}
 - Status: {patient.status}
-- Phone: {patient.user.phone_number if patient.user.phone_number else 'N/A'}
+- Phone: {patient.user.phone_number if patient.user.phone_number else "N/A"}
 
 ### What AI Covered
 {chr(10).join(ai_coverage) if ai_coverage else "- No AI responses recorded"}
@@ -598,7 +598,7 @@ class EscalationService:
 ### AI Agent History
 - Primary Agent: {conversation.agent_type}
 - Tools Used: {len(conversation.tool_invocations)} invocations
-- Confidence Scores: {', '.join([str(m.confidence_score) for m in ai_messages if m.confidence_score]) or 'N/A'}
+- Confidence Scores: {", ".join([str(m.confidence_score) for m in ai_messages if m.confidence_score]) or "N/A"}
 
 ### Suggested Next Steps
 1. Review patient's current status and symptoms
