@@ -70,9 +70,9 @@
     </div>
 </div>
 
-<!-- Suggestion chips (persistent above input) -->
+<!-- Suggestion chips (persistent above input, hidden when empty chat shows its own chips) -->
 <div id="suggestion-chips"
-     class="px-4 py-2 flex gap-2 flex-wrap flex-shrink-0 border-t"
+     class="px-4 py-2 flex gap-2 flex-wrap flex-shrink-0 border-t {% if not messages %}hidden{% endif %}"
      style="border-color: var(--color-border);">
     {% for chip in suggestion_chips %}
     <button class="suggestion-chip px-3 py-1.5 text-sm rounded-full border transition-colors
