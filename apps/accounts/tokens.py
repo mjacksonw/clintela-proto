@@ -29,10 +29,7 @@ class ShortCodeTokenGenerator(PasswordResetTokenGenerator):
         - Patient's last_updated timestamp
         """
 
-        return (
-            str(patient.pk) + str(timestamp) +
-            str(patient.leaflet_code) + str(patient.updated_at)
-        )
+        return str(patient.pk) + str(timestamp) + str(patient.leaflet_code) + str(patient.updated_at)
 
     def get_short_code(self, token):
         """Derive a short 6-character code from the full token.
@@ -57,10 +54,7 @@ class ShortCodeTokenGenerator(PasswordResetTokenGenerator):
 
     def generate_short_code(self):
         """Generate a random short code (for leaflet codes, not auth tokens)."""
-        return "".join(
-            secrets.choice(self.CODE_ALPHABET)
-            for _ in range(self.CODE_LENGTH)
-        )
+        return "".join(secrets.choice(self.CODE_ALPHABET) for _ in range(self.CODE_LENGTH))
 
 
 # Singleton instance

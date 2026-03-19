@@ -30,12 +30,12 @@ def parse_flexible_date(date_string):
     patterns = [
         # MM/DD/YYYY or MM-DD-YYYY
         (
-            r'^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$',
+            r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$",
             lambda m: (int(m.group(1)), int(m.group(2)), int(m.group(3))),
         ),
         # MM/DD/YY or MM-DD-YY (2-digit year)
         (
-            r'^(\d{1,2})[/\-](\d{1,2})[/\-](\d{2})$',
+            r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{2})$",
             lambda m: (int(m.group(1)), int(m.group(2)), 2000 + int(m.group(3))),
         ),
     ]
@@ -53,6 +53,7 @@ def parse_flexible_date(date_string):
     # Try dateutil as fallback if available
     try:
         from dateutil import parser
+
         parsed = parser.parse(date_string)
         return parsed.date()
     except (ImportError, ValueError):

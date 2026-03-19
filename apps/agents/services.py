@@ -31,10 +31,14 @@ class ConversationService:
             AgentConversation instance
         """
         # Look for active conversation with lock
-        conversation = AgentConversation.objects.filter(
-            patient=patient,
-            status="active",
-        ).select_for_update().first()
+        conversation = (
+            AgentConversation.objects.filter(
+                patient=patient,
+                status="active",
+            )
+            .select_for_update()
+            .first()
+        )
 
         if conversation:
             return conversation
@@ -194,9 +198,13 @@ class ContextService:
             Patient context dict
         """
         # Get active pathway if any
-        active_pathway = patient.pathways.filter(
-            status="active",
-        ).select_related("pathway").first()
+        active_pathway = (
+            patient.pathways.filter(
+                status="active",
+            )
+            .select_related("pathway")
+            .first()
+        )
 
         context = {
             "id": str(patient.id),
@@ -230,9 +238,13 @@ class ContextService:
         """
         from apps.pathways.models import PathwayMilestone
 
-        active_pathway = patient.pathways.filter(
-            status="active",
-        ).select_related("pathway").first()
+        active_pathway = (
+            patient.pathways.filter(
+                status="active",
+            )
+            .select_related("pathway")
+            .first()
+        )
 
         if not active_pathway:
             return {
@@ -243,18 +255,26 @@ class ContextService:
         days_post_op = patient.days_post_op()
 
         # Get current milestone
-        current_milestone = PathwayMilestone.objects.filter(
-            pathway=active_pathway.pathway,
-            day__lte=days_post_op,
-            is_active=True,
-        ).order_by("-day").first()
+        current_milestone = (
+            PathwayMilestone.objects.filter(
+                pathway=active_pathway.pathway,
+                day__lte=days_post_op,
+                is_active=True,
+            )
+            .order_by("-day")
+            .first()
+        )
 
         # Get next milestone
-        next_milestone = PathwayMilestone.objects.filter(
-            pathway=active_pathway.pathway,
-            day__gt=days_post_op,
-            is_active=True,
-        ).order_by("day").first()
+        next_milestone = (
+            PathwayMilestone.objects.filter(
+                pathway=active_pathway.pathway,
+                day__gt=days_post_op,
+                is_active=True,
+            )
+            .order_by("day")
+            .first()
+        )
 
         return {
             "current_phase": current_milestone.phase if current_milestone else "unknown",
@@ -264,11 +284,15 @@ class ContextService:
                 "expected_symptoms": current_milestone.expected_symptoms,
                 "activities": current_milestone.activities,
                 "red_flags": current_milestone.red_flags,
-            } if current_milestone else None,
+            }
+            if current_milestone
+            else None,
             "next_milestone": {
                 "day": next_milestone.day,
                 "title": next_milestone.title,
-            } if next_milestone else None,
+            }
+            if next_milestone
+            else None,
         }
 
     @staticmethod
@@ -290,9 +314,19 @@ class ContextService:
 
         symptoms = []
         symptom_keywords = [
-            "pain", "fever", "nausea", "vomiting", "bleeding",
-            "swelling", "redness", "discharge", "dizziness",
-            "fatigue", "tired", "weakness", "appetite",
+            "pain",
+            "fever",
+            "nausea",
+            "vomiting",
+            "bleeding",
+            "swelling",
+            "redness",
+            "discharge",
+            "dizziness",
+            "fatigue",
+            "tired",
+            "weakness",
+            "appetite",
         ]
 
         for msg in recent_messages:
@@ -599,14 +633,16 @@ class EscalationService:
         # Build conversation timeline
         timeline = []
         for msg in messages:
-            timeline.append({
-                "timestamp": msg.created_at.isoformat(),
-                "role": msg.role,
-                "agent_type": msg.agent_type,
-                "content": msg.content[:200] + ('...' if len(msg.content) > 200 else ''),
-                "confidence": msg.confidence_score,
-                "escalation_triggered": msg.escalation_triggered,
-            })
+            timeline.append(
+                {
+                    "timestamp": msg.created_at.isoformat(),
+                    "role": msg.role,
+                    "agent_type": msg.agent_type,
+                    "content": msg.content[:200] + ("..." if len(msg.content) > 200 else ""),
+                    "confidence": msg.confidence_score,
+                    "escalation_triggered": msg.escalation_triggered,
+                }
+            )
 
         # Get patient context
         context = ContextService.get_patient_context(patient)

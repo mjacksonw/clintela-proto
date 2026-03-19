@@ -11,13 +11,17 @@ from unittest.mock import MagicMock
 
 def create_noop_ratelimit():
     """Create a no-op ratelimit decorator."""
+
     def ratelimit(*args, **kwargs):
         def decorator(func):
             @wraps(func)
             def wrapper(*f_args, **f_kwargs):
                 return func(*f_args, **f_kwargs)
+
             return wrapper
+
         return decorator
+
     return ratelimit
 
 

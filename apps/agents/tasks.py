@@ -5,15 +5,51 @@ from datetime import timedelta
 
 try:
     from celery import shared_task
+
     CELERY_AVAILABLE = True
 except ImportError:
     CELERY_AVAILABLE = False
+
     # Create a dummy decorator for when Celery is not installed
-    def shared_task(*args, **kwargs):
-        def decorator(func):
-            func.delay = lambda *a, **kw: func(*a, **kw)
+    def shared_task(*args, bind=False, **kwargs):
+        # Check if decorator was called with just the function (no parentheses)
+        if len(args) == 1 and callable(args[0]) and not kwargs and not bind:
+            # @shared_task without parentheses - args[0] is the function
+            func = args[0]
+            # Return the wrapped function directly
+            func.delay = func
             return func
+
+        def decorator(func):
+            # Store original function
+            original_func = func
+
+            # For bind=True tasks, the first arg is 'self' (the task instance)
+            if bind:
+                # The function already expects 'self', just pass it through
+                wrapped_func = func
+            else:
+                # No bind, just use the function directly
+                wrapped_func = func
+
+            # Attach .delay method that calls the wrapped function directly
+            def delay(*d_args, **d_kwargs):
+                return wrapped_func(*d_args, **d_kwargs)
+
+            # Replace the function with a callable that accepts both direct calls and .delay
+            def task_wrapper(*tw_args, **tw_kwargs):
+                return wrapped_func(*tw_args, **tw_kwargs)
+
+            task_wrapper.delay = delay
+            task_wrapper.__name__ = original_func.__name__
+            task_wrapper.__doc__ = original_func.__doc__
+            task_wrapper._is_task = True
+            task_wrapper._bind = bind
+
+            return task_wrapper
+
         return decorator
+
 
 from django.utils import timezone
 
@@ -59,6 +95,7 @@ def process_patient_message(self, patient_id: str, message: str):
 
         # Process through workflow (synchronously for Celery)
         import asyncio
+
         workflow = get_workflow()
         result = asyncio.run(workflow.process_message(message, context))
 
@@ -103,7 +140,7 @@ def process_patient_message(self, patient_id: str, message: str):
     except Exception as e:
         logger.error(f"Failed to process message for patient {patient_id}: {e}")
         if self.request.retries < self.max_retries:
-            raise self.retry(countdown=2 ** self.request.retries) from None
+            raise self.retry(countdown=2**self.request.retries) from None
         return {"error": str(e)}
 
 
@@ -139,10 +176,11 @@ def send_proactive_checkin(patient_id: str, milestone_id: int):
 
         # Build check-in message
         questions = milestone.check_in_questions
+        first_name = patient.user.first_name if patient.user else "Patient"
         if questions:
-            message = f"Hi {patient.first_name}! It's day {milestone.day} of your recovery. {questions[0]}"
+            message = f"Hi {first_name}! It's day {milestone.day} of your recovery. {questions[0]}"
         else:
-            message = f"Hi {patient.first_name}! How are you feeling on day {milestone.day} of your recovery?"
+            message = f"Hi {first_name}! How are you feeling on day {milestone.day} of your recovery?"
 
         # Get or create conversation
         conversation = ConversationService.get_or_create_conversation(
@@ -354,16 +392,21 @@ def generate_conversation_summaries():
             doc_agent = DocumentationAgent()
             import asyncio
 
-            result = asyncio.run(doc_agent.process("", {
-                "patient": {
-                    "name": f"{conversation.patient.first_name} {conversation.patient.last_name}",
-                },
-                "transcript": transcript,
-                "actions": conversation.tool_invocations,
-                "outcome": conversation.escalation_reason or "Completed",
-                "duration": str(conversation.updated_at - conversation.created_at),
-                "interaction_type": "Chat",
-            }))
+            result = asyncio.run(
+                doc_agent.process(
+                    "",
+                    {
+                        "patient": {
+                            "name": f"{conversation.patient.user.first_name} {conversation.patient.user.last_name}",
+                        },
+                        "transcript": transcript,
+                        "actions": conversation.tool_invocations,
+                        "outcome": conversation.escalation_reason or "Completed",
+                        "duration": str(conversation.updated_at - conversation.created_at),
+                        "interaction_type": "Chat",
+                    },
+                )
+            )
 
             # Store summary in conversation context
             conversation.context["summary"] = result.response

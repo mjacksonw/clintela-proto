@@ -6,7 +6,7 @@
 <body>
     <h1>Link Expired</h1>
     <p>This link has expired for security reasons.</p>
-    
+
     <h2>Options:</h2>
     <form method="post" action="{% url 'accounts:resend_link' %}">
         {% csrf_token %}
@@ -14,7 +14,7 @@
         <input type="tel" name="phone_number" placeholder="(555) 123-4567" required>
         <button type="submit">Send New Link</button>
     </form>
-    
+
     <p>Or enter your leaflet code manually:</p>
     <form method="post" action="{% url 'accounts:manual_entry' %}">
         {% csrf_token %}

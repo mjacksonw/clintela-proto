@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ChatMessageValidator(BaseModel):
@@ -12,8 +12,9 @@ class ChatMessageValidator(BaseModel):
     patient_id: str
     type: Literal["chat", "command", "status"] = Field(default="chat")
 
-    @validator("message")
-    def validate_message_content(self, v: str) -> str:
+    @field_validator("message")
+    @classmethod
+    def validate_message_content(cls, v: str) -> str:
         """Validate message content."""
         v = v.strip()
         if not v:

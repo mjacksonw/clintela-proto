@@ -25,8 +25,6 @@ from apps.agents import routing as agents_routing  # noqa: E402
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        "websocket": AuthMiddlewareStack(
-            URLRouter(agents_routing.websocket_urlpatterns)
-        ),
+        "websocket": AuthMiddlewareStack(URLRouter(agents_routing.websocket_urlpatterns)),
     }
 )

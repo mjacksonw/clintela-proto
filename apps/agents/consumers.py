@@ -61,13 +61,17 @@ class AgentChatConsumer(AsyncWebsocketConsumer):
             result = await self.process_message(message)
 
             # Send response back to client
-            await self.send(text_data=json.dumps({
-                "type": "agent_response",
-                "message": result["response"],
-                "agent_type": result["agent_type"],
-                "escalate": result["escalate"],
-                "metadata": result.get("metadata", {}),
-            }))
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "agent_response",
+                        "message": result["response"],
+                        "agent_type": result["agent_type"],
+                        "escalate": result["escalate"],
+                        "metadata": result.get("metadata", {}),
+                    }
+                )
+            )
 
             # Broadcast to clinician dashboard if escalation
             if result["escalate"]:
@@ -89,9 +93,7 @@ class AgentChatConsumer(AsyncWebsocketConsumer):
             Workflow result
         """
         # Get or create conversation
-        conversation = await database_sync_to_async(
-            ConversationService.get_or_create_conversation
-        )(self.patient)
+        conversation = await database_sync_to_async(ConversationService.get_or_create_conversation)(self.patient)
 
         # Add user message
         await database_sync_to_async(ConversationService.add_message)(
@@ -101,9 +103,7 @@ class AgentChatConsumer(AsyncWebsocketConsumer):
         )
 
         # Assemble context
-        context = await database_sync_to_async(
-            ContextService.assemble_full_context
-        )(self.patient, conversation)
+        context = await database_sync_to_async(ContextService.assemble_full_context)(self.patient, conversation)
 
         # Process through workflow
         workflow = get_workflow()
@@ -123,9 +123,7 @@ class AgentChatConsumer(AsyncWebsocketConsumer):
 
         # Update conversation status if escalated
         if result["escalate"]:
-            await database_sync_to_async(
-                ConversationService.update_conversation_status
-            )(
+            await database_sync_to_async(ConversationService.update_conversation_status)(
                 conversation=conversation,
                 status="escalated",
                 escalation_reason=result.get("escalation_reason", ""),
@@ -133,6 +131,7 @@ class AgentChatConsumer(AsyncWebsocketConsumer):
 
             # Create escalation record
             from apps.agents.services import EscalationService
+
             await database_sync_to_async(EscalationService.create_escalation)(
                 patient=self.patient,
                 conversation=conversation,
@@ -169,7 +168,7 @@ class AgentChatConsumer(AsyncWebsocketConsumer):
             {
                 "type": "escalation_alert",
                 "patient_id": str(self.patient.id),
-                "patient_name": f"{self.patient.first_name} {self.patient.last_name}",
+                "patient_name": f"{self.patient.user.first_name} {self.patient.user.last_name}",
                 "severity": result.get("metadata", {}).get("severity", "urgent"),
                 "reason": result.get("escalation_reason", ""),
                 "timestamp": result.get("timestamp", ""),
@@ -179,10 +178,14 @@ class AgentChatConsumer(AsyncWebsocketConsumer):
     async def escalation_alert(self, event):
         """Handle escalation alert from channel layer."""
         # Send to WebSocket
-        await self.send(text_data=json.dumps({
-            "type": "escalation_alert",
-            "data": event,
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "escalation_alert",
+                    "data": event,
+                }
+            )
+        )
 
     async def send_error(self, error_message: str):
         """Send error message to client.
@@ -190,10 +193,14 @@ class AgentChatConsumer(AsyncWebsocketConsumer):
         Args:
             error_message: Error message
         """
-        await self.send(text_data=json.dumps({
-            "type": "error",
-            "message": error_message,
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "error",
+                    "message": error_message,
+                }
+            )
+        )
 
     @database_sync_to_async
     def get_patient(self, patient_id: str) -> Patient | None:
@@ -265,21 +272,29 @@ class ClinicianDashboardConsumer(AsyncWebsocketConsumer):
 
     async def escalation_alert(self, event):
         """Handle escalation alert."""
-        await self.send(text_data=json.dumps({
-            "type": "escalation",
-            "patient_id": event["patient_id"],
-            "patient_name": event["patient_name"],
-            "severity": event["severity"],
-            "reason": event["reason"],
-            "timestamp": event["timestamp"],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "escalation",
+                    "patient_id": event["patient_id"],
+                    "patient_name": event["patient_name"],
+                    "severity": event["severity"],
+                    "reason": event["reason"],
+                    "timestamp": event["timestamp"],
+                }
+            )
+        )
 
     async def patient_status_update(self, event):
         """Handle patient status update."""
-        await self.send(text_data=json.dumps({
-            "type": "status_update",
-            "patient_id": event["patient_id"],
-            "old_status": event["old_status"],
-            "new_status": event["new_status"],
-            "timestamp": event["timestamp"],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "status_update",
+                    "patient_id": event["patient_id"],
+                    "old_status": event["old_status"],
+                    "new_status": event["new_status"],
+                    "timestamp": event["timestamp"],
+                }
+            )
+        )

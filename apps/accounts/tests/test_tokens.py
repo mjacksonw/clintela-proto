@@ -1,6 +1,5 @@
 """Tests for patient authentication tokens."""
 
-
 import pytest
 
 from apps.accounts.models import User
@@ -13,12 +12,7 @@ def test_token_generator_creates_valid_token():
     """Test that token generator creates valid tokens with short codes."""
     user = User.objects.create_user(username="testuser", password="testpass")
     hospital = Hospital.objects.create(name="Test Hospital", code="TEST001")
-    patient = Patient.objects.create(
-        user=user,
-        hospital=hospital,
-        date_of_birth="1990-01-15",
-        leaflet_code="A3B9K2"
-    )
+    patient = Patient.objects.create(user=user, hospital=hospital, date_of_birth="1990-01-15", leaflet_code="A3B9K2")
 
     generator = ShortCodeTokenGenerator()
     full_token = generator.make_token(patient)
@@ -37,12 +31,7 @@ def test_token_generator_short_code_is_deterministic():
     """Test that short code is deterministic for same token."""
     user = User.objects.create_user(username="testuser2", password="testpass")
     hospital = Hospital.objects.create(name="Test Hospital 2", code="TEST002")
-    patient = Patient.objects.create(
-        user=user,
-        hospital=hospital,
-        date_of_birth="1990-01-15",
-        leaflet_code="B4C0D1"
-    )
+    patient = Patient.objects.create(user=user, hospital=hospital, date_of_birth="1990-01-15", leaflet_code="B4C0D1")
 
     generator = ShortCodeTokenGenerator()
     full_token = generator.make_token(patient)
@@ -75,12 +64,7 @@ def test_short_code_singleton():
     """Test that singleton instance works correctly."""
     user = User.objects.create_user(username="testuser3", password="testpass")
     hospital = Hospital.objects.create(name="Test Hospital 3", code="TEST003")
-    patient = Patient.objects.create(
-        user=user,
-        hospital=hospital,
-        date_of_birth="1990-01-15",
-        leaflet_code="C5D1E2"
-    )
+    patient = Patient.objects.create(user=user, hospital=hospital, date_of_birth="1990-01-15", leaflet_code="C5D1E2")
 
     # Use singleton
     full_token = short_code_token_generator.make_token(patient)

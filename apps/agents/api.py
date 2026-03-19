@@ -62,7 +62,12 @@ async def send_chat_message(request, patient_id: str, data: ChatMessageRequest):
 
     # Process through workflow
     workflow = get_workflow()
-    result = await workflow.process_message(message, context)
+    try:
+        result = await workflow.process_message(message, context)
+    except Exception as e:
+        import logging
+        logging.error(f"Workflow processing error: {e}")
+        raise HttpError(500, f"Workflow processing error: {str(e)}")
 
     # Add agent response
     await add_message_async(
@@ -167,7 +172,7 @@ async def list_escalations(
             EscalationResponse(
                 id=str(esc.id),
                 patient_id=str(esc.patient.id),
-                patient_name=f"{esc.patient.first_name} {esc.patient.last_name}",
+                patient_name=f"{esc.patient.user.first_name} {esc.patient.user.last_name}",
                 reason=esc.reason,
                 severity=esc.severity,
                 status=esc.status,
@@ -200,9 +205,17 @@ async def acknowledge_escalation(request, escalation_id: str):
     else:
         # Temporary: accept from request body for testing
         try:
-            body = json.loads(request.body)
+            # In async context, request.body may need special handling
+            body_bytes = request.body
+            if isinstance(body_bytes, bytes):
+                body_str = body_bytes.decode("utf-8")
+            else:
+                body_str = body_bytes
+            body = json.loads(body_str)
             clinician_id = body.get("clinician_id")
-        except (json.JSONDecodeError, AttributeError):
+        except (json.JSONDecodeError, AttributeError, UnicodeDecodeError) as e:
+            import logging
+            logging.debug(f"Could not parse request body: {e}")
             clinician_id = None
 
     if not clinician_id:
@@ -236,7 +249,6 @@ async def resolve_escalation(request, escalation_id: str):
 
 
 # Async helper functions
-
 
 
 async def get_patient_async(patient_id: str) -> Patient | None:
@@ -389,7 +401,7 @@ async def get_escalations_async(
         if severity:
             queryset = queryset.filter(severity=severity)
 
-        return list(queryset.select_related("patient").order_by("-created_at")[:50])
+        return list(queryset.select_related("patient__user").order_by("-created_at")[:50])
 
     return await _get()
 

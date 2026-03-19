@@ -234,12 +234,14 @@ class SupervisorAgent(BaseAgent):
             logger.error(f"Supervisor routing failed: {e}")
             # Default to care coordinator on error
             return AgentResult(
-                response=json.dumps({
-                    "agent": "care_coordinator",
-                    "urgency": "routine",
-                    "escalate_to_human": False,
-                    "reasoning": f"Routing failed: {e}",
-                }),
+                response=json.dumps(
+                    {
+                        "agent": "care_coordinator",
+                        "urgency": "routine",
+                        "escalate_to_human": False,
+                        "reasoning": f"Routing failed: {e}",
+                    }
+                ),
                 agent_type="supervisor",
                 metadata={
                     "error": str(e),
@@ -282,10 +284,12 @@ Status: {patient.get('status', 'unknown')}
 """
 
         # Build conversation history
-        history_str = "\n".join([
-            f"{msg.get('role', 'user').title()}: {msg.get('content', '')}"
-            for msg in history[-5:]  # Last 5 messages
-        ])
+        history_str = "\n".join(
+            [
+                f"{msg.get('role', 'user').title()}: {msg.get('content', '')}"
+                for msg in history[-5:]  # Last 5 messages
+            ]
+        )
 
         prompt = build_care_coordinator_prompt(
             patient_context=patient_context,
@@ -341,20 +345,20 @@ class NurseTriageAgent(BaseAgent):
     CRITICAL_PATTERNS = [
         # Pain levels 8-10 (catches: "pain is 10", "10 out of 10 pain", "pain level 9")
         # Must be standalone numbers, not part of fractions like "4/10"
-        (r'\bpain\b[^0-9/.]*\b(8|9|10)\b(?:\s*(?:/|out\s+of)\s*10)?(?!\d)', "severe pain (8-10/10)"),
-        (r'\b(8|9|10)\b(?:\s*(?:/|out\s+of)\s*10)?[^0-9/.]*\bpain\b', "severe pain (8-10/10)"),
-        (r'\bpain\s+(level\s+)?(8|9|10)\b(?:\s*/\s*10)?\b', "severe pain (8-10/10)"),
+        (r"\bpain\b[^0-9/.]*\b(8|9|10)\b(?:\s*(?:/|out\s+of)\s*10)?(?!\d)", "severe pain (8-10/10)"),
+        (r"\b(8|9|10)\b(?:\s*(?:/|out\s+of)\s*10)?[^0-9/.]*\bpain\b", "severe pain (8-10/10)"),
+        (r"\bpain\s+(level\s+)?(8|9|10)\b(?:\s*/\s*10)?\b", "severe pain (8-10/10)"),
         # Severe pain variations
-        (r'severe\s+pain|unbearable\s+pain|intense\s+pain|excruciating', "severe pain description"),
+        (r"severe\s+pain|unbearable\s+pain|intense\s+pain|excruciating", "severe pain description"),
         # Bleeding
-        (r'\b(bleeding|blood)\b', "bleeding"),
+        (r"\b(bleeding|blood)\b", "bleeding"),
         # Fever 102+ (catches: "fever is 103", "103 degree fever", "temp of 104")
         # Must be standalone temperature, not part of other numbers
-        (r'\bfever\b[^0-9/.]*\b(10[2-9]|11[0-9])\b(?!\d)', "high fever (102°F+)"),
-        (r'\b(10[2-9]|11[0-9])\b[^0-9/.]*\bfever\b', "high fever (102°F+)"),
-        (r'\btemp(?:erature)?\b[^0-9/.]*\b(10[2-9]|11[0-9])\b', "high fever (102°F+)"),
+        (r"\bfever\b[^0-9/.]*\b(10[2-9]|11[0-9])\b(?!\d)", "high fever (102°F+)"),
+        (r"\b(10[2-9]|11[0-9])\b[^0-9/.]*\bfever\b", "high fever (102°F+)"),
+        (r"\btemp(?:erature)?\b[^0-9/.]*\b(10[2-9]|11[0-9])\b", "high fever (102°F+)"),
         # Chest pain / cardiac
-        (r'\b(chest\s+pain|heart\s+attack|cardiac\s+arrest)\b', "chest pain/cardiac"),
+        (r"\b(chest\s+pain|heart\s+attack|cardiac\s+arrest)\b", "chest pain/cardiac"),
         # Breathing difficulties
         (
             r"can't\s+breathe|cannot\s+breathe|breathing\s+difficulty|"
@@ -362,13 +366,13 @@ class NurseTriageAgent(BaseAgent):
             "breathing difficulty",
         ),
         # Unconsciousness
-        (r'unconscious|passed\s+out|fainted|blackout', "loss of consciousness"),
+        (r"unconscious|passed\s+out|fainted|blackout", "loss of consciousness"),
         # Vomiting blood
-        (r'vomiting\s+blood|coughing\s+blood|blood\s+in\s+vomit', "hematemesis"),
+        (r"vomiting\s+blood|coughing\s+blood|blood\s+in\s+vomit", "hematemesis"),
         # Allergic reaction
-        (r'allergic\s+reaction|anaphylaxis|swelling\s+throat', "allergic reaction"),
+        (r"allergic\s+reaction|anaphylaxis|swelling\s+throat", "allergic reaction"),
         # Suicide/self-harm
-        (r'suicide|kill\s+myself|end\s+my\s+life', "self-harm ideation"),
+        (r"suicide|kill\s+myself|end\s+my\s+life", "self-harm ideation"),
     ]
 
     def __init__(self, llm_client: LLMClient | None = None):
@@ -463,11 +467,7 @@ class NurseTriageAgent(BaseAgent):
             )
 
             # Escalate if severity is high or confidence is low
-            escalate = (
-                result.get("escalate", False)
-                or severity in ["orange", "red"]
-                or confidence < 0.70
-            )
+            escalate = result.get("escalate", False) or severity in ["orange", "red"] or confidence < 0.70
 
             return AgentResult(
                 response=response_text,
@@ -480,9 +480,8 @@ class NurseTriageAgent(BaseAgent):
                     "confidence_score": confidence,
                 },
                 escalate=escalate,
-                escalation_reason=result.get("escalation_reason", "") or (
-                    "Low confidence score" if confidence < 0.70 else ""
-                ),
+                escalation_reason=result.get("escalation_reason", "")
+                or ("Low confidence score" if confidence < 0.70 else ""),
             )
         except (json.JSONDecodeError, LLMError) as e:
             logger.error(f"Nurse Triage failed: {e}")

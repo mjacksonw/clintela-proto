@@ -158,7 +158,7 @@ Same as phone, but:
 **Flow:**
 ```
 Patient: "Hi, I'm having some pain"
-System:  "Hi! It's been a while. To confirm it's you, 
+System:  "Hi! It's been a while. To confirm it's you,
          please reply with your date of birth (MM/DD/YYYY)"
 Patient: "01/15/1990"
 System:  "Thanks! Now let's talk about your pain..."
@@ -409,20 +409,20 @@ The current models already support this design:
 ```python
 class AuthToken(models.Model):
     """Time-limited, single-use authentication token."""
-    
+
     token = models.CharField(max_length=64, unique=True, db_index=True)
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     leaflet_code = models.CharField(max_length=6)
     expires_at = models.DateTimeField()
     used = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         db_table = "accounts_auth_token"
         indexes = [
             models.Index(fields=["expires_at"]),  # For cleanup queries
         ]
-    
+
     def is_valid(self):
         return not self.used and timezone.now() < self.expires_at
 ```
@@ -439,7 +439,7 @@ class AuthAttempt(models.Model):
     success = models.BooleanField()
     method = models.CharField(choices=[("sms_link", "SMS Link"), ("manual", "Manual Entry")])
     failure_reason = models.CharField(max_length=100, blank=True)
-    
+
     class Meta:
         db_table = "accounts_auth_attempt"
 ```

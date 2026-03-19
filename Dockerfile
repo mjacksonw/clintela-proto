@@ -86,8 +86,8 @@ COPY . .
 RUN mkdir -p staticfiles media logs && \
     chown -R clintela:clintela /app
 
-# Collect static files
-RUN python manage.py collectstatic --noinput --clear
+# Collect static files (use dummy SECRET_KEY for build)
+RUN SECRET_KEY=build-secret-key python manage.py collectstatic --noinput --clear
 
 # Switch to non-root user
 USER clintela

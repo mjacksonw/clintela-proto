@@ -104,9 +104,8 @@ class LLMClient:
         base_url_normalized = self.base_url.rstrip("/")
 
         # Check if this is Ollama Cloud (ollama.com/api) vs OpenAI-compatible
-        is_ollama_cloud = (
-            "ollama.com" in base_url_normalized
-            or ("/api" in base_url_normalized and not base_url_normalized.endswith("/v1"))
+        is_ollama_cloud = "ollama.com" in base_url_normalized or (
+            "/api" in base_url_normalized and not base_url_normalized.endswith("/v1")
         )
         if is_ollama_cloud:
             endpoint = "/chat" if base_url_normalized.endswith("/api") else "/api/chat"
@@ -175,7 +174,8 @@ class LLMClient:
                 logger.warning(f"LLM request timed out (attempt {attempt + 1}/{self.max_retries})")
                 if attempt < self.max_retries - 1:
                     import asyncio
-                    await asyncio.sleep(min(2 * (2 ** attempt), 10))  # Exponential backoff
+
+                    await asyncio.sleep(min(2 * (2**attempt), 10))  # Exponential backoff
                 continue
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 429:
@@ -183,7 +183,8 @@ class LLMClient:
                     logger.warning(f"LLM rate limit hit (attempt {attempt + 1}/{self.max_retries})")
                     if attempt < self.max_retries - 1:
                         import asyncio
-                        await asyncio.sleep(min(2 * (2 ** attempt), 10))
+
+                        await asyncio.sleep(min(2 * (2**attempt), 10))
                     continue
                 logger.error(f"LLM HTTP error: {e.response.status_code} - {e.response.text}")
                 raise LLMResponseError(f"HTTP {e.response.status_code}: {e.response.text}") from e

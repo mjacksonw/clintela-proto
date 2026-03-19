@@ -24,17 +24,19 @@ class TestLLMClient:
     def llm_client(self):
         """Create LLM client for testing."""
         client = LLMClient()
-        client.api_key = "test-key"
+        client.api_key = "test-key"  # pragma: allowlist secret
         return client
 
     @pytest.mark.asyncio
     async def test_generate_success(self, llm_client):
         """Test successful generation."""
         mock_response = {
-            "choices": [{
-                "message": {"content": "Test response"},
-                "finish_reason": "stop",
-            }],
+            "choices": [
+                {
+                    "message": {"content": "Test response"},
+                    "finish_reason": "stop",
+                }
+            ],
             "usage": {"prompt_tokens": 10, "completion_tokens": 5},
             "model": "test-model",
         }
@@ -115,6 +117,7 @@ class TestLLMClient:
         """Test retry logic works."""
         # Fail twice, then succeed
         call_count = 0
+
         async def mock_post(*args, **kwargs):
             nonlocal call_count
             call_count += 1
@@ -122,9 +125,11 @@ class TestLLMClient:
                 raise httpx.TimeoutException("Timeout")
             # Return successful response
             mock_response_obj = AsyncMock()
-            mock_response_obj.json = AsyncMock(return_value={
-                "choices": [{"message": {"content": "Success"}}],
-            })
+            mock_response_obj.json = AsyncMock(
+                return_value={
+                    "choices": [{"message": {"content": "Success"}}],
+                }
+            )
             mock_response_obj.raise_for_status = AsyncMock()
             return mock_response_obj
 
@@ -141,9 +146,11 @@ class TestLLMClient:
     async def test_generate_json_parses_response(self, llm_client):
         """Test generate_json parses JSON from markdown."""
         mock_response_obj = AsyncMock()
-        mock_response_obj.json = AsyncMock(return_value={
-            "choices": [{"message": {"content": '```json\n{"key": "value"}\n```'}}],
-        })
+        mock_response_obj.json = AsyncMock(
+            return_value={
+                "choices": [{"message": {"content": '```json\n{"key": "value"}\n```'}}],
+            }
+        )
         mock_response_obj.raise_for_status = lambda: None  # Not async
 
         mock_client = AsyncMock()
@@ -161,13 +168,17 @@ class TestMockLLMClient:
     @pytest.mark.asyncio
     async def test_returns_predefined_response(self):
         """Test mock returns predefined responses."""
-        client = MockLLMClient(responses={
-            "hello": "Hi there!",
-        })
+        client = MockLLMClient(
+            responses={
+                "hello": "Hi there!",
+            }
+        )
 
-        result = await client.generate([
-            {"role": "user", "content": "hello"},
-        ])
+        result = await client.generate(
+            [
+                {"role": "user", "content": "hello"},
+            ]
+        )
 
         assert result["content"] == "Hi there!"
 
@@ -176,9 +187,11 @@ class TestMockLLMClient:
         """Test mock returns default response for unknown patterns."""
         client = MockLLMClient()
 
-        result = await client.generate([
-            {"role": "user", "content": "unknown query"},
-        ])
+        result = await client.generate(
+            [
+                {"role": "user", "content": "unknown query"},
+            ]
+        )
 
         assert "mock response" in result["content"].lower()
 
@@ -195,13 +208,17 @@ class TestMockLLMClient:
     @pytest.mark.asyncio
     async def test_generate_json_parses_dict_response(self):
         """Test generate_json handles dict responses."""
-        client = MockLLMClient(responses={
-            "query": {"result": "success"},
-        })
+        client = MockLLMClient(
+            responses={
+                "query": {"result": "success"},
+            }
+        )
 
-        result = await client.generate_json([
-            {"role": "user", "content": "query"},
-        ])
+        result = await client.generate_json(
+            [
+                {"role": "user", "content": "query"},
+            ]
+        )
 
         assert result == {"result": "success"}
 

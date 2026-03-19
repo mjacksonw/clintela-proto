@@ -217,9 +217,7 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Created Cardiac Surgery pathway with {len(cardiac_milestones)} milestones"
-            )
+            self.style.SUCCESS(f"Created Cardiac Surgery pathway with {len(cardiac_milestones)} milestones")
         )
 
         self.stdout.write(self.style.SUCCESS("\nTest pathways created successfully!"))

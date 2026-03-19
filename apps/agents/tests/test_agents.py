@@ -112,14 +112,16 @@ class TestSupervisorAgent:
     @pytest.mark.asyncio
     async def test_routes_to_care_coordinator(self):
         """Test supervisor routes routine messages to care coordinator."""
-        mock_client = MockLLMClient(responses={
-            "question": {
-                "agent": "care_coordinator",
-                "urgency": "routine",
-                "escalate_to_human": False,
-                "reasoning": "General question",
+        mock_client = MockLLMClient(
+            responses={
+                "question": {
+                    "agent": "care_coordinator",
+                    "urgency": "routine",
+                    "escalate_to_human": False,
+                    "reasoning": "General question",
+                }
             }
-        })
+        )
 
         agent = SupervisorAgent(mock_client)
         result = await agent.process(
@@ -133,14 +135,16 @@ class TestSupervisorAgent:
     @pytest.mark.asyncio
     async def test_routes_to_nurse_triage_for_symptoms(self):
         """Test supervisor routes symptom messages to nurse triage."""
-        mock_client = MockLLMClient(responses={
-            "pain": {
-                "agent": "nurse_triage",
-                "urgency": "urgent",
-                "escalate_to_human": False,
-                "reasoning": "Patient reports pain",
+        mock_client = MockLLMClient(
+            responses={
+                "pain": {
+                    "agent": "nurse_triage",
+                    "urgency": "urgent",
+                    "escalate_to_human": False,
+                    "reasoning": "Patient reports pain",
+                }
             }
-        })
+        )
 
         agent = SupervisorAgent(mock_client)
         result = await agent.process(
@@ -154,14 +158,16 @@ class TestSupervisorAgent:
     @pytest.mark.asyncio
     async def test_escalates_critical_symptoms(self):
         """Test supervisor escalates critical symptoms immediately."""
-        mock_client = MockLLMClient(responses={
-            "chest pain": {
-                "agent": "nurse_triage",
-                "urgency": "critical",
-                "escalate_to_human": True,
-                "reasoning": "Critical symptom: chest pain",
+        mock_client = MockLLMClient(
+            responses={
+                "chest pain": {
+                    "agent": "nurse_triage",
+                    "urgency": "critical",
+                    "escalate_to_human": True,
+                    "reasoning": "Critical symptom: chest pain",
+                }
             }
-        })
+        )
 
         agent = SupervisorAgent(mock_client)
         result = await agent.process(
@@ -194,9 +200,11 @@ class TestCareCoordinatorAgent:
     @pytest.mark.asyncio
     async def test_generates_warm_response(self):
         """Test care coordinator generates warm, supportive response."""
-        mock_client = MockLLMClient(responses={
-            "feeling": "I'm sorry to hear you're feeling down. Recovery can be emotionally challenging.",
-        })
+        mock_client = MockLLMClient(
+            responses={
+                "feeling": "I'm sorry to hear you're feeling down. Recovery can be emotionally challenging.",
+            }
+        )
 
         agent = CareCoordinatorAgent(mock_client)
         result = await agent.process(
@@ -214,9 +222,11 @@ class TestCareCoordinatorAgent:
     async def test_escalates_on_low_confidence(self):
         """Test care coordinator escalates when confidence is low."""
         # Mock a response that will trigger low confidence (short response < 20 chars)
-        mock_client = MockLLMClient(responses={
-            "question": "Hi.",  # Very short response triggers short penalty
-        })
+        mock_client = MockLLMClient(
+            responses={
+                "question": "Hi.",  # Very short response triggers short penalty
+            }
+        )
 
         agent = CareCoordinatorAgent(mock_client)
         result = await agent.process(
@@ -269,13 +279,15 @@ class TestNurseTriageAgent:
     @pytest.mark.asyncio
     async def test_classifies_severity(self):
         """Test nurse triage classifies symptom severity."""
-        mock_client = MockLLMClient(responses={
-            "pain": {
-                "severity": "yellow",
-                "response": "Some discomfort is normal.",
-                "escalate": False,
+        mock_client = MockLLMClient(
+            responses={
+                "pain": {
+                    "severity": "yellow",
+                    "response": "Some discomfort is normal.",
+                    "escalate": False,
+                }
             }
-        })
+        )
 
         agent = NurseTriageAgent(mock_client)
         result = await agent.process(
@@ -291,14 +303,16 @@ class TestNurseTriageAgent:
     @pytest.mark.asyncio
     async def test_escalates_red_severity(self):
         """Test nurse triage escalates red severity."""
-        mock_client = MockLLMClient(responses={
-            "fever": {
-                "severity": "red",
-                "response": "This needs immediate attention.",
-                "escalate": True,
-                "escalation_reason": "High fever with infection signs",
+        mock_client = MockLLMClient(
+            responses={
+                "fever": {
+                    "severity": "red",
+                    "response": "This needs immediate attention.",
+                    "escalate": True,
+                    "escalation_reason": "High fever with infection signs",
+                }
             }
-        })
+        )
 
         agent = NurseTriageAgent(mock_client)
         result = await agent.process(
@@ -316,9 +330,11 @@ class TestDocumentationAgent:
     @pytest.mark.asyncio
     async def test_generates_summary(self):
         """Test documentation agent generates summary."""
-        mock_client = MockLLMClient(responses={
-            "": "## Patient Interaction Summary\n\n**Patient:** John",
-        })
+        mock_client = MockLLMClient(
+            responses={
+                "": "## Patient Interaction Summary\n\n**Patient:** John",
+            }
+        )
 
         agent = DocumentationAgent(mock_client)
         result = await agent.process(
