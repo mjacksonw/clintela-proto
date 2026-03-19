@@ -5,8 +5,9 @@ For more information, see:
 https://pytest-django.readthedocs.io/en/latest/
 """
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 
 @pytest.fixture(scope="session")
@@ -25,41 +26,45 @@ def client(client):
 @pytest.fixture(autouse=True)
 def disable_rate_limiting():
     """Disable rate limiting for all tests to avoid 403 errors."""
-    from django_ratelimit.decorators import ratelimit
     from functools import wraps
-    
+
+    from django_ratelimit.decorators import ratelimit
+
     # Store the original ratelimit decorator
     original_ratelimit = ratelimit
-    
+
     # Create a no-op version that just passes through
     def noop_ratelimit(*args, **kwargs):
         def decorator(func):
             @wraps(func)
             def wrapper(*f_args, **f_kwargs):
                 return func(*f_args, **f_kwargs)
+
             return wrapper
+
         return decorator
-    
+
     # Patch the ratelimit decorator
-    with patch('apps.accounts.views.ratelimit', noop_ratelimit):
-        with patch('django_ratelimit.decorators.ratelimit', noop_ratelimit):
+    with patch("apps.accounts.views.ratelimit", noop_ratelimit):
+        with patch("django_ratelimit.decorators.ratelimit", noop_ratelimit):
             yield
 
 
 @pytest.fixture
 def disable_rate_limiting_fixture():
     """Disable rate limiting for tests that need it."""
-    from django_ratelimit.decorators import ratelimit
     from functools import wraps
-    
+
     def noop_ratelimit(*args, **kwargs):
         def decorator(func):
             @wraps(func)
             def wrapper(*f_args, **f_kwargs):
                 return func(*f_args, **f_kwargs)
+
             return wrapper
+
         return decorator
-    
-    with patch('apps.accounts.views.ratelimit', noop_ratelimit):
-        with patch('django_ratelimit.decorators.ratelimit', noop_ratelimit):
+
+    with patch("apps.accounts.views.ratelimit", noop_ratelimit):
+        with patch("django_ratelimit.decorators.ratelimit", noop_ratelimit):
             yield

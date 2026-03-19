@@ -1,15 +1,16 @@
 """Comprehensive tests for AgentWorkflow and related functions."""
 
 import json
-import pytest
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
+
+from apps.agents.agents import AgentResult
 from apps.agents.workflow import (
     AgentWorkflow,
     get_workflow,
     reset_workflow,
 )
-from apps.agents.agents import AgentResult
 
 
 @pytest.fixture

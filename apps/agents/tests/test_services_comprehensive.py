@@ -1,25 +1,22 @@
 """Comprehensive tests for agent services."""
 
 import uuid
-from datetime import date, datetime, timedelta
-from unittest.mock import patch
+from datetime import date, timedelta
 
 import pytest
-from django.utils import timezone
 
-from apps.agents.models import AgentConversation, AgentMessage, ConversationState, Escalation
-from apps.agents.services import ConversationService, ContextService, EscalationService
+from apps.agents.models import AgentConversation
+from apps.agents.services import ContextService, ConversationService, EscalationService
 from apps.agents.tests.factories import (
     AgentConversationFactory,
     AgentMessageFactory,
-    AgentAuditLogFactory,
     ConversationStateFactory,
     EscalationFactory,
     HospitalFactory,
     PatientFactory,
     UserFactory,
 )
-from apps.pathways.models import ClinicalPathway, PatientPathway, PathwayMilestone
+from apps.pathways.models import ClinicalPathway, PathwayMilestone, PatientPathway
 
 
 @pytest.mark.django_db

@@ -11,9 +11,8 @@ This module provides thorough test coverage for all Celery tasks including:
 All external dependencies are mocked to ensure isolated, fast tests.
 """
 
-import uuid
-from datetime import date, datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from datetime import date, timedelta
+from unittest.mock import Mock, patch
 
 import pytest
 from django.utils import timezone
@@ -34,11 +33,10 @@ from apps.agents.tests.factories import (
 )
 from apps.pathways.models import (
     ClinicalPathway,
+    PathwayMilestone,
     PatientMilestoneCheckin,
     PatientPathway,
-    PathwayMilestone,
 )
-from apps.patients.models import Patient
 
 
 @pytest.fixture

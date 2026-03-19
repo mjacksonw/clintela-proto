@@ -1,9 +1,5 @@
 """Tests for agent services."""
 
-import pytest
-from unittest.mock import MagicMock, patch
-from uuid import uuid4
-
 from apps.agents.agents import calculate_confidence_score
 
 

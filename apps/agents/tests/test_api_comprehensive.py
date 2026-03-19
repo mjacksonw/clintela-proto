@@ -9,7 +9,6 @@ This module provides complete test coverage for:
 
 import json
 import uuid
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -26,7 +25,6 @@ from apps.agents.tests.factories import (
     UserFactory,
 )
 
-
 # ============================================================================
 # Fixtures
 # ============================================================================
@@ -35,7 +33,6 @@ from apps.agents.tests.factories import (
 @pytest.fixture
 def async_client():
     """Provide an async Django test client."""
-    from django.test import AsyncClient
 
     return AsyncClient()
 

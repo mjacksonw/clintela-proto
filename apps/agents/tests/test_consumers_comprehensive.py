@@ -1,23 +1,18 @@
 """Comprehensive tests for agent consumers."""
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
 from channels.db import database_sync_to_async
-from channels.testing import WebsocketCommunicator
 
 from apps.agents.consumers import AgentChatConsumer, ClinicianDashboardConsumer
 from apps.agents.tests.factories import (
-    AgentAuditLogFactory,
-    AgentConversationFactory,
-    HospitalFactory,
     PatientFactory,
 )
 from apps.patients.models import Patient
-
 
 # ============================================================================
 # Fixtures
@@ -648,7 +643,7 @@ class TestAgentChatConsumerBroadcastEscalation:
             "response": "Escalating to nurse",
             "metadata": {"severity": "urgent"},
             "escalation_reason": "High severity",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         await consumer.broadcast_escalation(result)
@@ -728,7 +723,7 @@ class TestAgentChatConsumerEscalationAlert:
             "patient_name": f"{patient.user.first_name} {patient.user.last_name}",
             "severity": "urgent",
             "reason": "Test reason",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         await consumer.escalation_alert(event)
@@ -1011,7 +1006,7 @@ class TestClinicianDashboardConsumerEscalationAlert:
             "patient_name": "John Doe",
             "severity": "urgent",
             "reason": "High fever",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         await consumer.escalation_alert(event)
@@ -1072,7 +1067,7 @@ class TestClinicianDashboardConsumerPatientStatusUpdate:
             "patient_id": str(uuid4()),
             "old_status": "green",
             "new_status": "yellow",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         await consumer.patient_status_update(event)
@@ -1100,7 +1095,7 @@ class TestClinicianDashboardConsumerPatientStatusUpdate:
             "patient_id": str(uuid4()),
             "old_status": "yellow",
             "new_status": "red",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         await consumer.patient_status_update(event)
@@ -1693,7 +1688,7 @@ class TestConsumerSecurity:
             "patient_name": "<script>alert('xss')</script>",
             "severity": "urgent",
             "reason": "<img src=x onerror=alert(1)>",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         await consumer.escalation_alert(event)

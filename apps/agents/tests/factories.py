@@ -1,20 +1,18 @@
 """Factory Boy factories for testing."""
 
-import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 import factory
-from django.contrib.auth import get_user_model
 
 from apps.accounts.models import User
-from apps.patients.models import Hospital, Patient
 from apps.agents.models import (
+    AgentAuditLog,
     AgentConversation,
     AgentMessage,
     ConversationState,
     Escalation,
-    AgentAuditLog,
 )
+from apps.patients.models import Hospital, Patient
 
 
 class HospitalFactory(factory.django.DjangoModelFactory):

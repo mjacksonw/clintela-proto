@@ -66,6 +66,7 @@ async def send_chat_message(request, patient_id: str, data: ChatMessageRequest):
         result = await workflow.process_message(message, context)
     except Exception as e:
         import logging
+
         logging.error(f"Workflow processing error: {e}")
         raise HttpError(500, f"Workflow processing error: {str(e)}")
 
@@ -215,6 +216,7 @@ async def acknowledge_escalation(request, escalation_id: str):
             clinician_id = body.get("clinician_id")
         except (json.JSONDecodeError, AttributeError, UnicodeDecodeError) as e:
             import logging
+
             logging.debug(f"Could not parse request body: {e}")
             clinician_id = None
 

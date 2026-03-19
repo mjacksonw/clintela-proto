@@ -5,7 +5,6 @@ for the agents app with 100% coverage target.
 """
 
 from datetime import datetime
-from typing import Any
 
 import pytest
 from pydantic import ValidationError

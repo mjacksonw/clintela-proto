@@ -1,7 +1,5 @@
 """Tests for agent constants."""
 
-import pytest
-
 from apps.agents import constants
 
 
