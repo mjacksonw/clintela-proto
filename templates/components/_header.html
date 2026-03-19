@@ -1,0 +1,46 @@
+<!-- Patient header — sticky, 64px height -->
+<header role="banner"
+        class="sticky top-0 z-40 h-16 flex items-center justify-between px-4 lg:px-6
+               border-b"
+        style="background-color: var(--color-surface); border-color: var(--color-border);"
+        x-data="{ soundEnabled: localStorage.getItem('clintela-sound') !== 'muted' }">
+
+    <!-- Left: Clintela wordmark -->
+    <a href="/" class="flex items-center gap-2 no-underline">
+        <span class="text-xl font-bold tracking-tight text-secondary" style="letter-spacing: -0.02em;">
+            Clintela
+        </span>
+    </a>
+
+    <!-- Right: patient name + icon group -->
+    <div class="flex items-center gap-3">
+        <!-- Patient name (hidden on mobile) -->
+        {% if patient %}
+        <span class="hidden md:block text-sm font-medium" style="color: var(--color-text-secondary);">
+            {{ patient.user.first_name }}
+        </span>
+        {% endif %}
+
+        <!-- Sound toggle -->
+        <button @click="soundEnabled = !soundEnabled; localStorage.setItem('clintela-sound', soundEnabled ? 'enabled' : 'muted')"
+                class="p-2.5 rounded-lg transition-colors hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
+                :aria-label="soundEnabled ? 'Mute notifications' : 'Unmute notifications'"
+                title="Toggle notification sound">
+            <template x-if="soundEnabled">
+                <i data-lucide="volume-2" class="w-5 h-5" style="color: var(--color-text-secondary);"></i>
+            </template>
+            <template x-if="!soundEnabled">
+                <i data-lucide="volume-x" class="w-5 h-5" style="color: var(--color-text-secondary);"></i>
+            </template>
+        </button>
+
+        <!-- Dark mode toggle -->
+        <button @click="window.clintelaTheme.toggle(); $nextTick(() => { if (window.lucide) lucide.createIcons(); })"
+                class="p-2.5 rounded-lg transition-colors hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
+                aria-label="Toggle dark mode"
+                title="Toggle dark mode">
+            <i data-lucide="sun" class="w-5 h-5 hidden [data-theme='dark']:block" style="color: var(--color-text-secondary);"></i>
+            <i data-lucide="moon" class="w-5 h-5 block [data-theme='dark']:hidden" style="color: var(--color-text-secondary);"></i>
+        </button>
+    </div>
+</header>

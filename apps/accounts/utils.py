@@ -33,10 +33,14 @@ def parse_flexible_date(date_string):
             r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$",
             lambda m: (int(m.group(1)), int(m.group(2)), int(m.group(3))),
         ),
-        # MM/DD/YY or MM-DD-YY (2-digit year)
+        # MM/DD/YY or MM-DD-YY (2-digit year, pivot at 25)
         (
             r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{2})$",
-            lambda m: (int(m.group(1)), int(m.group(2)), 2000 + int(m.group(3))),
+            lambda m: (
+                int(m.group(1)),
+                int(m.group(2)),
+                1900 + int(m.group(3)) if int(m.group(3)) > 25 else 2000 + int(m.group(3)),
+            ),
         ),
     ]
 

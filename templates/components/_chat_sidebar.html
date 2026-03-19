@@ -1,0 +1,111 @@
+{% load humanize %}
+<!-- Chat sidebar content — used in both desktop sidebar and mobile overlay -->
+
+<!-- Chat label + minimize (tablet only) -->
+<div class="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
+     style="border-color: var(--color-border);">
+    <span class="text-sm font-semibold uppercase tracking-wider" style="color: var(--color-text-secondary); letter-spacing: 0.05em;">
+        Chat
+    </span>
+</div>
+
+<!-- Offline banner -->
+<div id="offline-banner"
+     class="hidden px-4 py-2 text-sm font-medium text-center"
+     style="background-color: #FEF3C7; color: #92400E;"
+     role="alert">
+    <i data-lucide="wifi-off" class="w-4 h-4 inline-block mr-1 align-text-bottom"></i>
+    You're offline — messages can't be sent right now
+</div>
+
+<!-- Escalation banner -->
+<div id="escalation-banner"
+     class="hidden px-4 py-2.5 text-sm font-medium border-b"
+     style="background-color: #FEF3C7; color: #92400E; border-color: var(--color-border);"
+     role="alert">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+            <span>Your care team has been notified and will follow up shortly.</span>
+        </div>
+        <button onclick="document.getElementById('escalation-banner').classList.add('hidden')"
+                class="p-1 rounded hover:bg-yellow-200"
+                aria-label="Dismiss">
+            <i data-lucide="x" class="w-3 h-3"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Messages area -->
+<div id="messages"
+     role="log"
+     aria-live="polite"
+     aria-label="Chat messages"
+     class="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar">
+
+    {% if messages %}
+        {% for msg in messages %}
+            {% include "components/_message_bubble.html" with message=msg %}
+        {% endfor %}
+    {% else %}
+        {% include "components/_empty_chat.html" %}
+    {% endif %}
+</div>
+
+<!-- Typing indicator — OUTSIDE #messages to avoid HTMX swap conflicts -->
+<div id="typing-indicator"
+     x-data="{ visible: false, text: 'Your care team is thinking...' }"
+     x-show="visible"
+     x-cloak
+     role="status"
+     aria-live="assertive"
+     class="px-4 py-2 flex-shrink-0">
+    <div class="flex items-center gap-2 text-sm" style="color: var(--color-text-secondary);">
+        <div class="flex gap-1" aria-hidden="true">
+            <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 0ms;"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 150ms;"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 300ms;"></span>
+        </div>
+        <span x-text="text" aria-label="Agent is typing"></span>
+    </div>
+</div>
+
+<!-- Suggestion chips (persistent above input) -->
+<div id="suggestion-chips"
+     class="px-4 py-2 flex gap-2 flex-wrap flex-shrink-0 border-t"
+     style="border-color: var(--color-border);">
+    {% for chip in suggestion_chips %}
+    <button class="suggestion-chip px-3 py-1.5 text-sm rounded-full border transition-colors
+                   hover:bg-primary-50 hover:border-primary hover:text-primary
+                   disabled:opacity-50 disabled:pointer-events-none"
+            style="border-color: var(--color-border); color: var(--color-text-secondary);"
+            onclick="clintelaChat.sendChip(this.textContent.trim())">
+        {{ chip }}
+    </button>
+    {% empty %}
+    <button class="suggestion-chip px-3 py-1.5 text-sm rounded-full border transition-colors
+                   hover:bg-primary-50 hover:border-primary hover:text-primary
+                   disabled:opacity-50 disabled:pointer-events-none"
+            style="border-color: var(--color-border); color: var(--color-text-secondary);"
+            onclick="clintelaChat.sendChip(this.textContent.trim())">
+        Is this normal?
+    </button>
+    <button class="suggestion-chip px-3 py-1.5 text-sm rounded-full border transition-colors
+                   hover:bg-primary-50 hover:border-primary hover:text-primary
+                   disabled:opacity-50 disabled:pointer-events-none"
+            style="border-color: var(--color-border); color: var(--color-text-secondary);"
+            onclick="clintelaChat.sendChip(this.textContent.trim())">
+        My medications
+    </button>
+    <button class="suggestion-chip px-3 py-1.5 text-sm rounded-full border transition-colors
+                   hover:bg-primary-50 hover:border-primary hover:text-primary
+                   disabled:opacity-50 disabled:pointer-events-none"
+            style="border-color: var(--color-border); color: var(--color-text-secondary);"
+            onclick="clintelaChat.sendChip(this.textContent.trim())">
+        Talk to my care team
+    </button>
+    {% endfor %}
+</div>
+
+<!-- Chat input -->
+{% include "components/_chat_input.html" %}

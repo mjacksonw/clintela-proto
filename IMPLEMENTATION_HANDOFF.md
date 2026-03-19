@@ -145,8 +145,24 @@ python manage.py shell
 - [x] 38 tests passing
 - [x] Live LLM acceptance testing
 
-### Phase 3: Communication (Next)
-- [ ] Leaflet code + DOB authentication
+### Phase 2.5: Patient UI 🔄 IN PROGRESS
+- [x] Django admin registration (Patient, Hospital, User, AgentConversation, Escalation)
+- [x] Management command: `create_test_patient`
+- [x] Base template with full DESIGN.md design system (Satoshi, dark mode, Tailwind CDN)
+- [x] Two-panel layout: chat sidebar (360px) + dashboard (max 720px)
+- [x] Responsive: mobile FAB overlay, tablet collapsible sidebar, desktop side-by-side
+- [x] Chat sidebar with HTMX POST, typing indicator, suggestion chips
+- [x] Message bubbles with markdown rendering (marked.js + DOMPurify)
+- [x] Optimistic UI, progressive timeout, inline error bubbles
+- [x] Patient dashboard: recovery status hero, what to expect, welcome card
+- [x] Backend: async chat send view, templatetags, conversation history
+- [x] Restyled auth pages (home, DOB entry, token expired, rate limited)
+- [x] Skeleton loading, dev toolbar (DEBUG-only)
+- [ ] Accessibility polish (contrast, tab order, focus management)
+- [ ] Tests (chat view, templatetags, management command)
+- [ ] Documentation update
+
+### Phase 3: Communication
 - [ ] Twilio SMS integration
 - [ ] WebSocket setup for real-time updates
 - [ ] Notification queue (PostgreSQL-based)
@@ -160,12 +176,11 @@ python manage.py shell
 - [ ] Caregiver invitation flow
 - [ ] Consent management
 
-### Phase 5: Dashboard & UI
+### Phase 5: Dashboard & UI (Clinician)
 - [ ] Clinician dashboard with triage view
 - [ ] Real-time status updates
 - [ ] Patient detail views
 - [ ] Admin metrics dashboard
-- [ ] Dark mode support
 
 ### Phase 6: Polish & Testing
 - [ ] Multilingual support (i18n)
@@ -322,10 +337,11 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for detailed results.
 
 ## What to Do in Next Session
 
-1. **Start with:** `make dev` to verify server running
-2. **Focus on:** Authentication system (leaflet codes + DOB)
-3. **Then:** Twilio SMS integration
-4. **Verify:** Tests passing, pre-commit hooks working
+1. **Start with:** `make docker-up && make dev` to verify server running
+2. **Create test data:** `python manage.py create_test_patient` → prints auth URL
+3. **Test auth flow:** Click generated URL → DOB form → dashboard with chat
+4. **Test chat:** Send messages in sidebar → verify agent responses
+5. **Remaining:** Write tests for chat view, templatetags, management command
 
 ---
 

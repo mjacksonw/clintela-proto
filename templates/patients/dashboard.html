@@ -1,18 +1,146 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Dashboard - Clintela</title>
-</head>
-<body>
-    <h1>Patient Dashboard</h1>
-    {% if patient %}
-        <p>Welcome, {{ patient.user.get_full_name|default:patient.user.username }}</p>
-        <p>Hospital: {{ patient.hospital.name }}</p>
-        <p>Date of Birth: {{ patient.date_of_birth }}</p>
-    {% else %}
-        <p>No patient information available.</p>
+{% extends "base_patient.html" %}
+{% load humanize %}
+
+{% block title %}Recovery Dashboard — Clintela{% endblock %}
+
+{% block dashboard_content %}
+
+<!-- ① RECOVERY STATUS — primary anchor -->
+<div class="rounded-lg border p-6 mb-8"
+     style="background-color: var(--color-surface); border-color: var(--color-border);">
+
+    {% if patient.surgery_date %}
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+            <div class="flex items-baseline gap-3 mb-1">
+                <span class="text-5xl font-bold tracking-tight" style="color: var(--color-text);">
+                    Day {{ patient.days_post_op }}
+                </span>
+                <span class="text-lg" style="color: var(--color-text-secondary);">
+                    of recovery
+                </span>
+            </div>
+            <p class="text-base mt-1" style="color: var(--color-text-secondary);">
+                {{ patient.surgery_type|default:"Surgery" }}
+                &middot;
+                {{ patient.surgery_date|date:"M j, Y" }}
+            </p>
+        </div>
+
+        <!-- Status badge -->
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium
+                    {% if patient.status == 'green' %}bg-emerald-50 text-emerald-700{% endif %}
+                    {% if patient.status == 'yellow' %}bg-amber-50 text-amber-700{% endif %}
+                    {% if patient.status == 'orange' %}bg-orange-50 text-orange-700{% endif %}
+                    {% if patient.status == 'red' %}bg-red-50 text-red-700{% endif %}">
+            {% if patient.status == 'green' %}
+                <i data-lucide="check-circle" class="w-4 h-4"></i> On Track
+            {% elif patient.status == 'yellow' %}
+                <i data-lucide="alert-circle" class="w-4 h-4"></i> Needs Attention
+            {% elif patient.status == 'orange' %}
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i> Escalated
+            {% elif patient.status == 'red' %}
+                <i data-lucide="alert-octagon" class="w-4 h-4"></i> Critical
+            {% endif %}
+        </div>
+    </div>
+
+    {% if pathway_context.current_milestone %}
+    <div class="mt-4 pt-4 border-t" style="border-color: var(--color-border);">
+        <p class="text-sm font-medium" style="color: var(--color-text-secondary);">
+            Current phase: <span style="color: var(--color-text);">{{ pathway_context.current_phase|title }}</span>
+        </p>
+    </div>
     {% endif %}
-</body>
-</html>
+
+    {% else %}
+    <!-- No surgery data -->
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="heart-pulse" class="w-5 h-5 text-secondary"></i>
+        </div>
+        <div>
+            <p class="font-medium" style="color: var(--color-text);">Your care team is setting up your recovery plan</p>
+            <p class="text-sm mt-0.5" style="color: var(--color-text-secondary);">We'll have your dashboard ready soon.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ② WHAT TO EXPECT — contextual guidance -->
+{% if pathway_context.current_milestone %}
+<div class="rounded-lg border p-6 mb-8"
+     style="background-color: var(--color-surface); border-color: var(--color-border);">
+
+    <h2 class="text-lg font-semibold mb-3" style="color: var(--color-text);">
+        <i data-lucide="compass" class="w-5 h-5 inline-block mr-1.5 align-text-bottom text-secondary"></i>
+        What to expect
+    </h2>
+
+    <p class="text-base mb-4" style="color: var(--color-text-secondary);">
+        At day {{ pathway_context.current_milestone.day }} of your {{ pathway_context.current_phase|default:"" }} recovery phase:
+    </p>
+
+    {% if pathway_context.current_milestone.expected_symptoms %}
+    <div class="mb-4">
+        <h3 class="text-sm font-medium mb-2" style="color: var(--color-text);">Normal at this stage</h3>
+        <ul class="space-y-1">
+            {% for symptom in pathway_context.current_milestone.expected_symptoms %}
+            <li class="flex items-start gap-2 text-sm" style="color: var(--color-text-secondary);">
+                <i data-lucide="check" class="w-4 h-4 mt-0.5 text-emerald-500 flex-shrink-0"></i>
+                {{ symptom }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if pathway_context.current_milestone.red_flags %}
+    <div class="mb-4">
+        <h3 class="text-sm font-medium mb-2" style="color: var(--color-text);">Contact your care team if</h3>
+        <ul class="space-y-1">
+            {% for flag in pathway_context.current_milestone.red_flags %}
+            <li class="flex items-start gap-2 text-sm" style="color: var(--color-text-secondary);">
+                <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 text-amber-500 flex-shrink-0"></i>
+                {{ flag }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if pathway_context.next_milestone %}
+    <div class="pt-3 border-t" style="border-color: var(--color-border);">
+        <p class="text-sm" style="color: var(--color-text-secondary);">
+            <i data-lucide="calendar" class="w-4 h-4 inline-block mr-1 align-text-bottom"></i>
+            Next milestone:
+            <span class="font-medium" style="color: var(--color-text);">
+                {{ pathway_context.next_milestone.title }}
+            </span>
+            (day {{ pathway_context.next_milestone.day }})
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ③ WELCOME + CARE TEAM — warm footer -->
+<div class="rounded-lg border p-6"
+     style="background-color: var(--color-surface); border-color: var(--color-border);">
+
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="hand-heart" class="w-5 h-5 text-primary"></i>
+        </div>
+        <div>
+            <p class="font-medium" style="color: var(--color-text);">
+                Hi {{ patient.user.first_name }} — {% if patient.hospital %}your team at {{ patient.hospital.name }} is{% else %}your care team is{% endif %} here for you.
+            </p>
+            <p class="text-sm mt-0.5" style="color: var(--color-text-secondary);">
+                Use the chat anytime to ask questions about your recovery.
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

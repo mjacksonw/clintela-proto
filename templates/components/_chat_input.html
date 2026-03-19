@@ -1,0 +1,52 @@
+<!-- Chat input — textarea + send button with HTMX -->
+<form id="chat-form"
+      hx-post="{% url 'patients:chat_send' %}"
+      hx-target="#messages"
+      hx-swap="beforeend"
+      hx-on::before-request="clintelaChat.onBeforeRequest(event)"
+      hx-on::after-swap="clintelaChat.onAfterSwap(event)"
+      hx-on::response-error="clintelaChat.onError(event)"
+      class="px-4 py-3 border-t flex-shrink-0"
+      style="border-color: var(--color-border); background-color: var(--color-surface);"
+      x-data="{ message: '', inflight: false }">
+
+    <div class="flex items-end gap-2">
+        <!-- Auto-growing textarea -->
+        <textarea name="message"
+                  id="chat-textarea"
+                  x-model="message"
+                  @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 120) + 'px'"
+                  @keydown.enter.prevent="if (!$event.shiftKey && message.trim() && !inflight) { $el.closest('form').requestSubmit(); }"
+                  placeholder="Type a message..."
+                  maxlength="2000"
+                  rows="1"
+                  :disabled="inflight"
+                  class="flex-1 resize-none rounded-xl px-4 py-2.5 text-base leading-relaxed
+                         border transition-colors focus:border-primary focus:ring-0 focus:outline-none
+                         disabled:opacity-50"
+                  style="background-color: var(--color-bg);
+                         border-color: var(--color-border);
+                         color: var(--color-text);
+                         min-height: 44px; max-height: 120px;
+                         font-size: 16px;"></textarea>
+
+        <!-- Send button with micro-states -->
+        <button type="submit"
+                :disabled="!message.trim() || inflight"
+                class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0
+                       transition-all duration-150"
+                :class="message.trim() && !inflight
+                    ? 'bg-primary hover:bg-primary-700 text-white cursor-pointer'
+                    : inflight
+                        ? 'bg-primary/50 text-white cursor-wait'
+                        : 'bg-warm-300 text-warm-500 cursor-not-allowed'"
+                aria-label="Send message">
+            <template x-if="!inflight">
+                <i data-lucide="arrow-up" class="w-5 h-5"></i>
+            </template>
+            <template x-if="inflight">
+                <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
+            </template>
+        </button>
+    </div>
+</form>

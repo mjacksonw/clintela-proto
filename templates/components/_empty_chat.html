@@ -1,0 +1,50 @@
+<!-- Empty chat welcome state -->
+<div class="flex flex-col items-center justify-center h-full text-center px-6">
+    <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mb-4">
+        <i data-lucide="heart-handshake" class="w-6 h-6 text-secondary"></i>
+    </div>
+
+    <h3 class="text-xl font-semibold mb-2" style="color: var(--color-text);">
+        Hi {{ patient.user.first_name }}!
+    </h3>
+
+    <p class="text-base mb-6" style="color: var(--color-text-secondary);">
+        I'm here to help with your recovery. Ask me anything.
+    </p>
+
+    <!-- Trust signal -->
+    <p class="text-sm mb-6" style="color: var(--color-text-secondary); opacity: 0.7;">
+        Your conversations are private and shared only with your care team.
+    </p>
+
+    <!-- Initial suggestion chips (centered, larger for empty state) -->
+    <div class="flex flex-wrap justify-center gap-2">
+        {% for chip in suggestion_chips %}
+        <button class="suggestion-chip px-4 py-2 text-sm rounded-full border transition-colors
+                       hover:bg-primary-50 hover:border-primary hover:text-primary"
+                style="border-color: var(--color-border); color: var(--color-text-secondary);"
+                onclick="clintelaChat.sendChip(this.textContent.trim())">
+            {{ chip }}
+        </button>
+        {% empty %}
+        <button class="suggestion-chip px-4 py-2 text-sm rounded-full border transition-colors
+                       hover:bg-primary-50 hover:border-primary hover:text-primary"
+                style="border-color: var(--color-border); color: var(--color-text-secondary);"
+                onclick="clintelaChat.sendChip(this.textContent.trim())">
+            Is this normal?
+        </button>
+        <button class="suggestion-chip px-4 py-2 text-sm rounded-full border transition-colors
+                       hover:bg-primary-50 hover:border-primary hover:text-primary"
+                style="border-color: var(--color-border); color: var(--color-text-secondary);"
+                onclick="clintelaChat.sendChip(this.textContent.trim())">
+            My medications
+        </button>
+        <button class="suggestion-chip px-4 py-2 text-sm rounded-full border transition-colors
+                       hover:bg-primary-50 hover:border-primary hover:text-primary"
+                style="border-color: var(--color-border); color: var(--color-text-secondary);"
+                onclick="clintelaChat.sendChip(this.textContent.trim())">
+            Talk to my care team
+        </button>
+        {% endfor %}
+    </div>
+</div>

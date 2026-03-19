@@ -1,0 +1,55 @@
+{% load humanize %}
+{% load patient_tags %}
+<!-- Chat message bubble — used for both user and agent messages -->
+
+{% if message.role == "user" %}
+<!-- Patient message — right-aligned, primary blue -->
+<div class="flex justify-end">
+    <div class="max-w-[85%]">
+        <div class="px-4 py-2.5 text-white text-lg leading-relaxed"
+             style="background-color: var(--color-primary);
+                    border-radius: 16px 16px 4px 16px;">
+            {{ message.content }}
+        </div>
+        <div class="text-xs mt-1 text-right" style="color: var(--color-text-secondary);">
+            {{ message.created_at|naturaltime }}
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Agent message — left-aligned, surface bg -->
+<div class="flex justify-start" {% if message.escalation_triggered %}data-escalation="true"{% endif %}>
+    <div class="max-w-[85%]">
+        <!-- Agent label -->
+        {% if message.agent_type %}
+        <div class="flex items-center gap-1.5 mb-1">
+            <i data-lucide="{{ message.agent_type|agent_icon }}" class="w-3.5 h-3.5" style="color: var(--color-text-secondary);"></i>
+            <span class="text-xs font-medium" style="color: var(--color-text-secondary);">
+                {{ message.agent_type|agent_display_name }}
+            </span>
+        </div>
+        {% endif %}
+
+        <div class="px-4 py-2.5 border text-lg leading-relaxed agent-message-content"
+             style="background-color: var(--color-surface);
+                    border-color: var(--color-border);
+                    color: var(--color-text);
+                    border-radius: 16px 16px 16px 4px;">
+            {{ message.content }}
+        </div>
+
+        <!-- Confidence indicator -->
+        {% if message.confidence_score != None and message.confidence_score < 0.6 %}
+        <div class="mt-1.5 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5"
+             style="background-color: #FEF3C7; color: #92400E;">
+            <i data-lucide="info" class="w-3 h-3 flex-shrink-0"></i>
+            I may not have the best answer for this — consider reaching out to your care team.
+        </div>
+        {% endif %}
+
+        <div class="text-xs mt-1" style="color: var(--color-text-secondary);">
+            {{ message.created_at|naturaltime }}
+        </div>
+    </div>
+</div>
+{% endif %}

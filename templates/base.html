@@ -1,0 +1,199 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}Clintela{% endblock %}</title>
+
+    <!-- Prevent dark mode flash -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('clintela-theme') || 'system';
+            if (theme === 'system') {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: ['selector', '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Satoshi', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+                    },
+                    colors: {
+                        primary: {
+                            DEFAULT: '#2563EB',
+                            dark: '#3B82F6',
+                            50: '#EFF6FF',
+                            100: '#DBEAFE',
+                            600: '#2563EB',
+                            700: '#1D4ED8',
+                        },
+                        secondary: {
+                            DEFAULT: '#0D9488',
+                            dark: '#14B8A6',
+                        },
+                        success: '#059669',
+                        warning: {
+                            DEFAULT: '#D97706',
+                            dark: '#EA580C',
+                        },
+                        danger: '#DC2626',
+                        warm: {
+                            50: '#FAFAF9',
+                            100: '#F5F5F4',
+                            200: '#E7E5E4',
+                            300: '#D6D3D1',
+                            400: '#A8A29E',
+                            500: '#78716C',
+                            600: '#57534E',
+                            700: '#44403C',
+                            800: '#292524',
+                            900: '#1C1917',
+                        },
+                    },
+                    maxWidth: {
+                        patient: '720px',
+                    },
+                    spacing: {
+                        '4.5': '18px',
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- CSS Custom Properties for dark mode -->
+    <style type="text/tailwindcss">
+        :root {
+            --color-bg: #FAFAF9;
+            --color-surface: #FFFFFF;
+            --color-text: #44403C;
+            --color-text-secondary: #78716C;
+            --color-border: #E7E5E4;
+            --color-primary: #2563EB;
+        }
+
+        [data-theme="dark"] {
+            --color-bg: #0F172A;
+            --color-surface: #1E293B;
+            --color-text: #F8FAFC;
+            --color-text-secondary: #94A3B8;
+            --color-border: #334155;
+            --color-primary: #3B82F6;
+        }
+
+        /* Base styles */
+        body {
+            font-family: 'Satoshi', ui-sans-serif, system-ui, -apple-system, sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Respect reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Focus styles */
+        *:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        /* Scrollbar styling */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: var(--color-text-secondary);
+        }
+    </style>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>  {# pragma: allowlist secret #}
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- marked.js + DOMPurify for safe markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+
+    <!-- HTMX CSRF configuration -->
+    <script>
+        document.addEventListener('htmx:configRequest', function(event) {
+            var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            if (csrfMeta) {
+                event.detail.headers['X-CSRFToken'] = csrfMeta.getAttribute('content');
+            }
+        });
+    </script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen overflow-x-hidden">
+    <!-- Skip to content -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded">
+        Skip to content
+    </a>
+
+    {% block body %}
+        {% block header %}{% endblock %}
+        <div id="main-content">
+            {% block content %}{% endblock %}
+        </div>
+    {% endblock %}
+
+    <!-- Theme management -->
+    <script src="{% static 'js/theme.js' %}"></script>
+
+    <!-- Initialize Lucide icons -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide) lucide.createIcons();
+        });
+        // Re-init icons after HTMX swaps
+        document.addEventListener('htmx:afterSwap', function() {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

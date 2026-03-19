@@ -1,0 +1,36 @@
+{% if debug %}
+<!-- Dev Toolbar — DEBUG only -->
+<div x-data="{ collapsed: true }"
+     class="fixed bottom-0 left-0 right-0 z-50 font-mono text-xs"
+     style="background-color: #1a1a2e; color: #a0aec0; border-top: 2px solid #e53e3e;">
+
+    <!-- Collapsed bar -->
+    <button @click="collapsed = !collapsed"
+            class="w-full px-3 py-1 flex items-center justify-between hover:bg-gray-800">
+        <span class="text-red-400 font-bold">DEV</span>
+        <span>{{ patient.user.get_full_name }} (ID: {{ patient.id }})</span>
+        <span x-text="collapsed ? '▲' : '▼'"></span>
+    </button>
+
+    <!-- Expanded content -->
+    <div x-show="!collapsed" x-cloak class="px-3 py-2 space-y-2 border-t border-gray-700">
+        <div class="flex flex-wrap gap-4">
+            <span>Status: <span class="text-green-400">{{ patient.status }}</span></span>
+            <span>Surgery: {{ patient.surgery_type|default:"N/A" }}</span>
+            <span>Days post-op: {{ patient.days_post_op|default:"N/A" }}</span>
+            <span>Hospital: {{ patient.hospital.name|default:"N/A" }}</span>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+            <form method="post" action="{% url 'patients:dev_actions' %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="clear_conversation">
+                <button type="submit"
+                        class="px-2 py-1 bg-red-900 text-red-200 rounded hover:bg-red-800 text-xs">
+                    Clear Conversation
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
