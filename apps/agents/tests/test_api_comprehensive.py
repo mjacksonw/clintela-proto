@@ -399,12 +399,17 @@ class TestListEscalations:
     @pytest.mark.django_db(transaction=True)
     async def test_list_escalations_success(self, async_client):
         """Test successful listing of escalations."""
-        # Create some escalations
-        await database_sync_to_async(EscalationFactory.create)(status="pending")
-        await database_sync_to_async(EscalationFactory.create)(status="pending")
-        await database_sync_to_async(EscalationFactory.create)(status="acknowledged")
+        # Create a unique hospital for test isolation
+        hospital = await database_sync_to_async(HospitalFactory.create)()
+        patient1 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
+        patient2 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
+        patient3 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
 
-        response = await async_client.get("/api/agents/escalations?status=pending")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient1, status="pending")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient2, status="pending")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient3, status="acknowledged")
+
+        response = await async_client.get(f"/api/agents/escalations?status=pending&hospital_id={hospital.id}")
 
         assert response.status_code == 200
         data = json.loads(response.content)
@@ -416,11 +421,17 @@ class TestListEscalations:
     @pytest.mark.django_db(transaction=True)
     async def test_list_escalations_filter_by_status(self, async_client):
         """Test filtering escalations by status."""
-        await database_sync_to_async(EscalationFactory.create)(status="pending")
-        await database_sync_to_async(EscalationFactory.create)(status="acknowledged")
-        await database_sync_to_async(EscalationFactory.create)(status="resolved")
+        # Create a unique hospital for test isolation
+        hospital = await database_sync_to_async(HospitalFactory.create)()
+        patient1 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
+        patient2 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
+        patient3 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
 
-        response = await async_client.get("/api/agents/escalations?status=acknowledged")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient1, status="pending")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient2, status="acknowledged")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient3, status="resolved")
+
+        response = await async_client.get(f"/api/agents/escalations?status=acknowledged&hospital_id={hospital.id}")
 
         assert response.status_code == 200
         data = json.loads(response.content)
@@ -450,11 +461,19 @@ class TestListEscalations:
     @pytest.mark.django_db(transaction=True)
     async def test_list_escalations_filter_by_severity(self, async_client):
         """Test filtering escalations by severity."""
-        await database_sync_to_async(EscalationFactory.create)(status="pending", severity="critical")
-        await database_sync_to_async(EscalationFactory.create)(status="pending", severity="urgent")
-        await database_sync_to_async(EscalationFactory.create)(status="pending", severity="routine")
+        # Create a unique hospital for test isolation
+        hospital = await database_sync_to_async(HospitalFactory.create)()
+        patient1 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
+        patient2 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
+        patient3 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
 
-        response = await async_client.get("/api/agents/escalations?status=pending&severity=critical")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient1, status="pending", severity="critical")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient2, status="pending", severity="urgent")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient3, status="pending", severity="routine")
+
+        response = await async_client.get(
+            f"/api/agents/escalations?status=pending&severity=critical&hospital_id={hospital.id}"
+        )
 
         assert response.status_code == 200
         data = json.loads(response.content)
@@ -464,8 +483,11 @@ class TestListEscalations:
     @pytest.mark.asyncio
     @pytest.mark.django_db(transaction=True)
     async def test_list_escalations_empty(self, async_client):
-        """Test listing when no escalations exist."""
-        response = await async_client.get("/api/agents/escalations?status=pending")
+        """Test listing when no escalations exist for a specific hospital."""
+        # Create a unique hospital with no escalations
+        hospital = await database_sync_to_async(HospitalFactory.create)()
+
+        response = await async_client.get(f"/api/agents/escalations?status=pending&hospital_id={hospital.id}")
 
         assert response.status_code == 200
         data = json.loads(response.content)
@@ -476,14 +498,15 @@ class TestListEscalations:
     @pytest.mark.django_db(transaction=True)
     async def test_list_escalations_response_format(self, async_client):
         """Test that escalation response has correct format."""
-        patient = await database_sync_to_async(PatientFactory.create)()
+        hospital = await database_sync_to_async(HospitalFactory.create)()
+        patient = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
         await database_sync_to_async(EscalationFactory.create)(
             patient=patient,
             status="pending",
             severity="urgent",
         )
 
-        response = await async_client.get("/api/agents/escalations?status=pending")
+        response = await async_client.get(f"/api/agents/escalations?status=pending&hospital_id={hospital.id}")
 
         assert response.status_code == 200
         data = json.loads(response.content)
@@ -768,11 +791,18 @@ class TestAsyncHelperFunctions:
         """Test getting escalations with filters."""
         from apps.agents.api import get_escalations_async
 
-        await database_sync_to_async(EscalationFactory.create)(status="pending")
-        await database_sync_to_async(EscalationFactory.create)(status="pending")
-        await database_sync_to_async(EscalationFactory.create)(status="acknowledged")
+        # Create a unique hospital for this test to ensure isolation from parallel tests
+        hospital = await database_sync_to_async(HospitalFactory.create)()
+        patient1 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
+        patient2 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
+        patient3 = await database_sync_to_async(PatientFactory.create)(hospital=hospital)
 
-        escalations = await get_escalations_async(status="pending", hospital_id=None, severity=None)
+        await database_sync_to_async(EscalationFactory.create)(patient=patient1, status="pending")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient2, status="pending")
+        await database_sync_to_async(EscalationFactory.create)(patient=patient3, status="acknowledged")
+
+        # Filter by hospital to isolate from other tests' escalations
+        escalations = await get_escalations_async(status="pending", hospital_id=hospital.id, severity=None)
 
         assert len(escalations) == 2
 
