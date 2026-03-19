@@ -6,7 +6,7 @@
         x-data="{ soundEnabled: localStorage.getItem('clintela-sound') !== 'muted' }">
 
     <!-- Left: Clintela wordmark -->
-    <a href="/" class="flex items-center gap-2 no-underline">
+    <a href="/" class="flex items-center gap-2 no-underline py-2">
         <span class="text-xl font-bold tracking-tight text-secondary" style="letter-spacing: -0.02em;">
             Clintela
         </span>
@@ -23,7 +23,7 @@
 
         <!-- Sound toggle -->
         <button @click="soundEnabled = !soundEnabled; localStorage.setItem('clintela-sound', soundEnabled ? 'enabled' : 'muted')"
-                class="p-2.5 rounded-lg transition-colors hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
+                class="p-3 rounded-lg transition-colors hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
                 :aria-label="soundEnabled ? 'Mute notifications' : 'Unmute notifications'"
                 title="Toggle notification sound">
             <template x-if="soundEnabled">
@@ -36,7 +36,7 @@
 
         <!-- Dark mode toggle -->
         <button @click="window.clintelaTheme.toggle(); $nextTick(() => { if (window.lucide) lucide.createIcons(); })"
-                class="p-2.5 rounded-lg transition-colors hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
+                class="p-3 rounded-lg transition-colors hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
                 aria-label="Toggle dark mode"
                 title="Toggle dark mode">
             <i data-lucide="sun" class="w-5 h-5 hidden [data-theme='dark']:block" style="color: var(--color-text-secondary);"></i>
