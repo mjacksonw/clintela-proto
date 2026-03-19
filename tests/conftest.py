@@ -28,11 +28,6 @@ def disable_rate_limiting():
     """Disable rate limiting for all tests to avoid 403 errors."""
     from functools import wraps
 
-    from django_ratelimit.decorators import ratelimit
-
-    # Store the original ratelimit decorator
-    original_ratelimit = ratelimit
-
     # Create a no-op version that just passes through
     def noop_ratelimit(*args, **kwargs):
         def decorator(func):
@@ -45,9 +40,11 @@ def disable_rate_limiting():
         return decorator
 
     # Patch the ratelimit decorator
-    with patch("apps.accounts.views.ratelimit", noop_ratelimit):
-        with patch("django_ratelimit.decorators.ratelimit", noop_ratelimit):
-            yield
+    with (
+        patch("apps.accounts.views.ratelimit", noop_ratelimit),
+        patch("django_ratelimit.decorators.ratelimit", noop_ratelimit),
+    ):
+        yield
 
 
 @pytest.fixture
@@ -65,6 +62,8 @@ def disable_rate_limiting_fixture():
 
         return decorator
 
-    with patch("apps.accounts.views.ratelimit", noop_ratelimit):
-        with patch("django_ratelimit.decorators.ratelimit", noop_ratelimit):
-            yield
+    with (
+        patch("apps.accounts.views.ratelimit", noop_ratelimit),
+        patch("django_ratelimit.decorators.ratelimit", noop_ratelimit),
+    ):
+        yield

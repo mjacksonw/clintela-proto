@@ -477,7 +477,7 @@ class TestListEscalations:
     async def test_list_escalations_response_format(self, async_client):
         """Test that escalation response has correct format."""
         patient = await database_sync_to_async(PatientFactory.create)()
-        escalation = await database_sync_to_async(EscalationFactory.create)(
+        await database_sync_to_async(EscalationFactory.create)(
             patient=patient,
             status="pending",
             severity="urgent",
@@ -755,7 +755,7 @@ class TestAsyncHelperFunctions:
 
         conversation = await database_sync_to_async(AgentConversationFactory.create)()
 
-        for i in range(5):
+        for _ in range(5):
             await database_sync_to_async(AgentMessageFactory.create)(conversation=conversation)
 
         count = await get_message_count_async(conversation)
@@ -947,7 +947,7 @@ class TestEdgeCases:
         conversation = await database_sync_to_async(AgentConversationFactory.create)(patient=patient)
 
         # Create 100 messages
-        for i in range(100):
+        for _ in range(100):
             await database_sync_to_async(AgentMessageFactory.create)(conversation=conversation)
 
         response = await async_client.get(f"/api/agents/chat/{patient.id}/history?page=1&page_size=1000")

@@ -68,7 +68,7 @@ async def send_chat_message(request, patient_id: str, data: ChatMessageRequest):
         import logging
 
         logging.error(f"Workflow processing error: {e}")
-        raise HttpError(500, f"Workflow processing error: {str(e)}")
+        raise HttpError(500, f"Workflow processing error: {str(e)}") from e
 
     # Add agent response
     await add_message_async(
@@ -208,10 +208,7 @@ async def acknowledge_escalation(request, escalation_id: str):
         try:
             # In async context, request.body may need special handling
             body_bytes = request.body
-            if isinstance(body_bytes, bytes):
-                body_str = body_bytes.decode("utf-8")
-            else:
-                body_str = body_bytes
+            body_str = body_bytes.decode("utf-8") if isinstance(body_bytes, bytes) else body_bytes
             body = json.loads(body_str)
             clinician_id = body.get("clinician_id")
         except (json.JSONDecodeError, AttributeError, UnicodeDecodeError) as e:

@@ -137,9 +137,9 @@ class TestConversationService:
         conversation = AgentConversationFactory()
 
         # Create messages in chronological order
-        msg1 = AgentMessageFactory(conversation=conversation, role="user", content="Hello")
-        msg2 = AgentMessageFactory(conversation=conversation, role="assistant", content="Hi there")
-        msg3 = AgentMessageFactory(conversation=conversation, role="user", content="I have pain")
+        AgentMessageFactory(conversation=conversation, role="user", content="Hello")  # noqa: F841
+        AgentMessageFactory(conversation=conversation, role="assistant", content="Hi there")  # noqa: F841
+        AgentMessageFactory(conversation=conversation, role="user", content="I have pain")  # noqa: F841
 
         history = ConversationService.get_conversation_history(conversation, limit=10)
 
@@ -349,7 +349,7 @@ class TestContextService:
             description="Standard knee recovery",
             duration_days=90,
         )
-        patient_pathway = PatientPathway.objects.create(
+        patient_pathway = PatientPathway.objects.create(  # noqa: F841
             patient=patient,
             pathway=pathway,
             status="active",
@@ -406,7 +406,7 @@ class TestContextService:
         )
 
         # Create milestones
-        milestone_1 = PathwayMilestone.objects.create(
+        milestone_1 = PathwayMilestone.objects.create(  # noqa: F841
             pathway=pathway,
             day=3,
             phase="early",
@@ -415,7 +415,7 @@ class TestContextService:
             activities=["rest", "ice"],
             red_flags=["fever"],
         )
-        milestone_2 = PathwayMilestone.objects.create(
+        milestone_2 = PathwayMilestone.objects.create(  # noqa: F841
             pathway=pathway,
             day=7,
             phase="early",
@@ -921,9 +921,9 @@ class TestEscalationService:
         """Test that pending escalations are ordered by created_at desc."""
         patient = PatientFactory()
 
-        esc1 = EscalationFactory(patient=patient, status="pending")
-        esc2 = EscalationFactory(patient=patient, status="pending")
-        esc3 = EscalationFactory(patient=patient, status="pending")
+        esc1 = EscalationFactory(patient=patient, status="pending")  # noqa: F841
+        esc2 = EscalationFactory(patient=patient, status="pending")  # noqa: F841
+        esc3 = EscalationFactory(patient=patient, status="pending")  # noqa: F841
 
         pending = list(EscalationService.get_pending_escalations())
 
@@ -939,7 +939,10 @@ class TestEscalationService:
         AgentMessageFactory(
             conversation=conversation,
             role="user",
-            content="This is a very long message that should be truncated in the summary because it exceeds one hundred characters easily",
+            content=(
+                "This is a very long message that should be truncated "
+                "in the summary because it exceeds one hundred characters easily"
+            ),
         )
 
         summary = EscalationService.generate_conversation_summary(conversation)
@@ -1242,7 +1245,7 @@ class TestServiceIntegration:
 
         # Create conversation and escalate
         conversation = AgentConversationFactory(patient=patient)
-        escalation = EscalationService.create_escalation(
+        escalation = EscalationService.create_escalation(  # noqa: F841
             patient=patient,
             conversation=conversation,
             reason="Fever detected",
@@ -1270,7 +1273,7 @@ class TestServiceIntegration:
         esc1.status = "resolved"
         esc1.save()
 
-        esc2 = EscalationService.create_escalation(
+        esc2 = EscalationService.create_escalation(  # noqa: F841
             patient=patient,
             conversation=conversation,
             reason="Second issue",

@@ -1120,7 +1120,7 @@ class TestConsumerIntegration:
         """Test full message flow from patient to dashboard escalation."""
         # Setup
         patient = await database_sync_to_async(PatientFactory.create)()
-        hospital_group = f"hospital_{patient.hospital_id}"
+        _ = f"hospital_{patient.hospital_id}"  # Setup for potential group channel
 
         # Mock workflow with escalation
         escalation_result = {
@@ -1273,7 +1273,7 @@ class TestConsumerErrorHandling:
         consumer.close = AsyncMock()
 
         # Should raise the exception
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017 - Testing broad exception handling
             await consumer.connect()
 
     @patch("apps.agents.consumers.get_workflow")
@@ -1303,7 +1303,7 @@ class TestConsumerErrorHandling:
         consumer.send_error = mock_send_error
 
         # Should handle exception gracefully
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017 - Testing exception handling
             await consumer.process_message("Hello")
 
     async def test_send_error_while_handling_error(self, mock_scope_with_patient):
@@ -1330,7 +1330,7 @@ class TestConsumerErrorHandling:
             await consumer.send_error("Test error")
             # If we get here, send_error handled the failure gracefully
             assert True
-        except Exception:
+        except Exception:  # noqa: S110 - Acceptable in test context
             # If it raises, that's also acceptable behavior
             pass
 

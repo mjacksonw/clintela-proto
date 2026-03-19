@@ -1016,7 +1016,7 @@ class TestResetWorkflow:
             # Reset
             reset_workflow()
             # Create new instance
-            result = get_workflow()
+            result = get_workflow()  # noqa: F841
 
             assert mock_workflow_class.call_count == 2
 
@@ -1189,12 +1189,6 @@ class TestEdgeCases:
     def test_none_values_in_state(self, mock_llm_client):
         """Test nodes handle None values in state."""
         workflow = AgentWorkflow(llm_client=mock_llm_client)
-
-        state = {
-            "message": None,
-            "context": None,
-            "routing": None,
-        }
 
         # Should not raise
         result = workflow._route_from_supervisor({"routing": {}, "should_escalate": False})

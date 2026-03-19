@@ -25,12 +25,8 @@ except ImportError:
             original_func = func
 
             # For bind=True tasks, the first arg is 'self' (the task instance)
-            if bind:
-                # The function already expects 'self', just pass it through
-                wrapped_func = func
-            else:
-                # No bind, just use the function directly
-                wrapped_func = func
+            # In both cases, just use the function directly
+            wrapped_func = func
 
             # Attach .delay method that calls the wrapped function directly
             def delay(*d_args, **d_kwargs):
