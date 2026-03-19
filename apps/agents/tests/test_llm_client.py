@@ -1,7 +1,7 @@
 """Tests for LLM client."""
 
 import json
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
@@ -41,10 +41,10 @@ class TestLLMClient:
             "model": "test-model",
         }
 
-        # Create proper async mock - json() is an async method, raise_for_status is not
-        mock_response_obj = AsyncMock()
-        mock_response_obj.json = AsyncMock(return_value=mock_response)
-        mock_response_obj.raise_for_status = lambda: None  # Not async
+        # httpx.Response: json() and raise_for_status() are sync methods
+        mock_response_obj = MagicMock()
+        mock_response_obj.json.return_value = mock_response
+        mock_response_obj.raise_for_status = MagicMock()
 
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=mock_response_obj)
@@ -101,9 +101,9 @@ class TestLLMClient:
     @pytest.mark.asyncio
     async def test_generate_raises_on_invalid_json(self, llm_client):
         """Test invalid JSON response raises LLMResponseError."""
-        mock_response_obj = AsyncMock()
-        mock_response_obj.json = AsyncMock(side_effect=json.JSONDecodeError("test", "doc", 0))
-        mock_response_obj.raise_for_status = lambda: None  # Not async
+        mock_response_obj = MagicMock()
+        mock_response_obj.json.side_effect = json.JSONDecodeError("test", "doc", 0)
+        mock_response_obj.raise_for_status = MagicMock()
 
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=mock_response_obj)
@@ -124,13 +124,11 @@ class TestLLMClient:
             if call_count < 3:
                 raise httpx.TimeoutException("Timeout")
             # Return successful response
-            mock_response_obj = AsyncMock()
-            mock_response_obj.json = AsyncMock(
-                return_value={
-                    "choices": [{"message": {"content": "Success"}}],
-                }
-            )
-            mock_response_obj.raise_for_status = AsyncMock()
+            mock_response_obj = MagicMock()
+            mock_response_obj.json.return_value = {
+                "choices": [{"message": {"content": "Success"}}],
+            }
+            mock_response_obj.raise_for_status = MagicMock()
             return mock_response_obj
 
         mock_client = AsyncMock()
@@ -145,13 +143,11 @@ class TestLLMClient:
     @pytest.mark.asyncio
     async def test_generate_json_parses_response(self, llm_client):
         """Test generate_json parses JSON from markdown."""
-        mock_response_obj = AsyncMock()
-        mock_response_obj.json = AsyncMock(
-            return_value={
-                "choices": [{"message": {"content": '```json\n{"key": "value"}\n```'}}],
-            }
-        )
-        mock_response_obj.raise_for_status = lambda: None  # Not async
+        mock_response_obj = MagicMock()
+        mock_response_obj.json.return_value = {
+            "choices": [{"message": {"content": '```json\n{"key": "value"}\n```'}}],
+        }
+        mock_response_obj.raise_for_status = MagicMock()
 
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=mock_response_obj)
