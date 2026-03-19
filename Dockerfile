@@ -86,8 +86,9 @@ COPY . .
 RUN mkdir -p staticfiles media logs && \
     chown -R clintela:clintela /app
 
-# Collect static files (use dummy SECRET_KEY and DATABASE_URL for build)
-RUN SECRET_KEY=build-secret-key DATABASE_URL=sqlite:///tmp/build.db python manage.py collectstatic --noinput --clear
+# Collect static files (use dummy env vars for build)
+# Use production settings explicitly to avoid dev-only dependencies like debug_toolbar
+RUN SECRET_KEY=build-secret-key DATABASE_URL=sqlite:///tmp/build.db ALLOWED_HOSTS=localhost DJANGO_SETTINGS_MODULE=config.settings.production python manage.py collectstatic --noinput --clear
 
 # Switch to non-root user
 USER clintela
