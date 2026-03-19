@@ -76,6 +76,7 @@ RUN groupadd -r clintela && useradd -r -g clintela clintela
 
 # Copy and install production dependencies
 COPY pyproject.toml .
+COPY README.md .
 RUN uv pip install -e ".[prod]" --system
 
 # Copy project files
