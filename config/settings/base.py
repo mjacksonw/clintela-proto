@@ -187,6 +187,16 @@ X_FRAME_OPTIONS = "DENY"
 
 CSRF_COOKIE_SECURE = env("CSRF_COOKIE_SECURE")
 SESSION_COOKIE_SECURE = env("SESSION_COOKIE_SECURE")
+
+# Session configuration - 7-day rolling sessions
+SESSION_COOKIE_AGE = 7 * 24 * 60 * 60  # 7 days in seconds
+SESSION_SAVE_EVERY_REQUEST = True  # Rolling window - extends on every request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# django-ratelimit configuration
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = "default"
+
 SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT")
 SECURE_HSTS_SECONDS = env("SECURE_HSTS_SECONDS")
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env("SECURE_HSTS_INCLUDE_SUBDOMAINS")
@@ -292,6 +302,9 @@ TWILIO_PHONE_NUMBER = env("TWILIO_PHONE_NUMBER", default=None)
 # Ollama / LLM
 OLLAMA_API_KEY = env("OLLAMA_API_KEY", default=None)
 OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", default="https://api.ollama.com/v1")
+OLLAMA_MODEL = env("OLLAMA_MODEL", default="llama3.2")
+OLLAMA_TIMEOUT = env.int("OLLAMA_TIMEOUT", default=90)
+OLLAMA_MAX_RETRIES = env.int("OLLAMA_MAX_RETRIES", default=3)
 
 # =============================================================================
 # FEATURE FLAGS

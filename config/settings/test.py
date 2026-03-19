@@ -10,16 +10,21 @@ import os
 
 from .base import *  # noqa: F401, F403
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "clintela_test"),
-        "USER": os.environ.get("POSTGRES_USER", "clintela"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "clintela"),
-        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5434"),
+# Support DATABASE_URL env var (used by GitHub Actions) or individual POSTGRES_* vars
+if "DATABASE_URL" in os.environ:
+    # Use base.py's env instance which is already imported via *
+    DATABASES = {"default": env.db()}  # noqa: F405
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "clintela_test"),
+            "USER": os.environ.get("POSTGRES_USER", "clintela"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "clintela"),
+            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5434"),
+        }
     }
-}
 
 # Use faster password hasher for tests
 PASSWORD_HASHERS = [
@@ -37,11 +42,12 @@ PASSWORD_HASHERS = [
 # MIGRATION_MODULES = DisableMigrations()
 
 # =============================================================================
-# CACHING - Use dummy cache in tests
+# CACHING - Use local memory cache for rate limiting tests
 # =============================================================================
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
     }
 }
 

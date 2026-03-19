@@ -36,6 +36,7 @@ FROM base AS development
 # Copy only requirements files first for better caching
 COPY pyproject.toml .
 COPY uv.lock* ./
+COPY README.md .
 
 # Install dependencies with dev extras
 RUN uv pip install -e ".[dev]" --system
@@ -75,6 +76,7 @@ RUN groupadd -r clintela && useradd -r -g clintela clintela
 
 # Copy and install production dependencies
 COPY pyproject.toml .
+COPY README.md .
 RUN uv pip install -e ".[prod]" --system
 
 # Copy project files
@@ -84,8 +86,9 @@ COPY . .
 RUN mkdir -p staticfiles media logs && \
     chown -R clintela:clintela /app
 
-# Collect static files
-RUN python manage.py collectstatic --noinput --clear
+# Collect static files (use dummy env vars for build)
+# Use production settings explicitly to avoid dev-only dependencies like debug_toolbar
+RUN SECRET_KEY=build-secret-key DATABASE_URL=sqlite:///tmp/build.db ALLOWED_HOSTS=localhost DJANGO_SETTINGS_MODULE=config.settings.production python manage.py collectstatic --noinput --clear
 
 # Switch to non-root user
 USER clintela

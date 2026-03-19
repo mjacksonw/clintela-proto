@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Link Expired</title>
+</head>
+<body>
+    <h1>Link Expired</h1>
+    <p>This link has expired for security reasons.</p>
+
+    <h2>Options:</h2>
+    <form method="post" action="{% url 'accounts:resend_link' %}">
+        {% csrf_token %}
+        <label>Enter your mobile number:</label>
+        <input type="tel" name="phone_number" placeholder="(555) 123-4567" required>
+        <button type="submit">Send New Link</button>
+    </form>
+
+    <p>Or enter your leaflet code manually:</p>
+    <form method="post" action="{% url 'accounts:manual_entry' %}">
+        {% csrf_token %}
+        <input type="text" name="code" placeholder="A3B9K2" required>
+        <input type="text" name="dob" placeholder="MM/DD/YYYY" required>
+        <button type="submit">Sign In</button>
+    </form>
+</body>
+</html>

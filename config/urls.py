@@ -20,16 +20,20 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import TemplateView
+from ninja import NinjaAPI
 
 # Import API routers
-# from apps.api import api
+from apps.agents.api import router as agents_router
+
+api = NinjaAPI(version="1.0.0")
+api.add_router("/agents/", agents_router)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", TemplateView.as_view(template_name="home.html"), name="home"),
-    # path("api/", api.urls),  # Django Ninja API
-    # path("accounts/", include("apps.accounts.urls")),
-    # path("patients/", include("apps.patients.urls")),
+    path("api/", api.urls),  # Django Ninja API
+    path("accounts/", include("apps.accounts.urls", namespace="accounts")),
+    path("patient/", include("apps.patients.urls", namespace="patients")),
     # path("clinicians/", include("apps.clinicians.urls")),
     # path("caregivers/", include("apps.caregivers.urls")),
 ]

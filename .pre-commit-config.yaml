@@ -30,7 +30,7 @@ repos:
     hooks:
       - id: django-check
         name: Django System Checks
-        entry: python manage.py check --fail-level WARNING
+        entry: bash -c 'source .venv/bin/activate && python manage.py check --fail-level WARNING'
         language: system
         pass_filenames: false
         always_run: true
@@ -38,7 +38,7 @@ repos:
 
       - id: django-migrations-check
         name: Django Migrations Check
-        entry: python manage.py makemigrations --check --dry-run
+        entry: bash -c 'source .venv/bin/activate && python manage.py makemigrations --check --dry-run'
         language: system
         pass_filenames: false
         always_run: true
@@ -102,7 +102,7 @@ repos:
     hooks:
       - id: pytest
         name: Run Tests (pre-push only)
-        entry: pytest -x -q --tb=line
+        entry: bash -c 'source .venv/bin/activate && pytest -x -q --tb=line'
         language: system
         pass_filenames: false
         always_run: true
@@ -110,7 +110,7 @@ repos:
 
       - id: pytest-coverage
         name: Run Tests with Coverage (pre-push only)
-        entry: pytest --cov=apps --cov=config --cov-fail-under=90 -q
+        entry: bash -c 'source .venv/bin/activate && pytest --cov=apps --cov=config --cov-fail-under=90 -q'
         language: system
         pass_filenames: false
         always_run: true
