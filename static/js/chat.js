@@ -36,11 +36,28 @@ const clintelaChat = (() => {
         return d.innerHTML;
     }
 
-    function renderMarkdown(html) {
-        if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-            return DOMPurify.sanitize(marked.parse(html));
+    function dedent(text) {
+        // Strip common leading whitespace that comes from Django template indentation.
+        // Without this, marked.js treats indented lines as code blocks.
+        var lines = text.split('\n');
+        // Find minimum indentation (ignoring empty lines)
+        var minIndent = Infinity;
+        for (var i = 0; i < lines.length; i++) {
+            if (lines[i].trim().length === 0) continue;
+            var indent = lines[i].match(/^(\s*)/)[1].length;
+            if (indent < minIndent) minIndent = indent;
         }
-        return escapeHtml(html);
+        if (minIndent > 0 && minIndent < Infinity) {
+            lines = lines.map(function(line) { return line.slice(minIndent); });
+        }
+        return lines.join('\n').trim();
+    }
+
+    function renderMarkdown(text) {
+        if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+            return DOMPurify.sanitize(marked.parse(dedent(text)));
+        }
+        return escapeHtml(text);
     }
 
     // --- Typing indicator ---
