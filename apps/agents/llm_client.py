@@ -118,8 +118,27 @@ class LLMClient:
         if response_format:
             payload["response_format"] = response_format
 
+        # Determine endpoint based on base URL
+        # Ollama Cloud: /api/chat
+        # OpenAI-compatible: /chat/completions
+        if "/api" in self.base_url and "completions" not in self.base_url:
+            # Ollama native API format
+            endpoint = "/api/chat"
+            # Ollama format doesn't use response_format in payload
+            ollama_payload = {
+                "model": self.model,
+                "messages": messages,
+                "stream": False,
+            }
+            if response_format:
+                ollama_payload["format"] = "json"
+            payload = ollama_payload
+        else:
+            # OpenAI-compatible format
+            endpoint = "/chat/completions"
+
         try:
-            response = await self.client.post("/chat/completions", json=payload)
+            response = await self.client.post(endpoint, json=payload)
             response.raise_for_status()
         except httpx.TimeoutException as e:
             logger.error(f"LLM request timed out: {e}")
@@ -140,16 +159,29 @@ class LLMClient:
             logger.error(f"Failed to parse LLM response: {e}")
             raise LLMResponseError("Invalid JSON response") from e
 
-        if "choices" not in data or not data["choices"]:
+        # Parse response based on API format
+        if "choices" in data:
+            # OpenAI-compatible format
+            if not data["choices"]:
+                logger.error(f"Invalid LLM response structure: {data}")
+                raise LLMResponseError("Invalid response structure")
+            return {
+                "content": data["choices"][0]["message"]["content"],
+                "usage": data.get("usage", {}),
+                "model": data.get("model", self.model),
+                "finish_reason": data["choices"][0].get("finish_reason"),
+            }
+        elif "message" in data:
+            # Ollama native format
+            return {
+                "content": data["message"]["content"],
+                "usage": data.get("prompt_eval_count") or data.get("usage", {}),
+                "model": data.get("model", self.model),
+                "finish_reason": "stop" if data.get("done") else None,
+            }
+        else:
             logger.error(f"Invalid LLM response structure: {data}")
             raise LLMResponseError("Invalid response structure")
-
-        return {
-            "content": data["choices"][0]["message"]["content"],
-            "usage": data.get("usage", {}),
-            "model": data.get("model", self.model),
-            "finish_reason": data["choices"][0].get("finish_reason"),
-        }
 
     async def generate_json(
         self,
