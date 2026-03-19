@@ -66,6 +66,7 @@ dev = [
     "pytest-django>=4.8",
     "pytest-cov>=5.0",
     "pytest-asyncio>=0.23",
+    "pytest-xdist>=3.5",
     "factory-boy>=3.3",
     "faker>=25.0",
 
@@ -185,6 +186,8 @@ addopts = [
     "-v",
     "--color=yes",
     "--ignore=node_modules",
+    "--numprocesses=auto",
+    "--dist=worksteal",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",

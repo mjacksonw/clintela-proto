@@ -24,8 +24,18 @@ def client(client):
 
 
 @pytest.fixture(autouse=True)
-def disable_rate_limiting():
-    """Disable rate limiting for all tests to avoid 403 errors."""
+def disable_rate_limiting(request):
+    """Disable rate limiting for view tests to avoid 403 errors.
+
+    Rate limiting tests are identified by their nodeid and skip patching.
+    """
+    # Check if this is a rate limiting test
+    # Rate limiting tests need the real ratelimit decorator to work
+    test_nodeid = request.node.nodeid
+    if "test_rate_limiting" in test_nodeid:
+        yield
+        return
+
     from functools import wraps
 
     # Create a no-op version that just passes through
