@@ -302,6 +302,9 @@ TWILIO_PHONE_NUMBER = env("TWILIO_PHONE_NUMBER", default=None)
 # Ollama / LLM
 OLLAMA_API_KEY = env("OLLAMA_API_KEY", default=None)
 OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", default="https://api.ollama.com/v1")
+OLLAMA_MODEL = env("OLLAMA_MODEL", default="llama3.2")
+OLLAMA_TIMEOUT = env.int("OLLAMA_TIMEOUT", default=90)
+OLLAMA_MAX_RETRIES = env.int("OLLAMA_MAX_RETRIES", default=3)
 
 # =============================================================================
 # FEATURE FLAGS

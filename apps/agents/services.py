@@ -50,7 +50,7 @@ class ConversationService:
         # Create initial state
         ConversationState.objects.create(
             conversation=conversation,
-            patient_summary=f"{patient.first_name} {patient.last_name}",
+            patient_summary=f"{patient.user.first_name} {patient.user.last_name}",
         )
 
         return conversation
@@ -200,13 +200,13 @@ class ContextService:
 
         context = {
             "id": str(patient.id),
-            "name": f"{patient.first_name} {patient.last_name}",
+            "name": f"{patient.user.first_name} {patient.user.last_name}",
             "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None,
             "surgery_type": patient.surgery_type or "Unknown",
             "surgery_date": patient.surgery_date.isoformat() if patient.surgery_date else None,
             "days_post_op": patient.days_post_op(),
             "status": patient.status,
-            "phone": str(patient.phone) if patient.phone else None,
+            "phone": str(patient.user.phone_number) if patient.user.phone_number else None,
         }
 
         if active_pathway:
@@ -541,7 +541,7 @@ class EscalationService:
             escalation_history.append(f"- {esc.created_at.strftime('%Y-%m-%d')}: {esc.reason[:80]}")
 
         notes = f"""## AI Handoff Notes
-**Patient:** {patient.first_name} {patient.last_name} | **Escalated:** {conversation.updated_at.isoformat()}
+**Patient:** {patient.user.first_name} {patient.user.last_name} | **Escalated:** {conversation.updated_at.isoformat()}
 
 ### Conversation Summary
 {summary[:500]}{'...' if len(summary) > 500 else ''}
@@ -553,7 +553,7 @@ class EscalationService:
 - Surgery: {patient.surgery_type or 'Unknown'}
 - Days Post-Op: {patient.days_post_op()}
 - Status: {patient.status}
-- Phone: {patient.phone}
+- Phone: {patient.user.phone_number if patient.user.phone_number else 'N/A'}
 
 ### What AI Covered
 {chr(10).join(ai_coverage) if ai_coverage else "- No AI responses recorded"}
@@ -614,11 +614,11 @@ class EscalationService:
         return {
             "patient": {
                 "id": str(patient.id),
-                "name": f"{patient.first_name} {patient.last_name}",
+                "name": f"{patient.user.first_name} {patient.user.last_name}",
                 "surgery_type": patient.surgery_type,
                 "days_post_op": patient.days_post_op(),
                 "status": patient.status,
-                "phone": str(patient.phone) if patient.phone else None,
+                "phone": str(patient.user.phone_number) if patient.user.phone_number else None,
             },
             "escalation": {
                 "reason": escalation_reason,

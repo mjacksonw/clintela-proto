@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 from django.conf import settings
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
 
 logger = logging.getLogger(__name__)
 
@@ -75,12 +75,6 @@ class LLMClient:
             )
         return self._client
 
-    @retry(
-        retry=retry_if_exception_type((LLMTimeoutError, LLMRateLimitError)),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        reraise=True,
-    )
     async def generate(
         self,
         messages: list[dict[str, str]],
@@ -88,7 +82,7 @@ class LLMClient:
         max_tokens: int = 1000,
         response_format: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Generate a response from the LLM.
+        """Generate a response from the LLM with retry logic.
 
         Args:
             messages: List of message dicts with 'role' and 'content' keys
@@ -100,34 +94,18 @@ class LLMClient:
             Dict containing 'content', 'usage', and 'model' keys
 
         Raises:
-            LLMTimeoutError: If request times out
+            LLMTimeoutError: If request times out after retries
             LLMRateLimitError: If rate limit is hit
             LLMResponseError: If response is invalid
         """
         if not self.api_key:
             raise LLMError("OLLAMA_API_KEY not configured")
 
-        payload = {
-            "model": self.model,
-            "messages": messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "stream": False,
-        }
-
-        if response_format:
-            payload["response_format"] = response_format
-
         # Determine endpoint based on base URL
-        # Ollama Cloud: https://ollama.com/api/chat
-        # OpenAI-compatible: https://api.openai.com/v1/chat/completions
-        # Handle both formats properly
         base_url_normalized = self.base_url.rstrip("/")
         
         # Check if this is Ollama Cloud (ollama.com/api) vs OpenAI-compatible
         if "ollama.com" in base_url_normalized or ("/api" in base_url_normalized and not base_url_normalized.endswith("/v1")):
-            # Ollama native API format - use relative path from base
-            # If base is https://ollama.com/api, endpoint should be /chat
             if base_url_normalized.endswith("/api"):
                 endpoint = "/chat"
             else:
@@ -144,52 +122,77 @@ class LLMClient:
         else:
             # OpenAI-compatible format
             endpoint = "/chat/completions"
-
-        try:
-            response = await self.client.post(endpoint, json=payload)
-            response.raise_for_status()
-        except httpx.TimeoutException as e:
-            logger.error(f"LLM request timed out: {e}")
-            raise LLMTimeoutError(f"Request timed out after {self.timeout}s") from e
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 429:
-                logger.warning("LLM rate limit hit")
-                raise LLMRateLimitError("Rate limit exceeded") from e
-            logger.error(f"LLM HTTP error: {e.response.status_code} - {e.response.text}")
-            raise LLMResponseError(f"HTTP {e.response.status_code}: {e.response.text}") from e
-        except httpx.RequestError as e:
-            logger.error(f"LLM request error: {e}")
-            raise LLMError(f"Request failed: {e}") from e
-
-        try:
-            data = await response.json()
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse LLM response: {e}")
-            raise LLMResponseError("Invalid JSON response") from e
-
-        # Parse response based on API format
-        if "choices" in data:
-            # OpenAI-compatible format
-            if not data["choices"]:
-                logger.error(f"Invalid LLM response structure: {data}")
-                raise LLMResponseError("Invalid response structure")
-            return {
-                "content": data["choices"][0]["message"]["content"],
-                "usage": data.get("usage", {}),
-                "model": data.get("model", self.model),
-                "finish_reason": data["choices"][0].get("finish_reason"),
+            payload = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": False,
             }
-        elif "message" in data:
-            # Ollama native format
-            return {
-                "content": data["message"]["content"],
-                "usage": data.get("prompt_eval_count") or data.get("usage", {}),
-                "model": data.get("model", self.model),
-                "finish_reason": "stop" if data.get("done") else None,
-            }
-        else:
-            logger.error(f"Invalid LLM response structure: {data}")
-            raise LLMResponseError("Invalid response structure")
+            if response_format:
+                payload["response_format"] = response_format
+
+        # Retry logic
+        last_error = None
+        for attempt in range(self.max_retries):
+            try:
+                response = await self.client.post(endpoint, json=payload)
+                response.raise_for_status()
+                
+                # Parse response (response.json() is async in httpx AsyncClient)
+                try:
+                    data = await response.json()
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse LLM response: {e}")
+                    raise LLMResponseError("Invalid JSON response") from e
+
+                # Parse response based on API format
+                if "choices" in data:
+                    # OpenAI-compatible format
+                    if not data["choices"]:
+                        logger.error(f"Invalid LLM response structure: {data}")
+                        raise LLMResponseError("Invalid response structure")
+                    return {
+                        "content": data["choices"][0]["message"]["content"],
+                        "usage": data.get("usage", {}),
+                        "model": data.get("model", self.model),
+                        "finish_reason": data["choices"][0].get("finish_reason"),
+                    }
+                elif "message" in data:
+                    # Ollama native format
+                    return {
+                        "content": data["message"]["content"],
+                        "usage": data.get("prompt_eval_count") or data.get("usage", {}),
+                        "model": data.get("model", self.model),
+                        "finish_reason": "stop" if data.get("done") else None,
+                    }
+                else:
+                    logger.error(f"Invalid LLM response structure: {data}")
+                    raise LLMResponseError("Invalid response structure")
+                    
+            except httpx.TimeoutException as e:
+                last_error = LLMTimeoutError(f"Request timed out after {self.timeout}s")
+                logger.warning(f"LLM request timed out (attempt {attempt + 1}/{self.max_retries})")
+                if attempt < self.max_retries - 1:
+                    import asyncio
+                    await asyncio.sleep(min(2 * (2 ** attempt), 10))  # Exponential backoff
+                continue
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 429:
+                    last_error = LLMRateLimitError("Rate limit exceeded")
+                    logger.warning(f"LLM rate limit hit (attempt {attempt + 1}/{self.max_retries})")
+                    if attempt < self.max_retries - 1:
+                        import asyncio
+                        await asyncio.sleep(min(2 * (2 ** attempt), 10))
+                    continue
+                logger.error(f"LLM HTTP error: {e.response.status_code} - {e.response.text}")
+                raise LLMResponseError(f"HTTP {e.response.status_code}: {e.response.text}") from e
+            except httpx.RequestError as e:
+                logger.error(f"LLM request error: {e}")
+                raise LLMError(f"Request failed: {e}") from e
+        
+        # If we get here, all retries failed
+        raise last_error or LLMError("All retries failed")
 
     async def generate_json(
         self,

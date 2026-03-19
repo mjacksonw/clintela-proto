@@ -70,7 +70,7 @@ class AgentWorkflow:
         # Build the graph
         workflow = StateGraph(AgentState)
 
-        # Add nodes
+        # Add nodes (async nodes for agent calls, sync for simple operations)
         workflow.add_node("supervisor", self._supervisor_node)
         workflow.add_node("care_coordinator", self._care_coordinator_node)
         workflow.add_node("nurse_triage", self._nurse_triage_node)
@@ -266,7 +266,7 @@ class AgentWorkflow:
                 "escalation_reason": f"Routed to {specialist_type}",
             }
 
-    async def _documentation_node(self, state: dict[str, Any]) -> dict[str, Any]:
+    def _documentation_node(self, state: dict[str, Any]) -> dict[str, Any]:
         """Documentation node - creates interaction summary.
 
         Args:
@@ -290,7 +290,7 @@ class AgentWorkflow:
             "documentation": doc,
         }
 
-    async def _escalation_node(self, state: dict[str, Any]) -> dict[str, Any]:
+    def _escalation_node(self, state: dict[str, Any]) -> dict[str, Any]:
         """Escalation node - handles human handoff.
 
         Args:

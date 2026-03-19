@@ -39,10 +39,10 @@ class TestLLMClient:
             "model": "test-model",
         }
 
-        # Create proper async mock - json() is an async method
+        # Create proper async mock - json() is an async method, raise_for_status is not
         mock_response_obj = AsyncMock()
         mock_response_obj.json = AsyncMock(return_value=mock_response)
-        mock_response_obj.raise_for_status = AsyncMock()
+        mock_response_obj.raise_for_status = lambda: None  # Not async
 
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=mock_response_obj)
@@ -101,7 +101,7 @@ class TestLLMClient:
         """Test invalid JSON response raises LLMResponseError."""
         mock_response_obj = AsyncMock()
         mock_response_obj.json = AsyncMock(side_effect=json.JSONDecodeError("test", "doc", 0))
-        mock_response_obj.raise_for_status = AsyncMock()
+        mock_response_obj.raise_for_status = lambda: None  # Not async
 
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=mock_response_obj)
@@ -144,7 +144,7 @@ class TestLLMClient:
         mock_response_obj.json = AsyncMock(return_value={
             "choices": [{"message": {"content": '```json\n{"key": "value"}\n```'}}],
         })
-        mock_response_obj.raise_for_status = AsyncMock()
+        mock_response_obj.raise_for_status = lambda: None  # Not async
 
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=mock_response_obj)

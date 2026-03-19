@@ -332,19 +332,40 @@ Status: {patient.get('status', 'unknown')}
             )
 
 
+import re
+
 class NurseTriageAgent(BaseAgent):
     """Nurse Triage agent - clinical assessment and guidance."""
 
     # Critical symptoms that require immediate escalation
-    CRITICAL_KEYWORDS = [
-        "pain 8", "pain 9", "pain 10",
-        "severe pain", "unbearable pain",
-        "bleeding", "blood",
-        "fever 102", "fever 103", "fever 104",
-        "chest pain", "heart attack",
-        "can't breathe", "breathing difficulty", "shortness of breath",
-        "unconscious", "passed out",
-        "vomiting blood",
+    # Using regex patterns for flexibility with human language variations
+    CRITICAL_PATTERNS = [
+        # Pain levels 8-10 (catches: "pain is 10", "10 out of 10 pain", "pain level 9")
+        # Must be standalone numbers, not part of fractions like "4/10"
+        (r'\bpain\b[^0-9/.]*\b(8|9|10)\b(?:\s*(?:/|out\s+of)\s*10)?(?!\d)', "severe pain (8-10/10)"),
+        (r'\b(8|9|10)\b(?:\s*(?:/|out\s+of)\s*10)?[^0-9/.]*\bpain\b', "severe pain (8-10/10)"),
+        (r'\bpain\s+(level\s+)?(8|9|10)\b(?:\s*/\s*10)?\b', "severe pain (8-10/10)"),
+        # Severe pain variations
+        (r'severe\s+pain|unbearable\s+pain|intense\s+pain|excruciating', "severe pain description"),
+        # Bleeding
+        (r'\b(bleeding|blood)\b', "bleeding"),
+        # Fever 102+ (catches: "fever is 103", "103 degree fever", "temp of 104")
+        # Must be standalone temperature, not part of other numbers
+        (r'\bfever\b[^0-9/.]*\b(10[2-9]|11[0-9])\b(?!\d)', "high fever (102°F+)"),
+        (r'\b(10[2-9]|11[0-9])\b[^0-9/.]*\bfever\b', "high fever (102°F+)"),
+        (r'\btemp(?:erature)?\b[^0-9/.]*\b(10[2-9]|11[0-9])\b', "high fever (102°F+)"),
+        # Chest pain / cardiac
+        (r'\b(chest\s+pain|heart\s+attack|cardiac\s+arrest)\b', "chest pain/cardiac"),
+        # Breathing difficulties
+        (r"can't\s+breathe|cannot\s+breathe|breathing\s+difficulty|shortness\s+of\s+breath|difficulty\s+breathing|wheezing|struggling\s+to\s+breathe", "breathing difficulty"),
+        # Unconsciousness
+        (r'unconscious|passed\s+out|fainted|blackout', "loss of consciousness"),
+        # Vomiting blood
+        (r'vomiting\s+blood|coughing\s+blood|blood\s+in\s+vomit', "hematemesis"),
+        # Allergic reaction
+        (r'allergic\s+reaction|anaphylaxis|swelling\s+throat', "allergic reaction"),
+        # Suicide/self-harm
+        (r'suicide|kill\s+myself|end\s+my\s+life', "self-harm ideation"),
     ]
 
     def __init__(self, llm_client: LLMClient | None = None):
@@ -354,6 +375,9 @@ class NurseTriageAgent(BaseAgent):
     def _check_critical_symptoms(self, message: str) -> tuple[bool, str]:
         """Check for critical symptoms requiring immediate escalation.
 
+        Uses regex patterns to catch variations in human language.
+        This is a safety net - the LLM should also detect these.
+
         Args:
             message: Patient's message
 
@@ -361,9 +385,14 @@ class NurseTriageAgent(BaseAgent):
             Tuple of (is_critical, reason)
         """
         message_lower = message.lower()
-        for keyword in self.CRITICAL_KEYWORDS:
-            if keyword in message_lower:
-                return True, f"Critical symptom detected: {keyword}"
+        matched_by = None
+
+        for pattern, description in self.CRITICAL_PATTERNS:
+            if re.search(pattern, message_lower):
+                matched_by = f"regex pattern: {description}"
+                logger.info(f"Critical symptom detected by {matched_by}: {message[:50]}...")
+                return True, f"Critical symptom detected: {description}"
+
         return False, ""
 
     async def process(
