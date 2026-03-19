@@ -58,7 +58,7 @@ class TestChatSendView:
         response = client.get(reverse("patients:chat_send"))
         assert response.status_code == 405
 
-    @patch("apps.patients.views.get_workflow")
+    @patch("apps.agents.workflow.get_workflow")
     def test_valid_message_returns_html_fragment(self, mock_get_workflow):
         """Valid message returns HTML fragment with message bubble."""
         mock_workflow = mock_get_workflow.return_value
@@ -82,7 +82,7 @@ class TestChatSendView:
         content = response.content.decode()
         assert "Recovery is going well!" in content
 
-    @patch("apps.patients.views.get_workflow")
+    @patch("apps.agents.workflow.get_workflow")
     def test_escalation_sets_hx_trigger(self, mock_get_workflow):
         """Escalation response includes HX-Trigger header."""
         mock_workflow = mock_get_workflow.return_value

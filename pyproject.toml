@@ -89,6 +89,10 @@ dev = [
 
     # Documentation
     "pytest-md>=0.2.0",
+
+    # E2E Testing
+    "pytest-playwright>=0.5.0",
+    "playwright>=1.40",
 ]
 
 prod = [
@@ -186,6 +190,7 @@ addopts = [
     "-v",
     "--color=yes",
     "--ignore=node_modules",
+    "--ignore=tests/e2e",
     "--numprocesses=auto",
     "--dist=worksteal",
 ]
@@ -193,6 +198,7 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
+    "e2e: marks tests as end-to-end browser tests (run with: pytest tests/e2e/ -p no:xdist)",
 ]
 
 # Coverage Configuration

@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-19
 **Branch:** feature/agent-system
-**Status:** Phase 2 COMPLETE - Multi-Agent System Implemented and Tested
+**Status:** Phase 2.5 COMPLETE - Patient UI with Chat Sidebar, Dashboard, and E2E Tests
 
 ---
 
@@ -145,24 +145,27 @@ python manage.py shell
 - [x] 38 tests passing
 - [x] Live LLM acceptance testing
 
-### Phase 2.5: Patient UI 🔄 IN PROGRESS
-- [x] Django admin registration (Patient, Hospital, User, AgentConversation, Escalation)
-- [x] Management command: `create_test_patient`
-- [x] Base template with full DESIGN.md design system (Satoshi, dark mode, Tailwind CDN)
-- [x] Two-panel layout: chat sidebar (360px) + dashboard (max 720px)
-- [x] Responsive: mobile FAB overlay, tablet collapsible sidebar, desktop side-by-side
-- [x] Chat sidebar with HTMX POST, typing indicator, suggestion chips
-- [x] Message bubbles with markdown rendering (marked.js + DOMPurify)
-- [x] Optimistic UI, progressive timeout, inline error bubbles
-- [x] Patient dashboard: recovery status hero, what to expect, welcome card
-- [x] Backend: async chat send view, templatetags, conversation history
-- [x] Restyled auth pages (home, DOB entry, token expired, rate limited)
-- [x] Skeleton loading, dev toolbar (DEBUG-only)
-- [ ] Accessibility polish (contrast, tab order, focus management)
-- [ ] Tests (chat view, templatetags, management command)
-- [ ] Documentation update
+### Phase 2.5: Patient UI ✅ COMPLETE
+- [x] Base template with full design system (Satoshi font, Tailwind CDN, dark mode)
+- [x] Patient chat sidebar (omnipresent, HTMX-powered)
+- [x] Chat message bubbles with markdown rendering (marked.js + DOMPurify)
+- [x] Patient dashboard (recovery status, care plan, care team cards)
+- [x] Optimistic UI, progressive timeout, offline detection
+- [x] Suggestion chips (contextual from pathway data)
+- [x] Escalation banner and confidence indicators
+- [x] Mobile responsive (FAB overlay, tablet collapsible sidebar)
+- [x] Dark mode toggle with localStorage persistence
+- [x] Django admin registration (Patient, Hospital, User, Conversations)
+- [x] `create_test_patient` management command
+- [x] Template tags (agent_display_name, agent_icon)
+- [x] Auth page styling (DOB entry, token expired, rate limited)
+- [x] Accessibility (WCAG 2.1 AA): ARIA landmarks, focus management, focus trap, labels, reduced motion
+- [x] Playwright E2E tests (27 tests: DOM structure, a11y attributes, responsiveness)
+- [x] Unit tests (chat_send view, templatetags, management command)
+- [x] Notification sound (Web Audio API, mute toggle)
 
-### Phase 3: Communication
+### Phase 3: Communication (Next)
+- [x] Leaflet code + DOB authentication
 - [ ] Twilio SMS integration
 - [ ] WebSocket setup for real-time updates
 - [ ] Notification queue (PostgreSQL-based)
@@ -337,11 +340,12 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for detailed results.
 
 ## What to Do in Next Session
 
-1. **Start with:** `make docker-up && make dev` to verify server running
-2. **Create test data:** `python manage.py create_test_patient` → prints auth URL
-3. **Test auth flow:** Click generated URL → DOB form → dashboard with chat
-4. **Test chat:** Send messages in sidebar → verify agent responses
-5. **Remaining:** Write tests for chat view, templatetags, management command
+1. **Start with:** `python manage.py create_test_patient` to get an auth URL
+2. **Test the UI:** Visit the auth URL, enter DOB `06/15/1985`, explore dashboard + chat
+3. **Focus on:** Twilio SMS integration (Phase 3)
+4. **Then:** WebSocket real-time upgrades
+5. **Run tests:** `POSTGRES_PORT=5434 pytest` for unit tests, `pytest tests/e2e/ -o "addopts="` for E2E
+6. **Verify:** Pre-commit hooks passing, coverage ≥90%
 
 ---
 
@@ -365,4 +369,4 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for detailed results.
 
 ---
 
-*Phase 2 Complete — Agent System Implemented and Tested. Ready for Phase 3: Communication & Authentication*
+*Phase 2.5 Complete — Patient UI with Chat, Dashboard, Accessibility, and E2E Tests. Ready for Phase 3: Communication (Twilio SMS)*
