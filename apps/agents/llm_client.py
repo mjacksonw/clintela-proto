@@ -119,11 +119,19 @@ class LLMClient:
             payload["response_format"] = response_format
 
         # Determine endpoint based on base URL
-        # Ollama Cloud: /api/chat
-        # OpenAI-compatible: /chat/completions
-        if "/api" in self.base_url and "completions" not in self.base_url:
-            # Ollama native API format
-            endpoint = "/api/chat"
+        # Ollama Cloud: https://ollama.com/api/chat
+        # OpenAI-compatible: https://api.openai.com/v1/chat/completions
+        # Handle both formats properly
+        base_url_normalized = self.base_url.rstrip("/")
+        
+        # Check if this is Ollama Cloud (ollama.com/api) vs OpenAI-compatible
+        if "ollama.com" in base_url_normalized or ("/api" in base_url_normalized and not base_url_normalized.endswith("/v1")):
+            # Ollama native API format - use relative path from base
+            # If base is https://ollama.com/api, endpoint should be /chat
+            if base_url_normalized.endswith("/api"):
+                endpoint = "/chat"
+            else:
+                endpoint = "/api/chat"
             # Ollama format doesn't use response_format in payload
             ollama_payload = {
                 "model": self.model,
