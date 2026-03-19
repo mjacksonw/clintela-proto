@@ -125,6 +125,16 @@ generate-hashes = true
 target-version = "py312"
 line-length = 100
 indent-width = 4
+exclude = [
+    "migrations",
+    "static",
+    "templates",
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
 
 [tool.ruff.lint]
 select = [

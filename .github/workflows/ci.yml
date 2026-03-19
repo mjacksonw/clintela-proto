@@ -34,10 +34,10 @@ jobs:
           uv pip install -e ".[dev]" --system
 
       - name: Run Ruff Linter
-        run: ruff check . --exclude migrations/ --exclude static/ --exclude templates/
+        run: ruff check .
 
       - name: Check Ruff Formatting
-        run: ruff format --check . --exclude migrations/ --exclude static/ --exclude templates/
+        run: ruff format --check .
 
   # =============================================================================
   # TYPE CHECKING
