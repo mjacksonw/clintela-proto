@@ -64,9 +64,18 @@ class LLMClient:
     def client(self) -> httpx.AsyncClient:
         """Get or create HTTP client."""
         if self._client is None:
+            # Ensure trailing slash for proper URL path joining
+            base_url = self.base_url.rstrip("/") + "/"
+            # Use explicit timeout config for cloud LLMs which can be slow
+            timeout_config = httpx.Timeout(
+                connect=10.0,
+                read=float(self.timeout),  # Main timeout for LLM response
+                write=10.0,
+                pool=10.0,
+            )
             self._client = httpx.AsyncClient(
-                base_url=self.base_url,
-                timeout=self.timeout,
+                base_url=base_url,
+                timeout=timeout_config,
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
@@ -108,7 +117,8 @@ class LLMClient:
             "/api" in base_url_normalized and not base_url_normalized.endswith("/v1")
         )
         if is_ollama_cloud:
-            endpoint = "/chat" if base_url_normalized.endswith("/api") else "/api/chat"
+            # Use relative path (no leading slash) since base_url includes /api
+            endpoint = "chat" if base_url_normalized.endswith("/api") else "api/chat"
             # Ollama format doesn't use response_format in payload
             ollama_payload = {
                 "model": self.model,
@@ -120,7 +130,7 @@ class LLMClient:
             payload = ollama_payload
         else:
             # OpenAI-compatible format
-            endpoint = "/chat/completions"
+            endpoint = "chat/completions"
             payload = {
                 "model": self.model,
                 "messages": messages,
@@ -138,9 +148,9 @@ class LLMClient:
                 response = await self.client.post(endpoint, json=payload)
                 response.raise_for_status()
 
-                # Parse response (response.json() is async in httpx AsyncClient)
+                # Parse response
                 try:
-                    data = await response.json()
+                    data = response.json()
                 except json.JSONDecodeError as e:
                     logger.error(f"Failed to parse LLM response: {e}")
                     raise LLMResponseError("Invalid JSON response") from e
