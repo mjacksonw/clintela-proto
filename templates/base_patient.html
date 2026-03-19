@@ -74,6 +74,7 @@
              class="md:hidden fixed inset-0 z-50 flex flex-col"
              style="background-color: var(--color-surface);"
              role="dialog"
+             aria-modal="true"
              aria-label="Chat"
              x-cloak>
 
@@ -97,6 +98,8 @@
 
         <!-- Dashboard content area -->
         <main role="main"
+              id="main-content"
+              tabindex="-1"
               aria-label="Recovery dashboard"
               class="flex-1 overflow-y-auto"
               style="background-color: var(--color-bg);">
