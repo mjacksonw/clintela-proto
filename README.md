@@ -61,8 +61,9 @@ Metrics and oversight for clinical leadership:
 - **Web Framework**: Django (request-based, idiomatic Python)
 - **Database**: PostgreSQL (relational data, document store for RAG, key-value caching)
 - **AI/ML**: LangChain / LangGraph for multi-agent orchestration
-- **Real-time**: WebSockets for chat functionality
-- **Communications**: Twilio (telephony), ElevenLabs (voice synthesis)
+- **Real-time**: WebSockets (Django Channels) for chat and live notifications
+- **Task Queue**: Celery + Redis for async notification delivery and scheduled reminders
+- **Communications**: Twilio SMS with signature validation, MediaRecorder voice input with Whisper transcription
 
 ### Agent Architecture
 
@@ -111,7 +112,7 @@ Non-LLM workflows handle: permissions, thresholds, escalation rules, retries, ti
 
 This repository contains the prototype implementation of Clintela's user interfaces and core systems.
 
-**Current Phase**: Foundation and interface scaffolding
+**Current Phase**: Phase 3 complete — notification engine, SMS, voice input, WebSocket notifications, and Celery task queue
 
 ---
 
@@ -127,6 +128,7 @@ This repository contains the prototype implementation of Clintela's user interfa
 - [Development Setup](./docs/development.md)
 - [Security & Compliance](./docs/security.md)
 - [Testing Guide](./docs/testing.md)
+- [Phase 3 Acceptance Testing](./docs/ACCEPTANCE-TESTING-PHASE3.md) — Manual QA guide for SMS, voice, notifications, and WebSocket features
 - [TODOs](./TODOS.md) — Deferred work and future phases
 
 ---

@@ -86,6 +86,40 @@ OLLAMA_API_KEY = "test_ollama_key"
 OLLAMA_BASE_URL = "https://test.ollama.com/v1"
 
 # =============================================================================
+# NOTIFICATION BACKENDS - In-memory for tests
+# =============================================================================
+NOTIFICATION_BACKENDS = {
+    "in_app": "apps.notifications.backends.LocMemBackend",
+    "sms": "apps.notifications.backends.LocMemBackend",
+    "email": "apps.notifications.backends.LocMemBackend",
+}
+
+# =============================================================================
+# SMS - In-memory for tests
+# =============================================================================
+SMS_BACKEND = "apps.messages_app.backends.LocMemSMSBackend"
+
+# =============================================================================
+# TRANSCRIPTION - Mock for tests
+# =============================================================================
+TRANSCRIPTION_BACKEND = "apps.messages_app.transcription.MockTranscriptionClient"
+
+# =============================================================================
+# CELERY - Eager mode for tests (synchronous execution)
+# =============================================================================
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+
+# =============================================================================
+# CHANNELS - In-memory for tests
+# =============================================================================
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    }
+}
+
+# =============================================================================
 # PASSWORD VALIDATION - Simplified for tests
 # =============================================================================
 AUTH_PASSWORD_VALIDATORS = []

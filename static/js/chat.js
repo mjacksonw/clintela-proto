@@ -106,6 +106,14 @@ const clintelaChat = (() => {
         timeoutTimer = setTimeout(() => {
             hideTyping();
             appendErrorBubble('This is taking too long. Please try again.');
+
+            // Reset inflight state so user can type again
+            const form = document.getElementById('chat-form');
+            if (form) {
+                const alpineData = Alpine.$data(form);
+                if (alpineData) alpineData.inflight = false;
+            }
+            setChipsDisabled(false);
         }, TIMEOUT_ERROR_MS);
     }
 

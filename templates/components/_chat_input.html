@@ -1,4 +1,5 @@
-<!-- Chat input — textarea + send button with HTMX -->
+{% load static %}
+<!-- Chat input — textarea + voice record button + send button with HTMX -->
 <form id="chat-form"
       hx-post="{% url 'patients:chat_send' %}"
       hx-target="#messages"
@@ -11,11 +12,12 @@
       x-data="{ message: '', inflight: false }">
 
     <label for="chat-textarea" class="sr-only">Type a message to your care team</label>
-    <div class="flex items-end gap-2">
-        <!-- Auto-growing textarea -->
+    <div class="flex items-end gap-2" x-data="voiceRecorder()">
+        <!-- Auto-growing textarea (hidden during recording on mobile) -->
         <textarea name="message"
                   id="chat-textarea"
                   x-model="message"
+                  x-show="!recording"
                   @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 120) + 'px'"
                   @keydown.enter.prevent="if (!$event.shiftKey && message.trim() && !inflight) { $el.closest('form').requestSubmit(); }"
                   placeholder="Type a message..."
@@ -31,11 +33,59 @@
                          min-height: 44px; max-height: 120px;
                          font-size: 16px;"></textarea>
 
+        <!-- Recording bar (shown during recording) -->
+        <template x-if="recording">
+            <div class="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl"
+                 style="background-color: var(--color-bg); border: 1px solid var(--color-border); min-height: 44px;">
+                <!-- Cancel button -->
+                <button type="button" @click="cancelRecording()"
+                        class="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-warm-200"
+                        aria-label="Cancel recording">
+                    <i data-lucide="x" class="w-4 h-4" style="color: var(--color-text-secondary);"></i>
+                </button>
+                <!-- Pulsing dot -->
+                <span class="w-2 h-2 rounded-full bg-danger animate-pulse"></span>
+                <!-- Timer -->
+                <span class="text-xs font-medium tabular-nums"
+                      :class="elapsed >= 45 ? 'text-warning' : ''"
+                      style="color: var(--color-text-secondary);"
+                      x-text="formatTime(elapsed)"
+                      :aria-live="elapsed === 45 ? 'polite' : 'off'"
+                      x-effect="if (elapsed === 45) { $el.setAttribute('aria-label', 'Recording will stop in 15 seconds') }">
+                </span>
+            </div>
+        </template>
+
+        <!-- Voice record button -->
+        <button type="button"
+                x-show="canRecord && !recording && !inflight"
+                @click="startRecording()"
+                class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0
+                       transition-all duration-150 bg-warm-200 hover:bg-warm-300
+                       [data-theme='dark']:bg-warm-700 [data-theme='dark']:hover:bg-warm-600
+                       focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                aria-label="Record voice message">
+            <i data-lucide="mic" class="w-5 h-5" style="color: var(--color-text);"></i>
+        </button>
+
+        <!-- Stop & send button (during recording) -->
+        <button type="button"
+                x-show="recording"
+                @click="stopAndSend()"
+                class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0
+                       bg-danger text-white animate-pulse transition-all duration-150
+                       focus-visible:ring-2 focus-visible:ring-danger focus-visible:ring-offset-2 focus-visible:outline-none"
+                aria-label="Stop recording and send">
+            <i data-lucide="circle-stop" class="w-5 h-5"></i>
+        </button>
+
         <!-- Send button with micro-states -->
         <button type="submit"
+                x-show="!recording"
                 :disabled="!message.trim() || inflight"
                 class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0
-                       transition-all duration-150"
+                       transition-all duration-150
+                       focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                 :class="message.trim() && !inflight
                     ? 'bg-primary hover:bg-primary-700 text-white cursor-pointer'
                     : inflight
@@ -51,3 +101,6 @@
         </button>
     </div>
 </form>
+
+<!-- Voice recorder script -->
+<script src="{% static 'js/voice-recorder.js' %}"></script>

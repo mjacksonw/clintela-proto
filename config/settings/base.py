@@ -307,6 +307,49 @@ OLLAMA_TIMEOUT = env.int("OLLAMA_TIMEOUT", default=90)
 OLLAMA_MAX_RETRIES = env.int("OLLAMA_MAX_RETRIES", default=3)
 
 # =============================================================================
+# NOTIFICATION BACKENDS
+# =============================================================================
+NOTIFICATION_BACKENDS = {
+    "in_app": "apps.notifications.backends.InAppBackend",
+    "sms": "apps.notifications.backends.SMSBackend",
+    "email": "apps.notifications.backends.EmailBackend",
+}
+
+# =============================================================================
+# SMS
+# =============================================================================
+SMS_BACKEND = "apps.messages_app.backends.ConsoleSMSBackend"
+SMS_RATE_LIMIT_PER_HOUR = env.int("SMS_RATE_LIMIT_PER_HOUR", default=10)
+
+# =============================================================================
+# VOICE
+# =============================================================================
+TRANSCRIPTION_BACKEND = "apps.messages_app.transcription.MockTranscriptionClient"
+VOICE_MEMO_RETENTION_HOURS = env.int("VOICE_MEMO_RETENTION_HOURS", default=24)
+VOICE_MEMO_MAX_SIZE_MB = env.int("VOICE_MEMO_MAX_SIZE_MB", default=10)
+VOICE_MEMO_MAX_DURATION_SECONDS = env.int("VOICE_MEMO_MAX_DURATION_SECONDS", default=60)
+
+# =============================================================================
+# CELERY
+# =============================================================================
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6380/0")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    "send-scheduled-reminders": {
+        "task": "apps.notifications.tasks.send_scheduled_reminders",
+        "schedule": 300,  # every 5 minutes
+    },
+    "cleanup-voice-files": {
+        "task": "apps.messages_app.tasks.cleanup_expired_voice_files",
+        "schedule": 3600,  # every hour
+    },
+}
+
+# =============================================================================
 # FEATURE FLAGS
 # =============================================================================
 ENABLE_WEBSOCKETS = env("ENABLE_WEBSOCKETS", default=False)

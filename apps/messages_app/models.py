@@ -35,6 +35,13 @@ class Message(models.Model):
     class Meta:
         db_table = "messages_message"
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["external_id"],
+                condition=~models.Q(external_id=""),
+                name="uniq_message_external_id",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.channel} {self.direction} - {self.created_at}"

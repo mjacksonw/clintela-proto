@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.6.0] - 2026-03-19
+
+### Added
+- Notification engine with multi-channel delivery (in-app, SMS, email) and pluggable backends (Console/LocMem for dev/test)
+- Celery task queue integration with Redis broker for async notification delivery and scheduled reminders
+- SMS integration with Twilio backend abstraction, console backend for development, opt-out (STOP/START), and rate limiting
+- SMS webhook endpoints for inbound messages and delivery status callbacks with Twilio signature validation
+- Voice input via MediaRecorder — record, transcribe, and process through AI workflow
+- Three-tier transcription system: MockTranscriptionClient, LocalWhisperClient (faster-whisper), RemoteTranscriptionClient
+- WebSocket notification consumers for real-time patient and clinician notifications
+- Notification bell with unread badge, desktop dropdown, and mobile bottom sheet
+- Channel indicator icons on message bubbles (voice/SMS/web) and delivery status indicators
+- Audio playback widget for voice messages with authenticated file serving
+- Dev toolbar with SMS simulator, patient switcher, conversation reset, and patient info display
+- Notification preference model with per-channel quiet hours support
+- Voice memo cleanup management command and Celery periodic task (24h retention)
+- Shared `process_patient_message()` helper eliminating code triplication across chat/SMS/voice
+- Phone number database index for SMS inbound lookup performance
+- Comprehensive test suite: 15 new test files covering all Phase 3 modules
+- Acceptance testing guide for manual QA of all Phase 3 features
+
+### Fixed
+- Chat input no longer stuck disabled after 45-second client-side timeout
+- WebSocket reconnect capped at 10 attempts to prevent console spam in dev mode
+- Focus-visible rings added to voice record, stop, and send buttons for keyboard accessibility
+- Audio file extension validated against allowlist to prevent path traversal
+- Clinician WebSocket auth correctly looks up Clinician model by user FK
+
 ## [0.2.5.0] - 2026-03-19
 
 ### Added

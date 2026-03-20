@@ -65,3 +65,27 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.dummy.DummyCache",
     }
 }
+
+# =============================================================================
+# NOTIFICATION BACKENDS - Console for development
+# =============================================================================
+NOTIFICATION_BACKENDS = {
+    "in_app": "apps.notifications.backends.InAppBackend",
+    "sms": "apps.notifications.backends.ConsoleBackend",
+    "email": "apps.notifications.backends.ConsoleBackend",
+}
+
+# =============================================================================
+# SMS - Console backend for development
+# =============================================================================
+SMS_BACKEND = "apps.messages_app.backends.ConsoleSMSBackend"
+
+# =============================================================================
+# TRANSCRIPTION - Local Whisper for development
+# =============================================================================
+TRANSCRIPTION_BACKEND = "apps.messages_app.transcription.LocalWhisperClient"
+
+# =============================================================================
+# WEBSOCKETS - Enable in development
+# =============================================================================
+ENABLE_WEBSOCKETS = True  # noqa: F811

@@ -1,5 +1,7 @@
 """Tests for patients views."""
 
+from unittest.mock import patch
+
 import pytest
 from django.test import Client
 from django.urls import reverse
@@ -289,3 +291,264 @@ class TestPatientDashboardIntegration:
         response = client.get(reverse("patients:dashboard"))
         assert response.status_code == 302
         assert response.url == reverse("accounts:start")
+
+
+@pytest.mark.django_db
+class TestPatientDashboardDebugMode:
+    """Test dashboard in DEBUG mode."""
+
+    def test_dashboard_includes_all_patients_in_debug(self, settings):
+        """In DEBUG mode, dashboard includes all_patients in context."""
+        settings.DEBUG = True
+
+        user = User.objects.create_user(username="debuguser", password="testpass")
+        hospital = Hospital.objects.create(name="Debug Hospital", code="DBG001")
+        patient = Patient.objects.create(
+            user=user,
+            hospital=hospital,
+            date_of_birth="1990-01-01",
+            leaflet_code="DBG001",
+        )
+
+        client = Client()
+        session = client.session
+        session["patient_id"] = str(patient.id)
+        session["authenticated"] = True
+        session.save()
+
+        response = client.get(reverse("patients:dashboard"))
+
+        assert response.status_code == 200
+        assert "all_patients" in response.context
+
+    def test_dashboard_no_all_patients_when_not_debug(self, settings):
+        """In non-DEBUG mode, all_patients not in context."""
+        settings.DEBUG = False
+
+        user = User.objects.create_user(username="nondebuguser", password="testpass")
+        hospital = Hospital.objects.create(name="NonDebug Hospital", code="NDB001")
+        patient = Patient.objects.create(
+            user=user,
+            hospital=hospital,
+            date_of_birth="1990-01-01",
+            leaflet_code="NDB001",
+        )
+
+        client = Client()
+        session = client.session
+        session["patient_id"] = str(patient.id)
+        session["authenticated"] = True
+        session.save()
+
+        response = client.get(reverse("patients:dashboard"))
+
+        assert response.status_code == 200
+        assert "all_patients" not in response.context
+
+
+@pytest.mark.django_db
+class TestPatientDashboardConversationError:
+    """Test dashboard handles conversation errors gracefully."""
+
+    def test_dashboard_handles_conversation_exception(self):
+        """Dashboard handles exception from ConversationService gracefully."""
+        user = User.objects.create_user(username="convuser", password="testpass")
+        hospital = Hospital.objects.create(name="Conv Hospital", code="CVH001")
+        patient = Patient.objects.create(
+            user=user,
+            hospital=hospital,
+            date_of_birth="1990-01-01",
+            leaflet_code="CVH001",
+        )
+
+        client = Client()
+        session = client.session
+        session["patient_id"] = str(patient.id)
+        session["authenticated"] = True
+        session.save()
+
+        with patch(
+            "apps.agents.services.ConversationService.get_or_create_conversation",
+            side_effect=Exception("DB error"),
+        ):
+            response = client.get(reverse("patients:dashboard"))
+
+        # Should still render the dashboard, just with empty messages
+        assert response.status_code == 200
+        assert response.context["messages"] == []
+
+
+@pytest.mark.django_db
+class TestDevActionsView:
+    """Test patient_dev_actions_view."""
+
+    def setup_method(self):
+        self.user = User.objects.create_user(username="devactuser", password="testpass")
+        self.hospital = Hospital.objects.create(name="Dev Hospital", code="DEV001")
+        self.patient = Patient.objects.create(
+            user=self.user,
+            hospital=self.hospital,
+            date_of_birth="1990-01-01",
+            leaflet_code="DEV001",
+        )
+
+    def _get_authenticated_client(self):
+        client = Client()
+        session = client.session
+        session["patient_id"] = str(self.patient.id)
+        session["authenticated"] = True
+        session.save()
+        return client
+
+    def test_dev_actions_returns_404_in_production(self, settings):
+        """Returns 404 when DEBUG=False."""
+        settings.DEBUG = False
+        client = self._get_authenticated_client()
+        response = client.post(reverse("patients:dev_actions"), {"action": "clear_conversation"})
+        assert response.status_code == 404
+
+    def test_dev_actions_returns_405_for_get(self, settings):
+        """Returns 405 for GET requests."""
+        settings.DEBUG = True
+        client = self._get_authenticated_client()
+        response = client.get(reverse("patients:dev_actions"))
+        assert response.status_code == 405
+
+    def test_clear_conversation_action(self, settings):
+        """clear_conversation action deletes conversations."""
+        settings.DEBUG = True
+        from apps.agents.models import AgentConversation
+        from apps.agents.tests.factories import AgentConversationFactory
+
+        AgentConversationFactory(patient=self.patient)
+        assert AgentConversation.objects.filter(patient=self.patient).count() == 1
+
+        client = self._get_authenticated_client()
+        response = client.post(reverse("patients:dev_actions"), {"action": "clear_conversation"})
+
+        assert response.status_code == 302
+        assert AgentConversation.objects.filter(patient=self.patient).count() == 0
+
+    def test_switch_patient_action(self, settings):
+        """switch_patient action updates the session patient_id."""
+        settings.DEBUG = True
+
+        other_user = User.objects.create_user(username="otherpatient", password="testpass")
+        other_patient = Patient.objects.create(
+            user=other_user,
+            hospital=self.hospital,
+            date_of_birth="1992-01-01",
+            leaflet_code="OTH001",
+        )
+
+        client = self._get_authenticated_client()
+        response = client.post(
+            reverse("patients:dev_actions"),
+            {"action": "switch_patient", "patient_id": str(other_patient.id)},
+        )
+
+        assert response.status_code == 302
+        # Session should now have the other patient's ID
+        assert str(client.session.get("patient_id")) == str(other_patient.id)
+
+    def test_switch_patient_nonexistent_id(self, settings):
+        """switch_patient with nonexistent ID is handled gracefully."""
+        settings.DEBUG = True
+        client = self._get_authenticated_client()
+        response = client.post(
+            reverse("patients:dev_actions"),
+            {"action": "switch_patient", "patient_id": "99999999"},
+        )
+        assert response.status_code == 302
+
+    def test_simulate_sms_action(self, settings):
+        """simulate_sms action triggers inbound SMS processing."""
+        settings.DEBUG = True
+        settings.SMS_BACKEND = "apps.messages_app.backends.LocMemSMSBackend"
+        settings.ENABLE_SMS = True
+        from apps.messages_app.backends import LocMemSMSBackend, _import_sms_backend_class
+
+        _import_sms_backend_class.cache_clear()
+        LocMemSMSBackend.reset()
+
+        client = self._get_authenticated_client()
+        with patch("apps.messages_app.services.SMSService.handle_inbound_sms") as mock_handle:
+            response = client.post(
+                reverse("patients:dev_actions"),
+                {"action": "simulate_sms", "sms_text": "Hello from SMS"},
+            )
+        assert response.status_code == 302
+        mock_handle.assert_called_once()
+
+    def test_simulate_sms_no_text_is_noop(self, settings):
+        """simulate_sms with empty text does nothing."""
+        settings.DEBUG = True
+
+        client = self._get_authenticated_client()
+        with patch("apps.messages_app.services.SMSService.handle_inbound_sms") as mock_handle:
+            response = client.post(
+                reverse("patients:dev_actions"),
+                {"action": "simulate_sms", "sms_text": ""},
+            )
+        assert response.status_code == 302
+        mock_handle.assert_not_called()
+
+    def test_simulate_sms_unauthenticated_is_noop(self, settings):
+        """simulate_sms without authentication does nothing."""
+        settings.DEBUG = True
+
+        client = Client()  # no session
+        with patch("apps.messages_app.services.SMSService.handle_inbound_sms") as mock_handle:
+            response = client.post(
+                reverse("patients:dev_actions"),
+                {"action": "simulate_sms", "sms_text": "Hello"},
+            )
+        # Still redirects (no crash)
+        assert response.status_code == 302
+        mock_handle.assert_not_called()
+
+    def test_unknown_action_redirects(self, settings):
+        """Unknown action still redirects to dashboard."""
+        settings.DEBUG = True
+        client = self._get_authenticated_client()
+        response = client.post(reverse("patients:dev_actions"), {"action": "unknown_action"})
+        assert response.status_code == 302
+
+
+@pytest.mark.django_db
+class TestSuggestionChips:
+    """Test _get_suggestion_chips fallback behavior."""
+
+    def test_default_chips_returned_when_no_pathway(self):
+        """Returns default chips when no pathway exists."""
+        from apps.patients.views import _get_suggestion_chips
+
+        user = User.objects.create_user(username="chipuser", password="testpass")
+        hospital = Hospital.objects.create(name="Chip Hospital", code="CHIP01")
+        patient = Patient.objects.create(
+            user=user,
+            hospital=hospital,
+            date_of_birth="1990-01-01",
+            leaflet_code="CHIP01",
+        )
+
+        chips = _get_suggestion_chips(patient)
+        assert chips == ["Is this normal?", "My medications", "Talk to my care team"]
+
+    def test_default_chips_returned_on_exception(self):
+        """Returns default chips when exception occurs."""
+        from apps.patients.views import _get_suggestion_chips
+
+        user = User.objects.create_user(username="chipexcuser", password="testpass")
+        hospital = Hospital.objects.create(name="Chip Exc Hospital", code="CHEX01")
+        patient = Patient.objects.create(
+            user=user,
+            hospital=hospital,
+            date_of_birth="1990-01-01",
+            leaflet_code="CHEX01",
+        )
+
+        with patch("apps.pathways.models.PatientPathway.objects.filter", side_effect=Exception("DB error")):
+            chips = _get_suggestion_chips(patient)
+
+        assert chips == ["Is this normal?", "My medications", "Talk to my care team"]

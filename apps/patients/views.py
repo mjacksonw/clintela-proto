@@ -1,11 +1,11 @@
 """Patient views."""
 
 import logging
-import time
+import uuid
+from pathlib import Path
 
-from asgiref.sync import async_to_sync
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
@@ -81,6 +81,11 @@ def patient_dashboard_view(request):
         "debug": settings.DEBUG,
     }
 
+    if settings.DEBUG:
+        from .models import Patient
+
+        context["all_patients"] = Patient.objects.select_related("user").all()[:20]
+
     return render(request, "patients/dashboard.html", context)
 
 
@@ -95,82 +100,20 @@ def patient_chat_send_view(request):
     if not message_text:
         return HttpResponse(status=400)
 
-    start_time = time.time()
-
     try:
-        from apps.agents.services import ConversationService, EscalationService
-        from apps.agents.workflow import get_workflow
+        from apps.agents.services import process_patient_message
 
-        # Get or create conversation
-        conversation = ConversationService.get_or_create_conversation(patient)
-
-        # Save user message
-        ConversationService.add_message(
-            conversation=conversation,
-            role="user",
-            content=message_text,
-        )
-
-        # Build context for workflow
-        context = {
-            "patient": {
-                "name": patient.user.get_full_name(),
-                "surgery_type": patient.surgery_type or "General Surgery",
-                "days_post_op": patient.days_post_op() or 0,
-                "hospital": patient.hospital.name if patient.hospital else "Unknown",
-            },
-        }
-
-        # Call async workflow from sync view
-        workflow = get_workflow()
-        result = async_to_sync(workflow.process_message)(message_text, context)
-
-        response_text = result.get("response", "").strip()
-        if not response_text:
-            response_text = "I'm sorry, I wasn't able to process that. Could you try rephrasing?"
-
-        agent_type = result.get("agent_type", "care_coordinator")
-        escalate = result.get("escalate", False)
-        confidence = result.get("metadata", {}).get("confidence_score")
-
-        # Save agent message
-        agent_message = ConversationService.add_message(
-            conversation=conversation,
-            role="assistant",
-            content=response_text,
-            agent_type=agent_type,
-            confidence_score=confidence,
-            escalation_triggered=escalate,
-            escalation_reason=result.get("escalation_reason", ""),
-        )
-
-        # Handle escalation
-        if escalate:
-            EscalationService.create_escalation(
-                patient=patient,
-                conversation=conversation,
-                severity="high",
-                reason=result.get("escalation_reason", "Agent-triggered escalation"),
-            )
-
-        elapsed_ms = int((time.time() - start_time) * 1000)
-        logger.info(
-            "Chat response: patient=%s agent=%s elapsed=%dms escalation=%s",
-            patient.id,
-            agent_type,
-            elapsed_ms,
-            escalate,
-        )
+        result = process_patient_message(patient, message_text, channel="chat")
 
         # Render the message bubble HTML fragment
         html = render_to_string(
             "components/_message_bubble.html",
-            {"message": agent_message},
+            {"message": result["agent_message"]},
             request=request,
         )
 
         response = HttpResponse(html)
-        if escalate:
+        if result["escalate"]:
             response["HX-Trigger"] = "escalation"
         return response
 
@@ -186,6 +129,112 @@ def patient_chat_send_view(request):
             "</div></div></div>",
             status=200,
         )
+
+
+@require_POST
+def patient_voice_send_view(request):
+    """Handle voice message submission via HTMX.
+
+    Accepts audio file upload, transcribes it, and processes through
+    the same AI workflow as text chat.
+    """
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return HttpResponse(status=403)
+
+    audio_file = request.FILES.get("audio")
+    if not audio_file:
+        return HttpResponse(status=400)
+
+    # Validate file size
+    max_size = getattr(settings, "VOICE_MEMO_MAX_SIZE_MB", 10) * 1024 * 1024
+    if audio_file.size > max_size:
+        return HttpResponse("File too large", status=413)
+
+    # Validate content type
+    if not audio_file.content_type.startswith("audio/"):
+        return HttpResponse("Invalid file type", status=415)
+
+    try:
+        # Save audio file
+        file_id = uuid.uuid4()
+        voice_dir = Path(settings.MEDIA_ROOT) / "voice_memos" / str(patient.id)
+        voice_dir.mkdir(parents=True, exist_ok=True)
+
+        allowed_audio_extensions = {"webm", "wav", "mp3", "ogg", "m4a", "mp4", "aac", "flac"}
+        ext = audio_file.name.rsplit(".", 1)[-1].lower() if "." in audio_file.name else "webm"
+        if ext not in allowed_audio_extensions:
+            ext = "webm"
+        file_path = voice_dir / f"{file_id}.{ext}"
+
+        with open(file_path, "wb") as f:
+            for chunk in audio_file.chunks():
+                f.write(chunk)
+
+        # Transcribe
+        from apps.messages_app.transcription import get_transcription_client
+
+        client = get_transcription_client()
+        audio_data = file_path.read_bytes()
+        transcription = client.transcribe(audio_data, format=ext)
+
+        if not transcription:
+            transcription = "(Voice message — transcription unavailable)"
+
+        # Process through AI workflow
+        from django.urls import reverse
+
+        from apps.agents.services import process_patient_message
+
+        audio_url = reverse("patients:voice_file", kwargs={"file_id": file_id})
+        result = process_patient_message(patient, transcription, channel="voice", audio_url=audio_url)
+
+        # Render the message bubble HTML fragment
+        html = render_to_string(
+            "components/_message_bubble.html",
+            {"message": result["agent_message"]},
+            request=request,
+        )
+
+        response = HttpResponse(html)
+        if result["escalate"]:
+            response["HX-Trigger"] = "escalation"
+        return response
+
+    except Exception:
+        logger.exception("Voice send failed for patient %s", patient.id)
+        return HttpResponse(
+            '<div class="flex justify-start" role="alert">'
+            '<div class="max-w-[85%]">'
+            '<div class="px-4 py-2.5 text-lg leading-relaxed"'
+            ' style="background-color: #FEE2E2; color: #991B1B;'
+            ' border-radius: 16px 16px 16px 4px;">'
+            "Couldn't process audio. Please try again."
+            "</div></div></div>",
+            status=200,
+        )
+
+
+def patient_voice_file_view(request, file_id):
+    """Serve voice audio file with authentication check."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return HttpResponse(status=403)
+
+    # Find the file in the patient's voice memo directory
+    voice_dir = Path(settings.MEDIA_ROOT) / "voice_memos" / str(patient.id)
+
+    # Look for any extension with this file_id
+    matching = list(voice_dir.glob(f"{file_id}.*")) if voice_dir.exists() else []
+
+    if not matching:
+        return HttpResponse("Recording expired", status=404)
+
+    file_path = matching[0]
+    ext = file_path.suffix.lstrip(".")
+    content_type = f"audio/{ext}" if ext != "webm" else "audio/webm"
+
+    return FileResponse(file_path.open("rb"), content_type=content_type)
 
 
 def patient_dev_actions_view(request):
@@ -219,4 +268,25 @@ def patient_dev_actions_view(request):
             except Patient.DoesNotExist:
                 pass
 
+    elif action == "simulate_sms":
+        _dev_simulate_sms(request)
+
     return redirect("patients:dashboard")
+
+
+def _dev_simulate_sms(request):
+    """Simulate an inbound SMS for dev toolbar."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return
+    sms_text = request.POST.get("sms_text", "").strip()
+    if not sms_text:
+        return
+    from apps.messages_app.services import SMSService
+
+    phone = getattr(patient.user, "phone_number", "+15550000000")
+    sms_service = SMSService()
+    sms_service.handle_inbound_sms(
+        from_number=str(phone),
+        body=sms_text,
+    )

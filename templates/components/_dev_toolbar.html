@@ -6,28 +6,65 @@
 
     <!-- Collapsed bar -->
     <button @click="collapsed = !collapsed"
-            class="w-full px-3 py-1 flex items-center justify-between hover:bg-gray-800">
+            class="w-full px-3 py-1.5 flex items-center justify-between hover:bg-gray-800 transition-colors">
         <span class="text-red-400 font-bold">DEV</span>
-        <span>{{ patient.user.get_full_name }} (ID: {{ patient.id }})</span>
+        <span>{{ patient.user.get_full_name }} (ID: {{ patient.id }}) · {{ patient.status }}</span>
         <span x-text="collapsed ? '▲' : '▼'"></span>
     </button>
 
     <!-- Expanded content -->
-    <div x-show="!collapsed" x-cloak class="px-3 py-2 space-y-2 border-t border-gray-700">
+    <div x-show="!collapsed" x-cloak class="px-3 py-2 space-y-3 border-t border-gray-700">
+        <!-- Patient info row -->
         <div class="flex flex-wrap gap-4">
-            <span>Status: <span class="text-green-400">{{ patient.status }}</span></span>
+            <span>Status: <span class="{% if patient.status == 'green' %}text-green-400{% elif patient.status == 'yellow' %}text-yellow-400{% elif patient.status == 'orange' %}text-orange-400{% else %}text-red-400{% endif %}">{{ patient.status }}</span></span>
             <span>Surgery: {{ patient.surgery_type|default:"N/A" }}</span>
             <span>Days post-op: {{ patient.days_post_op|default:"N/A" }}</span>
             <span>Hospital: {{ patient.hospital.name|default:"N/A" }}</span>
+            {% if patient.user.phone_number %}<span>Phone: {{ patient.user.phone_number }}</span>{% endif %}
         </div>
 
-        <div class="flex gap-2 pt-1">
+        <!-- Actions row -->
+        <div class="flex gap-2 flex-wrap items-end">
+            <!-- Patient switcher -->
+            {% if all_patients %}
+            <form method="post" action="{% url 'patients:dev_actions' %}" class="inline flex gap-1 items-center">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="switch_patient">
+                <select name="patient_id"
+                        class="px-2 py-1 bg-gray-800 text-gray-200 rounded text-xs border border-gray-600">
+                    {% for p in all_patients %}
+                    <option value="{{ p.id }}" {% if p.id == patient.id %}selected{% endif %}>
+                        {{ p.user.get_full_name|default:p.user.username }} (ID: {{ p.id }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="submit"
+                        class="px-2 py-1 bg-purple-900 text-purple-200 rounded hover:bg-purple-800 text-xs">
+                    Switch
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- Clear conversation -->
             <form method="post" action="{% url 'patients:dev_actions' %}" class="inline">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="clear_conversation">
                 <button type="submit"
                         class="px-2 py-1 bg-red-900 text-red-200 rounded hover:bg-red-800 text-xs">
-                    Clear Conversation
+                    Clear Chat
+                </button>
+            </form>
+
+            <!-- SMS simulator -->
+            <form method="post" action="{% url 'patients:dev_actions' %}" class="inline flex gap-1 items-center">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="simulate_sms">
+                <input type="text" name="sms_text" placeholder="Simulate inbound SMS..."
+                       class="px-2 py-1 bg-gray-800 text-gray-200 rounded text-xs border border-gray-600 w-48"
+                       required>
+                <button type="submit"
+                        class="px-2 py-1 bg-blue-900 text-blue-200 rounded hover:bg-blue-800 text-xs whitespace-nowrap">
+                    Send SMS
                 </button>
             </form>
         </div>
