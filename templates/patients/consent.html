@@ -7,8 +7,8 @@
 
 <!-- Page header -->
 <div class="mb-6 animate-in">
-    <a href="{% url 'patients:dashboard' %}" class="inline-flex items-center gap-1.5 text-sm font-medium mb-4"
-       style="color: var(--color-primary);">
+    <a href="{% url 'patients:dashboard' %}" class="inline-flex items-center gap-1.5 text-sm font-medium mb-4 py-2"
+       style="color: var(--color-primary); min-height: 44px;">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
         Back to Dashboard
     </a>
@@ -49,13 +49,13 @@
                 <input type="hidden" name="consent_type" value="{{ item.type }}">
                 <input type="hidden" name="granted" value="{{ item.granted|yesno:'false,true' }}">
                 <button type="submit"
-                        class="relative flex-shrink-0 w-12 h-7 rounded-full transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2"
-                        style="background-color: {% if item.granted %}#059669{% else %}var(--color-border){% endif %};"
+                        class="relative flex-shrink-0 w-14 h-8 rounded-full transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2"
+                        style="background-color: {% if item.granted %}#059669{% else %}var(--color-border){% endif %}; min-height: 44px; min-width: 44px;"
                         role="switch"
                         aria-checked="{{ item.granted|yesno:'true,false' }}"
                         aria-label="Toggle {{ item.label }}">
-                    <span class="block w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
-                          style="transform: translateX({% if item.granted %}22px{% else %}2px{% endif %}); margin-top: 1px;"></span>
+                    <span class="block w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-200"
+                          style="transform: translateX({% if item.granted %}26px{% else %}2px{% endif %}); margin-top: 1px;"></span>
                 </button>
             </form>
         </div>
