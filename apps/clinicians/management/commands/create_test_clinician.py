@@ -169,7 +169,7 @@ class Command(BaseCommand):
                     "severity": severity,
                     "escalation_type": "clinical",
                     "conversation_summary": (
-                        f"AI conversation with " f"{patient.user.get_full_name()} " f"flagged for clinician review."
+                        f"AI conversation with {patient.user.get_full_name()} flagged for clinician review."
                     ),
                 },
             )

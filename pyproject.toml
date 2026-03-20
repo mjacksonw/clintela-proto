@@ -76,7 +76,7 @@ dev = [
     "faker>=25.0",
 
     # Linting & Formatting
-    "ruff>=0.4.0",
+    "ruff==0.15.6",
 
     # Type Checking
     "django-stubs>=5.0",
