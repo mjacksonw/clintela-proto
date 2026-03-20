@@ -4,6 +4,7 @@ import json
 import logging
 from typing import Any
 
+from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
@@ -248,12 +249,38 @@ class ClinicianDashboardConsumer(AsyncWebsocketConsumer):
     """WebSocket consumer for clinician dashboard."""
 
     async def connect(self):
-        """Handle WebSocket connection."""
+        """Handle WebSocket connection with clinician auth verification."""
         self.hospital_id = self.scope["url_route"]["kwargs"].get("hospital_id")
         self.room_group_name = f"hospital_{self.hospital_id}"
 
-        # TODO: Verify user is authenticated clinician
-        # For now, accept all connections
+        # Verify user is authenticated clinician with access to this hospital
+        user = self.scope.get("user")
+        if not user or not user.is_authenticated or user.role != "clinician":
+            logger.warning("WebSocket auth rejected: user not an authenticated clinician")
+            await self.close()
+            return
+
+        try:
+            clinician = await sync_to_async(lambda: user.clinician_profile)()
+            if not clinician.is_active:
+                await self.close()
+                return
+
+            # Verify hospital access — Hospital uses int PK
+            hospital_ids = await sync_to_async(lambda: set(clinician.hospitals.values_list("id", flat=True)))()
+
+            if int(self.hospital_id) not in hospital_ids:
+                logger.warning(
+                    "WebSocket IDOR: clinician=%s tried hospital=%s",
+                    clinician.id,
+                    self.hospital_id,
+                )
+                await self.close()
+                return
+        except Exception:
+            logger.warning("WebSocket auth failed: no clinician profile")
+            await self.close()
+            return
 
         await self.channel_layer.group_add(
             self.room_group_name,

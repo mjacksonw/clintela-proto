@@ -18,6 +18,52 @@ from apps.patients.models import Patient
 logger = logging.getLogger(__name__)
 
 
+def _record_cross_channel(patient, channel, direction, content):
+    """Record message in messages_app for cross-channel threading."""
+    try:
+        from apps.messages_app.models import Message
+
+        Message.objects.create(
+            patient=patient,
+            channel=channel,
+            direction=direction,
+            content=content,
+        )
+    except Exception:
+        logger.debug("messages_app.Message not available, skipping cross-channel record")
+
+
+def _handle_paused_message(conversation, content, channel, start_time):
+    """Route message to controlling clinician when conversation is paused."""
+    metadata = {"channel": channel} if channel != "chat" else {}
+    user_msg = ConversationService.add_message(
+        conversation=conversation,
+        role="user",
+        content=content,
+        metadata=metadata,
+    )
+    from apps.clinicians.services import TakeControlService
+
+    TakeControlService.push_to_clinician(
+        conversation,
+        {
+            "id": str(user_msg.id),
+            "role": "user",
+            "content": content,
+            "created_at": user_msg.created_at.isoformat(),
+        },
+    )
+    elapsed_ms = int((time.time() - start_time) * 1000)
+    return {
+        "agent_message": None,
+        "response_text": "",
+        "agent_type": "",
+        "escalate": False,
+        "escalation_reason": "",
+        "elapsed_ms": elapsed_ms,
+    }
+
+
 def process_patient_message(patient, content, channel="chat", audio_url=None):
     """Shared helper for processing a patient message through the AI workflow.
 
@@ -45,6 +91,11 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
     # Get or create conversation
     conversation = ConversationService.get_or_create_conversation(patient)
 
+    # Take-control check: if a clinician has paused this conversation,
+    # save the message but skip AI processing — route to clinician instead
+    if conversation.paused_by:
+        return _handle_paused_message(conversation, content, channel, start_time)
+
     # Save user message
     metadata = {}
     if channel != "chat":
@@ -60,17 +111,7 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
     )
 
     # Also record in messages_app for cross-channel threading
-    try:
-        from apps.messages_app.models import Message
-
-        Message.objects.create(
-            patient=patient,
-            channel=channel,
-            direction="inbound",
-            content=content,
-        )
-    except Exception:
-        logger.debug("messages_app.Message not available, skipping cross-channel record")
+    _record_cross_channel(patient, channel, "inbound", content)
 
     # Build context and call workflow
     from apps.agents.workflow import get_workflow
@@ -126,17 +167,7 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
             logger.debug("Failed to store RAG citations")
 
     # Record outbound in messages_app
-    try:
-        from apps.messages_app.models import Message
-
-        Message.objects.create(
-            patient=patient,
-            channel=channel,
-            direction="outbound",
-            content=response_text,
-        )
-    except Exception:
-        logger.debug("messages_app.Message not available, skipping cross-channel record")
+    _record_cross_channel(patient, channel, "outbound", response_text)
 
     # Handle escalation
     if escalate:

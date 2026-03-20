@@ -1,6 +1,5 @@
 """API endpoints for agent system."""
 
-import json
 from typing import Any
 
 from ninja import Router
@@ -197,30 +196,12 @@ async def acknowledge_escalation(request, escalation_id: str):
     Returns:
         Success response
     """
-    # FIXME: Implement proper authentication
-    # For now, require a clinician_id in the request body
-    # In production, this should come from request.user
-    clinician_id = getattr(request, "user", None)
-    if clinician_id and hasattr(clinician_id, "id"):
-        clinician_id = clinician_id.id
-    else:
-        # Temporary: accept from request body for testing
-        try:
-            # In async context, request.body may need special handling
-            body_bytes = request.body
-            body_str = body_bytes.decode("utf-8") if isinstance(body_bytes, bytes) else body_bytes
-            body = json.loads(body_str)
-            clinician_id = body.get("clinician_id")
-        except (json.JSONDecodeError, AttributeError, UnicodeDecodeError) as e:
-            import logging
-
-            logging.debug(f"Could not parse request body: {e}")
-            clinician_id = None
-
-    if not clinician_id:
+    # Authenticate via session — user must be an authenticated clinician
+    user = request.user if hasattr(request, "user") else None
+    if not user or not user.is_authenticated or user.role != "clinician":
         raise HttpError(401, "Authentication required")
 
-    success = await acknowledge_escalation_async(escalation_id, clinician_id)
+    success = await acknowledge_escalation_async(escalation_id, user.id)
 
     if not success:
         raise HttpError(404, "Escalation not found")
