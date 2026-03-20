@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 
 from django.conf import settings
+from django.contrib import messages as django_messages
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -64,7 +65,9 @@ def patient_dashboard_view(request):
         from apps.agents.services import ConversationService
 
         conversation = ConversationService.get_or_create_conversation(patient)
-        msg_objects = conversation.messages.order_by("created_at")[:50]
+        msg_objects = conversation.messages.prefetch_related(
+            "citations__knowledge_doc__source",
+        ).order_by("created_at")[:50]
         messages = list(msg_objects)
     except Exception:
         logger.exception("Failed to load conversation history")
@@ -235,6 +238,214 @@ def patient_voice_file_view(request, file_id):
     content_type = f"audio/{ext}" if ext != "webm" else "audio/webm"
 
     return FileResponse(file_path.open("rb"), content_type=content_type)
+
+
+def patient_consent_view(request):
+    """Consent management page — view current consent status."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return redirect("accounts:start")
+
+    from .models import ConsentRecord
+
+    consent_config = [
+        {
+            "type": "ai_interaction",
+            "label": "AI-Powered Care Assistance",
+            "description": (
+                "Allow Clintela's AI agents to help answer your recovery questions " "using clinical knowledge."
+            ),
+            "icon": "bot",
+            "color": "var(--color-primary)",
+        },
+        {
+            "type": "data_sharing_caregiver",
+            "label": "Share with Caregivers",
+            "description": (
+                "Allow your invited family members or caregivers to view your " "recovery status and chat history."
+            ),
+            "icon": "users",
+            "color": "#0D9488",
+        },
+        {
+            "type": "communication_sms",
+            "label": "SMS Messages",
+            "description": "Receive recovery check-ins and care reminders via text message.",
+            "icon": "message-square",
+            "color": "#D97706",
+        },
+        {
+            "type": "communication_email",
+            "label": "Email Updates",
+            "description": "Receive recovery summaries and appointment reminders by email.",
+            "icon": "mail",
+            "color": "#7C3AED",
+        },
+        {
+            "type": "data_sharing_research",
+            "label": "Anonymized Research",
+            "description": "Allow your de-identified data to be used for improving post-surgical care outcomes.",
+            "icon": "flask-conical",
+            "color": "#059669",
+        },
+    ]
+
+    consent_items = []
+    for cfg in consent_config:
+        latest = ConsentRecord.objects.filter(patient=patient, consent_type=cfg["type"]).order_by("-granted_at").first()
+        consent_items.append(
+            {
+                **cfg,
+                "granted": latest.granted if latest else False,
+                "last_changed": latest.granted_at if latest else None,
+            }
+        )
+
+    return render(
+        request,
+        "patients/consent.html",
+        {
+            "patient": patient,
+            "consent_items": consent_items,
+        },
+    )
+
+
+@require_POST
+def patient_consent_toggle_view(request):
+    """Toggle a consent setting via POST."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return HttpResponse(status=403)
+
+    from .models import ConsentRecord
+
+    consent_type = request.POST.get("consent_type", "")
+    granted = request.POST.get("granted", "true") == "true"
+
+    valid_types = [c[0] for c in ConsentRecord.CONSENT_TYPE_CHOICES]
+    if consent_type not in valid_types:
+        return HttpResponse(status=400)
+
+    ConsentRecord.objects.create(
+        patient=patient,
+        consent_type=consent_type,
+        granted=granted,
+        granted_by=patient.user,
+        ip_address=request.META.get("REMOTE_ADDR"),
+    )
+
+    action = "enabled" if granted else "disabled"
+    label = dict(ConsentRecord.CONSENT_TYPE_CHOICES).get(consent_type, consent_type)
+    django_messages.success(request, f"{label} {action}.")
+
+    return redirect("patients:consent")
+
+
+def patient_caregivers_view(request):
+    """Caregiver management — view active caregivers and send invitations."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return redirect("accounts:start")
+
+    from apps.caregivers.models import CaregiverInvitation, CaregiverRelationship
+
+    relationships = CaregiverRelationship.objects.filter(
+        patient=patient,
+        is_active=True,
+    ).select_related("caregiver__user")
+
+    invitations = CaregiverInvitation.objects.filter(
+        patient=patient,
+        status="pending",
+    ).order_by("-created_at")
+
+    return render(
+        request,
+        "patients/caregivers.html",
+        {
+            "patient": patient,
+            "relationships": relationships,
+            "invitations": invitations,
+            "relationship_choices": CaregiverInvitation.RELATIONSHIP_CHOICES,
+        },
+    )
+
+
+@require_POST
+def patient_caregiver_invite_view(request):
+    """Send a caregiver invitation."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return HttpResponse(status=403)
+
+    from apps.caregivers.models import CaregiverInvitation
+
+    name = request.POST.get("name", "").strip()
+    email = request.POST.get("email", "").strip()
+    phone = request.POST.get("phone", "").strip()
+    relationship = request.POST.get("relationship", "").strip()
+
+    if not name or not relationship:
+        django_messages.error(request, "Name and relationship are required.")
+        return redirect("patients:caregivers")
+
+    if not email and not phone:
+        django_messages.error(request, "Please provide an email or phone number.")
+        return redirect("patients:caregivers")
+
+    valid_rels = [c[0] for c in CaregiverInvitation.RELATIONSHIP_CHOICES]
+    if relationship not in valid_rels:
+        django_messages.error(request, "Invalid relationship type.")
+        return redirect("patients:caregivers")
+
+    invitation = CaregiverInvitation.objects.create(
+        patient=patient,
+        name=name,
+        email=email,
+        phone=phone,
+        relationship=relationship,
+    )
+
+    django_messages.success(request, f"Invitation sent to {name}.")
+    logger.info("Caregiver invitation created: %s for patient %s", invitation.id, patient.id)
+
+    return redirect("patients:caregivers")
+
+
+@require_POST
+def patient_caregiver_revoke_view(request):
+    """Revoke a caregiver invitation or relationship."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return HttpResponse(status=403)
+
+    from apps.caregivers.models import CaregiverInvitation, CaregiverRelationship, InvalidInvitationError
+
+    invitation_id = request.POST.get("invitation_id")
+    relationship_id = request.POST.get("relationship_id")
+
+    if invitation_id:
+        try:
+            invitation = CaregiverInvitation.objects.get(pk=invitation_id, patient=patient)
+            invitation.revoke()
+            django_messages.success(request, f"Invitation to {invitation.name} revoked.")
+        except CaregiverInvitation.DoesNotExist:
+            django_messages.error(request, "Invitation not found.")
+        except InvalidInvitationError as e:
+            django_messages.error(request, str(e))
+
+    elif relationship_id:
+        try:
+            rel = CaregiverRelationship.objects.get(pk=relationship_id, patient=patient)
+            rel.is_active = False
+            rel.save(update_fields=["is_active"])
+            name = rel.caregiver.user.get_full_name()
+            django_messages.success(request, f"Access for {name} has been removed.")
+        except CaregiverRelationship.DoesNotExist:
+            django_messages.error(request, "Caregiver not found.")
+
+    return redirect("patients:caregivers")
 
 
 def patient_dev_actions_view(request):

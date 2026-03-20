@@ -1,0 +1,86 @@
+{% extends "base_patient.html" %}
+{% load static %}
+
+{% block title %}Privacy & Consent — Clintela{% endblock %}
+
+{% block dashboard_content %}
+
+<!-- Page header -->
+<div class="mb-6 animate-in">
+    <a href="{% url 'patients:dashboard' %}" class="inline-flex items-center gap-1.5 text-sm font-medium mb-4"
+       style="color: var(--color-primary);">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        Back to Dashboard
+    </a>
+    <h1 class="text-2xl font-semibold" style="letter-spacing: -0.02em;">Privacy & Consent</h1>
+    <p class="mt-1 text-base" style="color: var(--color-text-secondary);">
+        Control how your information is used and shared. Changes take effect immediately.
+    </p>
+</div>
+
+{% if messages %}
+<div class="mb-4 animate-in">
+    {% for msg in messages %}
+    <div class="px-4 py-3 rounded-lg text-sm flex items-center gap-2 mb-2"
+         style="{% if msg.tags == 'success' %}background-color: #D1FAE5; color: #065F46;{% else %}background-color: #FEE2E2; color: #991B1B;{% endif %}">
+        <i data-lucide="{% if msg.tags == 'success' %}check-circle{% else %}alert-circle{% endif %}" class="w-4 h-4 flex-shrink-0"></i>
+        {{ msg }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Consent categories -->
+<div class="space-y-4">
+    {% for item in consent_items %}
+    <div class="card animate-in" style="animation-delay: {{ forloop.counter0 }}50ms;">
+        <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                    <i data-lucide="{{ item.icon }}" class="w-5 h-5 flex-shrink-0" style="color: {{ item.color }};"></i>
+                    <h2 class="text-base font-semibold">{{ item.label }}</h2>
+                </div>
+                <p class="text-sm" style="color: var(--color-text-secondary);">
+                    {{ item.description }}
+                </p>
+            </div>
+            <form method="post" action="{% url 'patients:consent_toggle' %}">
+                {% csrf_token %}
+                <input type="hidden" name="consent_type" value="{{ item.type }}">
+                <input type="hidden" name="granted" value="{{ item.granted|yesno:'false,true' }}">
+                <button type="submit"
+                        class="relative flex-shrink-0 w-12 h-7 rounded-full transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2"
+                        style="background-color: {% if item.granted %}#059669{% else %}var(--color-border){% endif %};"
+                        role="switch"
+                        aria-checked="{{ item.granted|yesno:'true,false' }}"
+                        aria-label="Toggle {{ item.label }}">
+                    <span class="block w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
+                          style="transform: translateX({% if item.granted %}22px{% else %}2px{% endif %}); margin-top: 1px;"></span>
+                </button>
+            </form>
+        </div>
+        {% if item.last_changed %}
+        <p class="text-xs mt-2" style="color: var(--color-text-secondary);">
+            Last updated {{ item.last_changed|timesince }} ago
+        </p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Privacy note -->
+<div class="mt-8 px-4 py-3 rounded-lg text-sm animate-in" style="animation-delay: 300ms; background-color: var(--color-surface); border: 1px solid var(--color-border);">
+    <div class="flex items-start gap-2">
+        <i data-lucide="shield-check" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color: #0D9488;"></i>
+        <div style="color: var(--color-text-secondary);">
+            <p class="font-medium" style="color: var(--color-text);">Your privacy matters</p>
+            <p class="mt-1">
+                All consent changes are logged for your protection. Your care team can see
+                what you've agreed to, but cannot change your preferences.
+                You can update these settings at any time.
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

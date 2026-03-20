@@ -91,6 +91,42 @@
             {{ message.content|linebreaksbr }}
         </div>
 
+        <!-- Clinical evidence citations -->
+        {% if message.citations.all %}
+        <div class="mt-1.5 px-3 py-2 rounded-lg border"
+             style="border-color: var(--color-border); background-color: var(--color-surface);"
+             x-data="{ expanded: false }">
+            <button type="button" @click="expanded = !expanded"
+                    class="flex items-center gap-1.5 text-xs font-medium w-full"
+                    style="color: var(--color-text-secondary);"
+                    :aria-expanded="expanded"
+                    aria-controls="citations-{{ message.id }}">
+                <i data-lucide="book-open" class="w-3 h-3 flex-shrink-0" style="color: #0D9488;"></i>
+                <span>Based on {{ message.citations.count }} clinical source{{ message.citations.count|pluralize }}</span>
+                <i data-lucide="chevron-down" class="w-3 h-3 ml-auto transition-transform duration-200"
+                   :class="expanded && 'rotate-180'"></i>
+            </button>
+            <div x-show="expanded" x-collapse id="citations-{{ message.id }}" class="mt-2 space-y-1.5">
+                {% for citation in message.citations.all %}
+                <div class="flex items-start gap-2 text-xs" style="color: var(--color-text-secondary);">
+                    <span class="font-mono flex-shrink-0 px-1 py-0.5 rounded"
+                          style="background-color: var(--color-border); color: var(--color-text);">
+                        [{{ forloop.counter }}]
+                    </span>
+                    <div class="min-w-0">
+                        <span class="font-medium" style="color: var(--color-text);">
+                            {{ citation.knowledge_doc.source.name }}
+                        </span>
+                        <span class="block truncate" title="{{ citation.knowledge_doc.content|truncatewords:20 }}">
+                            {{ citation.knowledge_doc.content|truncatewords:12 }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Confidence indicator -->
         {% if message.confidence_score != None and message.confidence_score < 0.6 %}
         <div class="mt-1.5 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5"

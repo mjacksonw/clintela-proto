@@ -107,6 +107,24 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
         metadata={"channel": channel} if channel != "chat" else {},
     )
 
+    # Store RAG citations if available
+    rag_result = result.get("rag_result")
+    if rag_result and getattr(rag_result, "has_results", False):
+        try:
+            from apps.agents.models import MessageCitation
+
+            citations_to_create = [
+                MessageCitation(
+                    agent_message=agent_message,
+                    knowledge_doc_id=r.document_id,
+                    similarity_score=r.combined_score,
+                )
+                for r in rag_result.citations
+            ]
+            MessageCitation.objects.bulk_create(citations_to_create, ignore_conflicts=True)
+        except Exception:
+            logger.debug("Failed to store RAG citations")
+
     # Record outbound in messages_app
     try:
         from apps.messages_app.models import Message

@@ -438,6 +438,7 @@ class AgentWorkflow:
                 "escalation_reason": result.get("escalation_reason", ""),
                 "metadata": result.get("result", {}).get("metadata", {}),
                 "routing": result.get("routing", {}),
+                "rag_result": result.get("result", {}).get("rag_result"),
             }
         except Exception as e:
             logger.error(f"Workflow failed: {e}")
