@@ -269,7 +269,7 @@ The following were considered during CEO Review and explicitly deferred:
 
 ## Completed TODOs
 
-*None yet—this project is just beginning.*
+*Phase 3 shipped in v0.2.6.0 (2026-03-19): SMS via Twilio, voice input with Whisper transcription, WebSocket real-time notifications, Celery task queue, notification preference model, and dev toolbar. See CHANGELOG.md for full details.*
 
 ---
 
@@ -287,5 +287,5 @@ When deferring new work:
 
 ---
 
-*Last updated: 2026-03-17*
-*Source: CEO Review Scope Expansion*
+*Last updated: 2026-03-19*
+*Source: CEO Review Scope Expansion + Phase 3 completion (v0.2.6.0)*

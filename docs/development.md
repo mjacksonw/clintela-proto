@@ -226,7 +226,7 @@ clintela/
 │   ├── caregivers/          # Caregiver portal
 │   ├── clinicians/          # Clinician dashboard
 │   ├── agents/              # AI agent system
-│   ├── messages/            # SMS, web chat, voice
+│   ├── messages_app/        # SMS, web chat, voice
 │   ├── pathways/            # Clinical pathways
 │   ├── notifications/       # Notifications, escalations
 │   └── analytics/           # Metrics and reporting
@@ -266,15 +266,18 @@ python manage.py runserver
 # Access at http://127.0.0.1:8000
 ```
 
-**With WebSocket support:**
+**With WebSocket support and Celery (Phase 3+):**
 ```bash
-# Terminal 1: Django HTTP server
+# Terminal 1: Django HTTP server (with ASGI for WebSockets)
 python manage.py runserver
 
-# Terminal 2: WebSocket worker
+# Terminal 2: Django Channels ASGI worker (WebSocket consumers)
 python manage.py runworker
 
-# Terminal 3: Redis (if not running as service)
+# Terminal 3: Celery worker (async notifications, SMS delivery, voice cleanup)
+celery -A config worker -l info
+
+# Terminal 4: Redis (if not running as service)
 redis-server
 ```
 
@@ -774,13 +777,8 @@ TWILIO_AUTH_TOKEN=your-auth-token
 TWILIO_PHONE_NUMBER=+1234567890
 ```
 
-**Test connection:**
-```bash
-python -c "from apps.messages.twilio_client import test_connection; test_connection()"
-```
-
 **For local development without Twilio:**
-Messages will be logged to console instead of sent.
+Messages are logged to the console via the console backend — no Twilio credentials needed for development.
 
 ---
 
