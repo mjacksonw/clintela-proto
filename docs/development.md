@@ -115,7 +115,18 @@ source venv/bin/activate
 
 ### 2. Database Setup
 
-**PostgreSQL:**
+**PostgreSQL with pgvector:**
+
+The project requires the pgvector extension for vector similarity search. The Docker Compose file uses `pgvector/pgvector:pg16` which bundles the extension. For local PostgreSQL, install the extension manually:
+
+```bash
+# macOS (Homebrew)
+brew install pgvector
+
+# Enable extension after creating the database
+psql clintela -c "CREATE EXTENSION IF NOT EXISTS vector;"
+```
+
 ```bash
 # Create database
 createdb clintela
@@ -196,6 +207,16 @@ SESSION_COOKIE_SECURE=False
 
 # Logging
 LOG_LEVEL=DEBUG
+
+# RAG / Clinical Knowledge (Phase 4)
+ENABLE_RAG=False                              # Set True to activate RAG in agent responses
+EMBEDDING_MODEL=nomic-embed-text              # Ollama embedding model name
+EMBEDDING_DIMENSIONS=768                      # Must match model output
+EMBEDDING_BASE_URL=http://localhost:11434     # Ollama base URL for embeddings
+RAG_TOP_K=5
+RAG_SIMILARITY_THRESHOLD=0.7
+RAG_VECTOR_WEIGHT=0.7
+RAG_TEXT_WEIGHT=0.3
 ```
 
 **Generate a secret key:**
@@ -226,6 +247,7 @@ clintela/
 │   ├── caregivers/          # Caregiver portal
 │   ├── clinicians/          # Clinician dashboard
 │   ├── agents/              # AI agent system
+│   ├── knowledge/           # Clinical knowledge RAG (Phase 4)
 │   ├── messages_app/        # SMS, web chat, voice
 │   ├── pathways/            # Clinical pathways
 │   ├── notifications/       # Notifications, escalations
@@ -303,13 +325,32 @@ docker-compose down
 
 **Docker Compose file includes:**
 - Web application (Django)
-- PostgreSQL database
+- PostgreSQL database with pgvector extension (`pgvector/pgvector:pg16`)
 - Redis cache/message broker
 - Celery worker (for background tasks)
 
 ---
 
 ## Development Workflow
+
+### Management Commands
+
+**Create a test patient (get auth URL):**
+```bash
+python manage.py create_test_patient
+```
+
+**Ingest a clinical document into the knowledge base:**
+```bash
+python manage.py ingest_document path/to/file.pdf --source-name "ACC HF Guideline 2022" --source-type acc_guideline
+```
+
+**Scrape and ingest ACC guidelines:**
+```bash
+python manage.py ingest_acc_guidelines
+```
+
+---
 
 ### Database Migrations
 

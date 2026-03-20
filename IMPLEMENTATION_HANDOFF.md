@@ -1,8 +1,8 @@
 # Implementation Session Handoff
 
-**Date:** 2026-03-19
-**Branch:** claude/inspiring-clarke
-**Status:** Phase 3 COMPLETE - Communication & Multi-modality (SMS, voice, WebSocket notifications, Celery)
+**Date:** 2026-03-20
+**Branch:** feature/phase4-clinical-knowledge-rag
+**Status:** Phase 4 COMPLETE - Clinical Knowledge RAG, specialist agents, patient lifecycle, caregiver flow, consent management
 
 ---
 
@@ -12,7 +12,7 @@
 
 ✅ **Development Environment**
 - UV package manager with `pyproject.toml` (132 dependencies)
-- Docker Compose with PostgreSQL 16 + Redis 7
+- Docker Compose with pgvector/pgvector:pg16 + Redis 7
 - Virtual environment auto-managed (`.venv/`)
 - Makefile with 30+ commands (`make dev`, `make test`, `make docker-up`)
 - Pre-commit hooks (Ruff, security checks, tests on push)
@@ -42,7 +42,7 @@
 - Care Coordinator agent (warm, supportive responses)
 - Nurse Triage agent (clinical assessment + severity classification)
 - Documentation agent (structured summaries)
-- 6 Specialist agents (placeholders for Phase 4)
+- 6 RAG-backed Specialist agents (Cardiology, Pharmacy, Nutrition, PT/Rehab, Social Work, Palliative)
 
 ✅ **LLM Integration**
 - Ollama Cloud API support (`/api/chat` endpoint)
@@ -107,7 +107,7 @@ python manage.py shell
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | **Package Manager** | UV | 10-100x faster than pip, auto-venv management |
-| **Database** | PostgreSQL 16 | Dockerized, port 5434 to avoid conflicts |
+| **Database** | pgvector/pgvector:pg16 | pgvector extension for vector search, port 5434 to avoid conflicts |
 | **Cache/Message Broker** | Redis 7 | For Channels and caching, port 6380 |
 | **Linting** | Ruff | Replaces black/isort/flake8; faster and simpler |
 | **Dev Environment** | Docker-first | `make docker-up` for turn-key setup |
@@ -179,12 +179,20 @@ python manage.py shell
 - [x] Channel indicator icons on message bubbles (voice/SMS/web)
 - [x] Comprehensive test suite: 15 new test files, 92% coverage
 
-### Phase 4: Clinical Features
-- [ ] Specialist agent implementations
-- [ ] Patient status state machine
-- [ ] Advanced escalation workflows
-- [ ] Caregiver invitation flow
-- [ ] Consent management
+### Phase 4: Clinical Features ✅ COMPLETE (2026-03-20)
+- [x] Clinical knowledge RAG with pgvector hybrid search (vector + full-text)
+- [x] Knowledge ingestion pipeline (PDF, Markdown, HTML, text; SHA-256 dedup; content sanitizer)
+- [x] Embedding client (nomic-embed-text via Ollama) with mock for tests
+- [x] 6 RAG-backed specialist agents replacing placeholders
+- [x] Patient lifecycle state machine (pre_surgery → admitted → in_surgery → post_op → discharged → recovering → recovered / readmitted)
+- [x] Advanced escalation model with type classification, priority scoring, SLA tracking
+- [x] Caregiver invitation flow (token-based, atomic acceptance, leaflet verification)
+- [x] Consent management with append-only audit trail (5 consent types)
+- [x] Patient-facing citation display on chat message bubbles
+- [x] Knowledge gap tracking for admin visibility
+- [x] Knowledge health admin dashboard
+- [x] Management commands: `ingest_document`, `ingest_acc_guidelines`
+- [x] Test coverage ≥ 90%
 
 ### Phase 5: Dashboard & UI (Clinician)
 - [ ] Clinician dashboard with triage view
@@ -231,6 +239,17 @@ clintela/
 │   │   ├── routing.py        # WebSocket routing (chat + notifications)
 │   │   ├── tasks.py          # Celery tasks (check-ins, summaries)
 │   │   └── tests/            # Agent tests
+│   ├── knowledge/             # Clinical knowledge RAG (Phase 4)
+│   │   ├── models.py         # KnowledgeSource, KnowledgeDocument (pgvector), KnowledgeGap
+│   │   ├── embeddings.py     # OllamaEmbeddingClient + MockEmbeddingClient
+│   │   ├── retrieval.py      # KnowledgeRetrievalService (hybrid vector + FTS)
+│   │   ├── ingestion.py      # KnowledgeIngestionService (chunk, embed, deduplicate)
+│   │   ├── parsers.py        # PDF, Markdown, HTML, plain-text parsers
+│   │   ├── sanitizer.py      # Content sanitizer (prompt injection defense)
+│   │   ├── admin.py          # KnowledgeSourceAdmin + health dashboard
+│   │   └── management/commands/
+│   │       ├── ingest_document.py        # Ingest any local file
+│   │       └── ingest_acc_guidelines.py  # Scrape + ingest ACC guidelines
 │   ├── messages_app/          # SMS, chat, voice
 │   │   ├── backends.py       # SMS backends (Twilio/Console/LocMem)
 │   │   ├── services.py       # SMSService (send, inbound, opt-out)
@@ -306,6 +325,16 @@ SMS_BACKEND=apps.messages_app.backends.ConsoleSMSBackend
 TRANSCRIPTION_BACKEND=apps.messages_app.transcription.MockTranscriptionClient
 SMS_RATE_LIMIT_PER_HOUR=10
 VOICE_MEMO_RETENTION_HOURS=24
+
+# RAG / Knowledge (Phase 4)
+ENABLE_RAG=False                              # Set True to activate RAG in agent responses
+EMBEDDING_MODEL=nomic-embed-text              # Ollama embedding model name
+EMBEDDING_DIMENSIONS=768                      # Must match model output
+EMBEDDING_BASE_URL=http://localhost:11434     # Ollama base URL (embeddings)
+RAG_TOP_K=5                                   # Documents returned per query
+RAG_SIMILARITY_THRESHOLD=0.7                  # Minimum cosine similarity to include
+RAG_VECTOR_WEIGHT=0.7                         # Weight for vector similarity score
+RAG_TEXT_WEIGHT=0.3                           # Weight for full-text search score
 ```
 
 ---
@@ -319,6 +348,21 @@ VOICE_MEMO_RETENTION_HOURS=24
 - `apps/agents/prompts.py` - Agent prompt templates with safety guardrails
 - `apps/agents/services.py` - ConversationService, EscalationService, `process_patient_message()`
 - `apps/agents/models.py` - AgentConversation, AgentMessage, Escalation models
+
+### Phase 4: Clinical Knowledge RAG
+- `apps/knowledge/models.py` - KnowledgeSource, KnowledgeDocument (pgvector + FTS), KnowledgeGap
+- `apps/knowledge/embeddings.py` - OllamaEmbeddingClient with MockEmbeddingClient for tests
+- `apps/knowledge/retrieval.py` - KnowledgeRetrievalService (hybrid search: vector + BM25-style FTS)
+- `apps/knowledge/ingestion.py` - KnowledgeIngestionService (chunk, embed, SHA-256 deduplicate)
+- `apps/knowledge/parsers.py` - PDF (pdfplumber), Markdown, HTML, plain-text parsers
+- `apps/knowledge/sanitizer.py` - Content sanitizer (strips prompt injection patterns)
+- `apps/knowledge/admin.py` - Knowledge health dashboard (freshness, gaps, top-cited)
+- `apps/agents/specialists.py` - 6 RAG-backed specialists via RAGSpecialistAgent base class
+- `apps/agents/workflow.py` - RAG integration with citation tracking and MessageCitation M2M
+- `apps/patients/models.py` - Patient lifecycle state machine + ConsentRecord (append-only)
+- `apps/caregivers/models.py` - CaregiverInvitation (token-based, atomic claim)
+- `templates/patients/caregivers.html` - Caregiver invitation management page
+- `templates/patients/consent.html` - Consent management page
 
 ### Phase 3: Communication & Multi-modality
 - `config/celery.py` - Celery app configuration with Redis broker
@@ -342,14 +386,16 @@ VOICE_MEMO_RETENTION_HOURS=24
 ### Full Test Suite
 ```bash
 POSTGRES_PORT=5434 pytest
-# 641+ tests, 92% coverage
+# 900+ tests, ≥90% coverage
 ```
 
 ### Test Coverage by App
-- `apps/agents/` - Agent routing, LLM client, services, tasks, workflow
+- `apps/knowledge/` - Embeddings, parsers, ingestion, retrieval, sanitizer, admin, management commands
+- `apps/agents/` - Agent routing, LLM client, services, tasks, workflow, RAG integration, specialists
+- `apps/caregivers/` - Invitation flow, atomic acceptance, token verification
+- `apps/patients/` - Lifecycle transitions, consent management, views
 - `apps/messages_app/` - SMS backends, services, transcription, webhooks, cleanup
 - `apps/notifications/` - Backends, services, consumers, tasks, integration
-- `apps/patients/` - Views, voice input, dev toolbar
 - `tests/e2e/` - Playwright E2E tests (27 tests, run separately with `-p no:xdist`)
 
 ### Live LLM Acceptance Testing
@@ -370,27 +416,27 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 
 ## Open Questions for Next Session
 
-1. **Clinical Features (Phase 4):**
-   - Specialist agent implementations (Cardiology, Social Work, Nutrition, PT/Rehab, Palliative, Pharmacy)
-   - Patient status state machine (admitted → discharged → recovering → recovered)
-   - Advanced escalation workflows with clinician assignment
-   - Caregiver invitation flow and consent management
-
-2. **Clinician Dashboard (Phase 5):**
-   - Triage view with severity color-coding
+1. **Clinician Dashboard (Phase 5):**
+   - Triage view with severity color-coding using the new lifecycle state machine
    - Real-time status updates via WebSocket
-   - Patient detail views with conversation history
+   - Patient detail views with conversation history and citation display
+
+2. **RAG Improvements (deferred to TODOs):**
+   - Embedding cache (Redis, TTL-based) — see TODO-012
+   - OCR for scanned PDFs — see TODO-011
+   - Caregiver read-only dashboard — see TODO-013
 
 ---
 
 ## What to Do in Next Session
 
 1. **Start with:** `python manage.py create_test_patient` to get an auth URL
-2. **Test the UI:** Visit the auth URL, enter DOB `06/15/1985`, explore dashboard + chat + voice + notifications
-3. **Test SMS:** Expand dev toolbar, use SMS simulator to send inbound messages
-4. **Focus on:** Phase 4 — Specialist agent implementations
-5. **Run tests:** `POSTGRES_PORT=5434 pytest` for full suite, `pytest tests/e2e/ -p no:xdist` for E2E
-6. **Verify:** Pre-commit hooks passing, coverage ≥90%
+2. **Test the UI:** Visit the auth URL, enter DOB `06/15/1985`, explore dashboard + chat + citations + caregiver page + consent page
+3. **Test RAG:** Set `ENABLE_RAG=True`, ingest a document with `python manage.py ingest_document <path>`, then chat and verify citation display
+4. **Test SMS:** Expand dev toolbar, use SMS simulator to send inbound messages
+5. **Focus on:** Phase 5 — Clinician dashboard (triage view, patient detail, real-time status)
+6. **Run tests:** `POSTGRES_PORT=5434 pytest` for full suite, `pytest tests/e2e/ -p no:xdist` for E2E
+7. **Verify:** Pre-commit hooks passing, coverage ≥90%
 
 ---
 
@@ -414,7 +460,8 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 - **Agent system** (2026-03-19) - Multi-agent AI with LangGraph, live LLM testing
 - **Patient UI** (2026-03-19) - HTMX chat, dashboard, dark mode, E2E tests
 - **Phase 3 communication** (2026-03-19) - SMS, voice, notifications, Celery, dev toolbar
+- **Phase 4 RAG** (2026-03-20) - pgvector, knowledge models, ingestion pipeline, specialists, lifecycle, caregiver flow, consent, admin dashboard
 
 ---
 
-*Phase 3 Complete (v0.2.6.0) — Communication & Multi-modality: SMS via Twilio, voice input with Whisper transcription, WebSocket notifications, Celery task queue, notification engine, dev toolbar, and 92% test coverage. Ready for Phase 4: Clinical Features.*
+*Phase 4 Complete (v0.2.7.0) — Clinical Knowledge RAG: pgvector hybrid search, ingestion pipeline, 6 RAG-backed specialists, patient lifecycle state machine, caregiver invitation flow, consent management, citation display, knowledge health admin dashboard, and ≥90% test coverage. Ready for Phase 5: Clinician Dashboard.*
