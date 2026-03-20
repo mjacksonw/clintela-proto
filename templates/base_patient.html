@@ -41,7 +41,7 @@
         <!-- Chat sidebar — desktop (always visible) + tablet (collapsible) -->
         <aside role="complementary"
                aria-label="Chat with your care team"
-               class="hidden md:flex flex-col border-r flex-shrink-0 overflow-hidden transition-all duration-300 ease-out"
+               class="hidden md:flex flex-col border-r flex-shrink-0 overflow-hidden min-h-0 transition-all duration-300 ease-out"
                style="background-color: var(--color-surface); border-color: var(--color-border);"
                :class="showSidebar ? 'w-[360px]' : 'w-16'">
 
@@ -57,7 +57,7 @@
 
             <!-- Expanded sidebar content -->
             <template x-if="showSidebar">
-                <div class="flex flex-col h-full w-[360px]">
+                <div class="flex flex-col h-full min-h-0 w-[360px]">
                     {% include "components/_chat_sidebar.html" %}
                 </div>
             </template>
@@ -91,7 +91,7 @@
             </div>
 
             <!-- Mobile chat content -->
-            <div class="flex flex-col flex-1 overflow-hidden overscroll-contain">
+            <div class="flex flex-col flex-1 min-h-0 overflow-hidden overscroll-contain">
                 {% include "components/_chat_sidebar.html" %}
             </div>
         </div>
@@ -101,7 +101,7 @@
               id="main-content"
               tabindex="-1"
               aria-label="Recovery dashboard"
-              class="flex-1 overflow-y-auto"
+              class="flex-1 overflow-y-auto min-h-0"
               style="background-color: var(--color-bg);">
             <div class="max-w-patient mx-auto px-4 md:px-6 py-6 md:py-8 pb-24 md:pb-12">
                 {% block dashboard_content %}{% endblock %}
