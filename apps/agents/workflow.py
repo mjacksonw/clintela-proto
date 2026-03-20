@@ -12,10 +12,10 @@ from apps.agents.agents import (
     CareCoordinatorAgent,
     DocumentationAgent,
     NurseTriageAgent,
-    PlaceholderSpecialistAgent,
     SupervisorAgent,
 )
 from apps.agents.llm_client import LLMClient, get_llm_client
+from apps.agents.specialists import SPECIALIST_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -35,15 +35,8 @@ class AgentWorkflow:
         self.nurse_triage = NurseTriageAgent(self.llm_client)
         self.documentation = DocumentationAgent(self.llm_client)
 
-        # Specialist agents (placeholders)
-        self.specialists = {
-            "specialist_cardiology": PlaceholderSpecialistAgent("specialist_cardiology", self.llm_client),
-            "specialist_social_work": PlaceholderSpecialistAgent("specialist_social_work", self.llm_client),
-            "specialist_nutrition": PlaceholderSpecialistAgent("specialist_nutrition", self.llm_client),
-            "specialist_pt_rehab": PlaceholderSpecialistAgent("specialist_pt_rehab", self.llm_client),
-            "specialist_palliative": PlaceholderSpecialistAgent("specialist_palliative", self.llm_client),
-            "specialist_pharmacy": PlaceholderSpecialistAgent("specialist_pharmacy", self.llm_client),
-        }
+        # Specialist agents (RAG-backed)
+        self.specialists = {agent_type: cls(self.llm_client) for agent_type, cls in SPECIALIST_REGISTRY.items()}
 
         self._workflow: CompiledStateGraph | None = None
         self._rag_enabled = getattr(settings, "ENABLE_RAG", False)
@@ -348,12 +341,12 @@ class AgentWorkflow:
             result_dict = result.to_dict()
             result_dict["rag_result"] = rag_result
 
-            # Specialists still escalate (placeholders), but with RAG context
+            # Specialists escalate based on confidence, not unconditionally
             return {
                 **state,
                 "result": result_dict,
-                "should_escalate": True,  # Specialists always escalate (placeholder)
-                "escalation_reason": f"Routed to {specialist_type}",
+                "should_escalate": result.escalate,
+                "escalation_reason": result.escalation_reason or f"Routed to {specialist_type}",
             }
         except Exception as e:
             logger.error(f"Specialist node failed: {e}")

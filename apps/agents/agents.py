@@ -671,23 +671,19 @@ def get_agent(agent_type: str, llm_client: LLMClient | None = None) -> BaseAgent
     Raises:
         ValueError: If agent type is unknown
     """
-    agents = {
+    from apps.agents.specialists import SPECIALIST_REGISTRY
+
+    core_agents: dict[str, type[BaseAgent]] = {
         "supervisor": SupervisorAgent,
         "care_coordinator": CareCoordinatorAgent,
         "nurse_triage": NurseTriageAgent,
         "documentation": DocumentationAgent,
-        "specialist_cardiology": PlaceholderSpecialistAgent,
-        "specialist_social_work": PlaceholderSpecialistAgent,
-        "specialist_nutrition": PlaceholderSpecialistAgent,
-        "specialist_pt_rehab": PlaceholderSpecialistAgent,
-        "specialist_palliative": PlaceholderSpecialistAgent,
-        "specialist_pharmacy": PlaceholderSpecialistAgent,
     }
 
-    if agent_type not in agents:
-        raise ValueError(f"Unknown agent type: {agent_type}")
+    if agent_type in core_agents:
+        return core_agents[agent_type](llm_client)
 
-    if agent_type.startswith("specialist_"):
-        return agents[agent_type](agent_type, llm_client)
+    if agent_type in SPECIALIST_REGISTRY:
+        return SPECIALIST_REGISTRY[agent_type](llm_client)
 
-    return agents[agent_type](llm_client)
+    raise ValueError(f"Unknown agent type: {agent_type}")
