@@ -185,3 +185,69 @@ class PatientStatusTransition(models.Model):
 
     def __str__(self):
         return f"{self.patient}: {self.from_status} → {self.to_status}"
+
+
+class ConsentRecord(models.Model):
+    """Track patient consent for data sharing and communications.
+
+    Each record represents a single consent grant or revocation.
+    Check the most recent record per (patient, consent_type) to
+    determine current consent status.
+    """
+
+    CONSENT_TYPE_CHOICES = [
+        ("data_sharing_caregiver", "Data Sharing with Caregivers"),
+        ("data_sharing_research", "Data Sharing for Research"),
+        ("communication_sms", "SMS Communication"),
+        ("communication_email", "Email Communication"),
+        ("ai_interaction", "AI-Powered Care Assistance"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name="consent_records",
+    )
+    consent_type = models.CharField(
+        max_length=30,
+        choices=CONSENT_TYPE_CHOICES,
+    )
+    granted = models.BooleanField()
+    granted_at = models.DateTimeField(auto_now_add=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    granted_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="consent_grants",
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        db_table = "patients_consent_record"
+        ordering = ["-granted_at"]
+        indexes = [
+            models.Index(
+                fields=["patient", "consent_type", "granted_at"],
+                name="idx_consent_patient_type_at",
+            ),
+        ]
+
+    def __str__(self):
+        action = "granted" if self.granted else "revoked"
+        return f"{self.patient}: {self.consent_type} {action}"
+
+    @classmethod
+    def has_consent(cls, patient, consent_type: str) -> bool:
+        """Check if a patient currently has active consent of the given type."""
+        latest = (
+            cls.objects.filter(
+                patient=patient,
+                consent_type=consent_type,
+            )
+            .order_by("-granted_at")
+            .first()
+        )
+        return latest.granted if latest else False
