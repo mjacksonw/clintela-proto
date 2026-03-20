@@ -58,7 +58,7 @@
         <aside role="region"
                aria-label="Patient list"
                class="flex-col w-full lg:!flex lg:w-[280px] flex-shrink-0 panel-border-r clinician-panel overflow-hidden"
-               :class="mobilePanel === 'list' ? 'flex' : 'hidden'"
+               :class="mobilePanel === 'list' ? 'flex' : 'hidden'">
             <div id="patient-list-panel"
                  hx-get="{% url 'clinicians:patient_list' %}"
                  hx-trigger="load"
@@ -134,7 +134,7 @@
         <aside role="complementary"
                aria-label="Patient chat"
                class="flex-col w-full lg:!flex lg:w-[360px] flex-shrink-0 panel-border-l clinician-panel overflow-hidden"
-               :class="mobilePanel === 'chat' ? 'flex' : 'hidden'"
+               :class="mobilePanel === 'chat' ? 'flex' : 'hidden'">
             <div id="chat-panel" class="h-full">
                 <div class="flex items-center justify-center h-full" style="color: var(--color-text-secondary);">
                     <div class="text-center">
