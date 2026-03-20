@@ -13,6 +13,8 @@ function notificationBell() {
         _ws: null,
         _reconnectTimer: null,
         _reconnectDelay: 1000,
+        _reconnectAttempts: 0,
+        _maxReconnectAttempts: 10,
 
         init() {
             const el = this.$el;
@@ -41,6 +43,7 @@ function notificationBell() {
 
             this._ws.onopen = () => {
                 this._reconnectDelay = 1000;
+                this._reconnectAttempts = 0;
             };
 
             this._ws.onmessage = (event) => {
@@ -59,6 +62,10 @@ function notificationBell() {
 
         _scheduleReconnect(patientId) {
             if (this._reconnectTimer) return;
+            this._reconnectAttempts++;
+            if (this._reconnectAttempts > this._maxReconnectAttempts) {
+                return; // Stop retrying — server likely doesn't support WebSockets
+            }
             this._reconnectTimer = setTimeout(() => {
                 this._reconnectTimer = null;
                 this._reconnectDelay = Math.min(this._reconnectDelay * 2, 30000);
