@@ -684,6 +684,7 @@ def schedule_view(request):
             "clinician": clinician,
             "days": days,
             "week_start": week_start,
+            "week_end": week_start + timedelta(days=4),
             "week_offset": week_offset,
             "patients": patients,
         },

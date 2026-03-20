@@ -29,7 +29,7 @@
                         <i data-lucide="chevron-left" class="w-4 h-4" style="color: var(--color-text-secondary);"></i>
                     </a>
                     <span class="text-sm font-medium px-3" style="color: var(--color-text);">
-                        {{ week_start|date:"M j" }} — {{ week_start|date:"M j, Y" }}
+                        {{ week_start|date:"M j" }} — {{ week_end|date:"M j, Y" }}
                     </span>
                     <a href="?week_offset={{ week_offset|add:'1' }}"
                        class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
