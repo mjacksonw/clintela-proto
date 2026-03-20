@@ -1,7 +1,10 @@
 """Embedding client for generating vector embeddings via Ollama.
 
-Follows the singleton + async httpx pattern from apps/agents/llm_client.py.
-Uses nomic-embed-text (768 dimensions) by default.
+Provides both sync and async interfaces:
+- Sync methods (embed_sync, embed_batch_sync) for management commands
+- Async methods (embed, embed_batch) for compatibility with existing code
+
+Uses nomic-embed-text (768 dimensions, 2048 token context) by default.
 """
 
 import logging
@@ -21,7 +24,11 @@ class EmbeddingTimeoutError(EmbeddingError):
 
 
 class EmbeddingClient:
-    """Client for generating embeddings via Ollama API."""
+    """Client for generating embeddings via Ollama API.
+
+    Provides both sync and async interfaces. The sync interface uses fresh
+    connections per request to avoid event loop issues in management commands.
+    """
 
     _instance = None
 
@@ -46,40 +53,68 @@ class EmbeddingClient:
         if self._client is None:
             self._client = httpx.AsyncClient(
                 base_url=self.base_url.rstrip("/") + "/",
-                timeout=httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=10.0),
+                timeout=httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=10.0),
                 headers={"Content-Type": "application/json"},
             )
         return self._client
 
-    async def embed(self, text: str) -> list[float]:
-        """Generate embedding for a single text.
+    # -------------------------------------------------------------------------
+    # Sync interface (for management commands, avoids event loop issues)
+    # -------------------------------------------------------------------------
 
-        Args:
-            text: Text to embed.
+    def embed_sync(self, text: str) -> list[float]:
+        """Generate embedding for a single text (sync version)."""
+        result = self.embed_batch_sync([text])
+        return result[0]
 
-        Returns:
-            List of floats (embedding vector).
+    def embed_batch_sync(self, texts: list[str]) -> list[list[float]]:
+        """Generate embeddings for a batch of texts (sync version).
 
-        Raises:
-            EmbeddingError: If the embedding request fails.
-            EmbeddingTimeoutError: If the request times out.
+        Uses a fresh httpx.Client per call to avoid event loop issues
+        when called from Django management commands.
         """
+        if not texts:
+            return []
+
+        url = f"{self.base_url.rstrip('/')}/api/embed"
+
+        try:
+            with httpx.Client(timeout=httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=10.0)) as sync_client:
+                response = sync_client.post(
+                    url,
+                    json={"model": self.model, "input": texts},
+                    headers={"Content-Type": "application/json"},
+                )
+                response.raise_for_status()
+                data = response.json()
+
+            embeddings = data.get("embeddings", [])
+            if len(embeddings) != len(texts):
+                raise EmbeddingError(f"Expected {len(texts)} embeddings, got {len(embeddings)}")
+
+            return embeddings
+
+        except httpx.TimeoutException as e:
+            logger.error("Embedding request timed out")
+            raise EmbeddingTimeoutError("Embedding request timed out") from e
+        except httpx.HTTPStatusError as e:
+            logger.error("Embedding HTTP error: %s", e.response.status_code)
+            raise EmbeddingError(f"HTTP {e.response.status_code}: {e.response.text}") from e
+        except httpx.RequestError as e:
+            logger.error("Embedding request error: %s", e)
+            raise EmbeddingError(f"Request failed: {e}") from e
+
+    # -------------------------------------------------------------------------
+    # Async interface (for compatibility with existing async code and tests)
+    # -------------------------------------------------------------------------
+
+    async def embed(self, text: str) -> list[float]:
+        """Generate embedding for a single text (async version)."""
         result = await self.embed_batch([text])
         return result[0]
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        """Generate embeddings for a batch of texts.
-
-        Args:
-            texts: List of texts to embed.
-
-        Returns:
-            List of embedding vectors, one per input text.
-
-        Raises:
-            EmbeddingError: If the embedding request fails.
-            EmbeddingTimeoutError: If the request times out.
-        """
+        """Generate embeddings for a batch of texts (async version)."""
         if not texts:
             return []
 
@@ -101,14 +136,14 @@ class EmbeddingClient:
             logger.error("Embedding request timed out")
             raise EmbeddingTimeoutError("Embedding request timed out") from e
         except httpx.HTTPStatusError as e:
-            logger.error(f"Embedding HTTP error: {e.response.status_code}")
+            logger.error("Embedding HTTP error: %s", e.response.status_code)
             raise EmbeddingError(f"HTTP {e.response.status_code}: {e.response.text}") from e
         except httpx.RequestError as e:
-            logger.error(f"Embedding request error: {e}")
+            logger.error("Embedding request error: %s", e)
             raise EmbeddingError(f"Request failed: {e}") from e
 
     async def close(self):
-        """Close the HTTP client."""
+        """Close the async HTTP client."""
         if self._client:
             await self._client.aclose()
             self._client = None
@@ -123,21 +158,13 @@ class MockEmbeddingClient:
     """Mock embedding client for testing.
 
     Returns deterministic 768-dimensional vectors based on text hash.
+    Provides both sync and async interfaces for compatibility.
     """
 
     def __init__(self, dimensions: int | None = None):
         self.dimensions = dimensions or getattr(settings, "EMBEDDING_DIMENSIONS", 768)
         self.call_count = 0
         self.last_texts: list[str] = []
-
-    async def embed(self, text: str) -> list[float]:
-        result = await self.embed_batch([text])
-        return result[0]
-
-    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        self.call_count += 1
-        self.last_texts = texts
-        return [self._deterministic_vector(t) for t in texts]
 
     def _deterministic_vector(self, text: str) -> list[float]:
         """Generate a deterministic vector from text hash.
@@ -148,11 +175,28 @@ class MockEmbeddingClient:
         h = hash(text)
         vector = []
         for i in range(self.dimensions):
-            # Create a deterministic float from hash + index
             val = ((h + i * 31) % 1000) / 1000.0
-            # Normalize to [-1, 1] range
             vector.append(val * 2 - 1)
         return vector
+
+    # Sync interface (used by ingestion pipeline)
+    def embed_sync(self, text: str) -> list[float]:
+        return self.embed_batch_sync([text])[0]
+
+    def embed_batch_sync(self, texts: list[str]) -> list[list[float]]:
+        self.call_count += 1
+        self.last_texts = texts
+        return [self._deterministic_vector(t) for t in texts]
+
+    # Async interface (for compatibility with async code and tests)
+    async def embed(self, text: str) -> list[float]:
+        result = await self.embed_batch([text])
+        return result[0]
+
+    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        self.call_count += 1
+        self.last_texts = texts
+        return [self._deterministic_vector(t) for t in texts]
 
     async def close(self):
         pass

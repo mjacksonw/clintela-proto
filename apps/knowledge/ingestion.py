@@ -12,7 +12,6 @@ import hashlib
 import logging
 from dataclasses import dataclass
 
-from asgiref.sync import async_to_sync
 from django.contrib.postgres.search import SearchVector
 from django.utils import timezone
 
@@ -23,12 +22,16 @@ from .sanitizer import sanitize_content
 
 logger = logging.getLogger(__name__)
 
-# Target chunk size in tokens (approximate: 1 token ≈ 4 chars for English)
-TARGET_CHUNK_TOKENS = 384
-MAX_CHUNK_TOKENS = 512
-OVERLAP_TOKENS = 50
-CHARS_PER_TOKEN = 4  # Rough estimate for English text
-EMBEDDING_BATCH_SIZE = 100
+# Chunk size tuned for nomic-embed-text (2048 token context window).
+# Clinical text with abbreviations (ACC/AHA/SCAI) tokenizes to ~2.5 chars/token.
+TARGET_CHUNK_TOKENS = 256
+MAX_CHUNK_TOKENS = 384
+OVERLAP_TOKENS = 40
+CHARS_PER_TOKEN = 2.5
+# Max characters = 384 * 2.5 = 960 chars, safely under 2048 tokens
+MAX_CHUNK_CHARS = int(MAX_CHUNK_TOKENS * CHARS_PER_TOKEN)
+# Embed one at a time to avoid Ollama batching issues
+EMBEDDING_BATCH_SIZE = 1
 
 
 @dataclass
@@ -179,84 +182,117 @@ class IngestionPipeline:
         metadata: dict,
         start_index: int,
     ) -> list[Chunk]:
-        """Split text into chunks with overlap."""
-        target_chars = TARGET_CHUNK_TOKENS * CHARS_PER_TOKEN
-        max_chars = MAX_CHUNK_TOKENS * CHARS_PER_TOKEN
-        overlap_chars = OVERLAP_TOKENS * CHARS_PER_TOKEN
+        """Split text into chunks with overlap.
 
-        if len(text) <= max_chars:
-            return [
-                Chunk(
-                    title=title,
-                    content=text,
-                    chunk_index=start_index,
-                    section_path=section_path,
-                    metadata={
-                        "page_numbers": page_numbers,
-                        "section_path": section_path,
-                        **metadata,
-                    },
-                    content_hash=hashlib.sha256(text.encode()).hexdigest(),
-                    token_count=len(text) // CHARS_PER_TOKEN,
-                )
-            ]
+        Uses paragraph boundaries when possible, falls back to hard character
+        truncation for text without clear paragraph breaks (common in PDFs).
+        """
+        if len(text) <= MAX_CHUNK_CHARS:
+            return [self._make_chunk(text, title, section_path, page_numbers, metadata, start_index)]
 
-        # Split on paragraph boundaries
+        paragraphs = self._split_into_paragraphs(text)
+        return self._process_paragraphs(paragraphs, title, section_path, page_numbers, metadata, start_index)
+
+    def _split_into_paragraphs(self, text: str) -> list[str]:
+        """Split text on paragraph boundaries, falling back to single newlines."""
         paragraphs = text.split("\n\n")
-        chunks = []
+        if len(paragraphs) == 1:
+            paragraphs = text.split("\n")
+        return [p.strip() for p in paragraphs if p.strip()]
+
+    def _process_paragraphs(
+        self,
+        paragraphs: list[str],
+        title: str,
+        section_path: str,
+        page_numbers: list[int],
+        metadata: dict,
+        start_index: int,
+    ) -> list[Chunk]:
+        """Process paragraphs into chunks with overlap."""
+        target_chars = int(TARGET_CHUNK_TOKENS * CHARS_PER_TOKEN)
+        overlap_chars = int(OVERLAP_TOKENS * CHARS_PER_TOKEN)
+
+        chunks: list[Chunk] = []
         current_text = ""
         idx = start_index
 
         for para in paragraphs:
-            para = para.strip()
+            # Truncate oversized paragraphs first
+            truncated, idx = self._truncate_long_paragraph(
+                para, title, section_path, page_numbers, metadata, idx, chunks
+            )
+            para = truncated
+
             if not para:
                 continue
 
             if len(current_text) + len(para) + 2 > target_chars and current_text:
-                chunks.append(
-                    Chunk(
-                        title=title,
-                        content=current_text.strip(),
-                        chunk_index=idx,
-                        section_path=section_path,
-                        metadata={
-                            "page_numbers": page_numbers,
-                            "section_path": section_path,
-                            **metadata,
-                        },
-                        content_hash=hashlib.sha256(current_text.strip().encode()).hexdigest(),
-                        token_count=len(current_text.strip()) // CHARS_PER_TOKEN,
-                    )
-                )
+                chunks.append(self._make_chunk(current_text.strip(), title, section_path, page_numbers, metadata, idx))
                 idx += 1
-
-                # Overlap: keep last portion of previous chunk
-                if overlap_chars and len(current_text) > overlap_chars:
-                    current_text = current_text[-overlap_chars:] + "\n\n" + para
-                else:
-                    current_text = para
+                current_text = self._compute_overlap(current_text, para, overlap_chars)
             else:
-                current_text = current_text + "\n\n" + para if current_text else para
+                current_text = f"{current_text}\n\n{para}" if current_text else para
 
-        # Last chunk
         if current_text.strip():
-            chunks.append(
-                Chunk(
-                    title=title,
-                    content=current_text.strip(),
-                    chunk_index=idx,
-                    section_path=section_path,
-                    metadata={
-                        "page_numbers": page_numbers,
-                        "section_path": section_path,
-                        **metadata,
-                    },
-                    content_hash=hashlib.sha256(current_text.strip().encode()).hexdigest(),
-                    token_count=len(current_text.strip()) // CHARS_PER_TOKEN,
-                )
-            )
+            chunks.append(self._make_chunk(current_text.strip(), title, section_path, page_numbers, metadata, idx))
 
         return chunks
+
+    def _truncate_long_paragraph(
+        self,
+        para: str,
+        title: str,
+        section_path: str,
+        page_numbers: list[int],
+        metadata: dict,
+        idx: int,
+        chunks: list[Chunk],
+    ) -> tuple[str, int]:
+        """Split oversized paragraph into chunks, return remaining text and updated index."""
+        while len(para) > MAX_CHUNK_CHARS:
+            split_point = para.rfind(" ", 0, MAX_CHUNK_CHARS)
+            if split_point == -1:
+                split_point = MAX_CHUNK_CHARS
+
+            chunk_text = para[:split_point].strip()
+            if chunk_text:
+                chunks.append(self._make_chunk(chunk_text, title, section_path, page_numbers, metadata, idx))
+                idx += 1
+
+            para = para[split_point:].strip()
+
+        return para, idx
+
+    def _compute_overlap(self, current_text: str, next_para: str, overlap_chars: int) -> str:
+        """Compute overlapping text for chunk continuity."""
+        if overlap_chars and len(current_text) > overlap_chars:
+            return f"{current_text[-overlap_chars:]}\n\n{next_para}"
+        return next_para
+
+    def _make_chunk(
+        self,
+        content: str,
+        title: str,
+        section_path: str,
+        page_numbers: list[int],
+        metadata: dict,
+        chunk_index: int,
+    ) -> Chunk:
+        """Create a Chunk with computed hash and token count."""
+        return Chunk(
+            title=title,
+            content=content,
+            chunk_index=chunk_index,
+            section_path=section_path,
+            metadata={
+                "page_numbers": page_numbers,
+                "section_path": section_path,
+                **metadata,
+            },
+            content_hash=hashlib.sha256(content.encode()).hexdigest(),
+            token_count=int(len(content) / CHARS_PER_TOKEN),
+        )
 
     def _sanitize_chunks(self, chunks: list[Chunk]) -> list[Chunk]:
         """Run content sanitizer on each chunk."""
@@ -269,7 +305,7 @@ class IngestionPipeline:
                 # Recompute hash after sanitization
                 chunk.content = clean_content
                 chunk.content_hash = hashlib.sha256(clean_content.encode()).hexdigest()
-                chunk.token_count = len(clean_content) // CHARS_PER_TOKEN
+                chunk.token_count = int(len(clean_content) / CHARS_PER_TOKEN)
                 sanitized.append(chunk)
 
         return sanitized
@@ -290,21 +326,25 @@ class IngestionPipeline:
         return new_chunks
 
     def _embed_and_store(self, chunks: list[Chunk]):
-        """Embed chunks in batches and store in database."""
+        """Embed chunks and store in database.
+
+        Embeds one chunk at a time (EMBEDDING_BATCH_SIZE=1) to avoid
+        exceeding Ollama's context window limits.
+        """
         embedding_client = get_embedding_client()
+        total_batches = (len(chunks) + EMBEDDING_BATCH_SIZE - 1) // EMBEDDING_BATCH_SIZE
 
         for batch_start in range(0, len(chunks), EMBEDDING_BATCH_SIZE):
             batch = chunks[batch_start : batch_start + EMBEDDING_BATCH_SIZE]
             texts = [c.content for c in batch]
 
             try:
-                embeddings = async_to_sync(embedding_client.embed_batch)(texts)
+                embeddings = embedding_client.embed_batch_sync(texts)
             except Exception:
-                logger.exception("Failed to embed batch starting at index %d", batch_start)
+                logger.exception("Failed to embed chunk at index %d", batch_start)
                 self.stats["errors"] += 1
                 continue
 
-            docs = []
             if len(embeddings) != len(batch):
                 logger.error(
                     "Embedding count mismatch: got %d embeddings for %d chunks",
@@ -314,6 +354,7 @@ class IngestionPipeline:
                 self.stats["errors"] += 1
                 continue
 
+            docs = []
             for chunk, embedding in zip(batch, embeddings, strict=True):
                 docs.append(
                     KnowledgeDocument(
@@ -331,13 +372,15 @@ class IngestionPipeline:
             created = KnowledgeDocument.objects.bulk_create(docs, ignore_conflicts=True)
             self.stats["chunks_created"] += len(created)
 
-            logger.info(
-                "Stored batch of %d chunks for %s (batch %d/%d)",
-                len(created),
-                self.source.name,
-                batch_start // EMBEDDING_BATCH_SIZE + 1,
-                (len(chunks) + EMBEDDING_BATCH_SIZE - 1) // EMBEDDING_BATCH_SIZE,
-            )
+            # Log progress every 50 chunks to avoid log spam
+            batch_num = batch_start // EMBEDDING_BATCH_SIZE + 1
+            if batch_num % 50 == 0 or batch_num == total_batches:
+                logger.info(
+                    "Embedded %d/%d chunks for %s",
+                    min(batch_start + EMBEDDING_BATCH_SIZE, len(chunks)),
+                    len(chunks),
+                    self.source.name,
+                )
 
     def _update_search_vectors(self):
         """Populate tsvector search_vector for full-text search."""
