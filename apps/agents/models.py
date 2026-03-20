@@ -180,6 +180,13 @@ class Escalation(models.Model):
         ("resolved", "Resolved"),
     ]
 
+    ESCALATION_TYPE_CHOICES = [
+        ("clinical", "Clinical"),
+        ("specialist_referral", "Specialist Referral"),
+        ("social_work", "Social Work"),
+        ("pharmacy_consult", "Pharmacy Consult"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     patient = models.ForeignKey(
         "patients.Patient",
@@ -203,7 +210,21 @@ class Escalation(models.Model):
             ("routine", "Routine"),
         ],
     )
+    escalation_type = models.CharField(
+        max_length=30,
+        choices=ESCALATION_TYPE_CHOICES,
+        default="clinical",
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    priority_score = models.FloatField(
+        default=0.0,
+        help_text="Computed from severity + wait time + patient status",
+    )
+    response_deadline = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="SLA tracking: when this escalation must be addressed",
+    )
 
     # Context for clinician
     conversation_summary = models.TextField(blank=True)

@@ -36,35 +36,35 @@ class TestSpecialistRegistry:
 
 class TestSpecialistInit:
     def test_cardiology_agent_type(self):
-        with patch("apps.agents.specialists.get_llm_client"):
+        with patch("apps.agents.agents.get_llm_client"):
             agent = CardiologySpecialist()
         assert agent.agent_type == "specialist_cardiology"
         assert agent.specialty_name == "Cardiology"
 
     def test_pharmacy_agent_type(self):
-        with patch("apps.agents.specialists.get_llm_client"):
+        with patch("apps.agents.agents.get_llm_client"):
             agent = PharmacySpecialist()
         assert agent.agent_type == "specialist_pharmacy"
         assert agent.specialty_name == "Pharmacy"
 
     def test_nutrition_agent_type(self):
-        with patch("apps.agents.specialists.get_llm_client"):
+        with patch("apps.agents.agents.get_llm_client"):
             agent = NutritionSpecialist()
         assert agent.agent_type == "specialist_nutrition"
 
     def test_pt_rehab_agent_type(self):
-        with patch("apps.agents.specialists.get_llm_client"):
+        with patch("apps.agents.agents.get_llm_client"):
             agent = PTRehabSpecialist()
         assert agent.agent_type == "specialist_pt_rehab"
         assert agent.specialty_name == "Pt Rehab"
 
     def test_social_work_agent_type(self):
-        with patch("apps.agents.specialists.get_llm_client"):
+        with patch("apps.agents.agents.get_llm_client"):
             agent = SocialWorkSpecialist()
         assert agent.agent_type == "specialist_social_work"
 
     def test_palliative_agent_type(self):
-        with patch("apps.agents.specialists.get_llm_client"):
+        with patch("apps.agents.agents.get_llm_client"):
             agent = PalliativeSpecialist()
         assert agent.agent_type == "specialist_palliative"
 
@@ -89,7 +89,7 @@ class TestSpecialistProcess:
     @pytest.mark.asyncio
     async def test_process_with_rag_evidence(self):
         """Specialist returns confident response when RAG evidence is strong."""
-        with patch("apps.agents.specialists.get_llm_client"):
+        with patch("apps.agents.agents.get_llm_client"):
             agent = CardiologySpecialist()
 
         agent._call_llm = _mock_llm_call("Based on the ACC CABG Recovery Guidelines, mild swelling is expected.")
@@ -113,7 +113,7 @@ class TestSpecialistProcess:
     @pytest.mark.asyncio
     async def test_process_without_rag_escalates_on_low_confidence(self):
         """Specialist escalates when confidence is low (short response, no RAG)."""
-        with patch("apps.agents.specialists.get_llm_client"):
+        with patch("apps.agents.agents.get_llm_client"):
             agent = PharmacySpecialist()
 
         # Short response + truncated finish reason triggers low confidence
@@ -139,7 +139,7 @@ class TestSpecialistProcess:
         """LLM failure triggers escalation with care team language."""
         from apps.agents.llm_client import LLMError
 
-        with patch("apps.agents.specialists.get_llm_client"):
+        with patch("apps.agents.agents.get_llm_client"):
             agent = NutritionSpecialist()
 
         async def fail(*args, **kwargs):
@@ -160,7 +160,7 @@ class TestSpecialistProcess:
     async def test_all_specialists_process(self):
         """Verify all specialist types can process a message."""
         for agent_type, cls in SPECIALIST_REGISTRY.items():
-            with patch("apps.agents.specialists.get_llm_client"):
+            with patch("apps.agents.agents.get_llm_client"):
                 agent = cls()
 
             agent._call_llm = _mock_llm_call("Here is my guidance based on the clinical evidence.")
@@ -184,7 +184,7 @@ class TestGetAgentFactory:
     def test_get_specialist_returns_rag_agent(self):
         from apps.agents.agents import get_agent
 
-        with patch("apps.agents.specialists.get_llm_client"):
+        with patch("apps.agents.agents.get_llm_client"):
             agent = get_agent("specialist_cardiology")
         assert isinstance(agent, CardiologySpecialist)
         assert isinstance(agent, RAGSpecialistAgent)
@@ -193,7 +193,7 @@ class TestGetAgentFactory:
         from apps.agents.agents import get_agent
 
         for agent_type in SPECIALIST_REGISTRY:
-            with patch("apps.agents.specialists.get_llm_client"):
+            with patch("apps.agents.agents.get_llm_client"):
                 agent = get_agent(agent_type)
             assert agent.agent_type == agent_type
 
