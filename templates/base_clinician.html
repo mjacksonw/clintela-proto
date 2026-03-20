@@ -3,6 +3,9 @@
 
 {% block extra_head %}
 <style type="text/tailwindcss">
+    /* Hide Alpine x-cloak elements until Alpine initializes */
+    [x-cloak] { display: none !important; }
+
     /* Clinician-specific tokens: 14px base, 16px card padding, 48px row height */
     .clinician-panel {
         background-color: var(--color-surface);
@@ -54,7 +57,8 @@
         <!-- LEFT PANEL: Patient List (280px) -->
         <aside role="region"
                aria-label="Patient list"
-               class="hidden lg:flex flex-col w-[280px] flex-shrink-0 panel-border-r clinician-panel overflow-hidden">
+               class="flex-col w-full lg:!flex lg:w-[280px] flex-shrink-0 panel-border-r clinician-panel overflow-hidden"
+               :class="mobilePanel === 'list' ? 'flex' : 'hidden'"
             <div id="patient-list-panel"
                  hx-get="{% url 'clinicians:patient_list' %}"
                  hx-trigger="load"
@@ -69,9 +73,52 @@
         <main role="main"
               id="main-content"
               tabindex="-1"
-              class="flex-1 overflow-y-auto min-h-0 clinician-panel"
-              style="min-width: 400px;">
-            <div id="detail-panel" class="h-full">
+              class="flex-1 flex-col min-h-0 clinician-panel lg:!flex"
+              :class="mobilePanel === 'detail' ? 'flex' : 'hidden'"
+              style="min-width: 0;">
+            <!-- Tab bar (visible when a patient is selected) -->
+            <div x-show="selectedPatientId"
+                 x-cloak
+                 role="tablist"
+                 aria-label="Patient detail tabs"
+                 class="flex border-b flex-shrink-0 px-1"
+                 style="border-color: var(--color-border);">
+                <button role="tab"
+                        class="px-3 py-2.5 text-sm font-medium border-b-2 transition-colors"
+                        :class="activeTab === 'details' ? 'border-teal-500 text-teal-600' : 'border-transparent'"
+                        :style="activeTab !== 'details' ? 'color: var(--color-text-secondary)' : ''"
+                        @click="switchTab('details')"
+                        :aria-selected="activeTab === 'details'">
+                    Details
+                </button>
+                <button role="tab"
+                        class="px-3 py-2.5 text-sm font-medium border-b-2 transition-colors"
+                        :class="activeTab === 'care_plan' ? 'border-teal-500 text-teal-600' : 'border-transparent'"
+                        :style="activeTab !== 'care_plan' ? 'color: var(--color-text-secondary)' : ''"
+                        @click="switchTab('care_plan')"
+                        :aria-selected="activeTab === 'care_plan'">
+                    Care Plan
+                </button>
+                <button role="tab"
+                        class="px-3 py-2.5 text-sm font-medium border-b-2 transition-colors"
+                        :class="activeTab === 'research' ? 'border-teal-500 text-teal-600' : 'border-transparent'"
+                        :style="activeTab !== 'research' ? 'color: var(--color-text-secondary)' : ''"
+                        @click="switchTab('research')"
+                        :aria-selected="activeTab === 'research'">
+                    Research
+                </button>
+                <button role="tab"
+                        class="px-3 py-2.5 text-sm font-medium border-b-2 transition-colors"
+                        :class="activeTab === 'tools' ? 'border-teal-500 text-teal-600' : 'border-transparent'"
+                        :style="activeTab !== 'tools' ? 'color: var(--color-text-secondary)' : ''"
+                        @click="switchTab('tools')"
+                        :aria-selected="activeTab === 'tools'">
+                    Tools
+                </button>
+            </div>
+
+            <!-- Tab content / detail panel -->
+            <div id="detail-panel" role="tabpanel" class="flex-1 overflow-y-auto min-h-0">
                 {% block detail_content %}
                 <div class="flex items-center justify-center h-full" style="color: var(--color-text-secondary);">
                     <div class="text-center">
@@ -86,7 +133,8 @@
         <!-- RIGHT PANEL: Patient Chat (360px) -->
         <aside role="complementary"
                aria-label="Patient chat"
-               class="hidden lg:flex flex-col w-[360px] flex-shrink-0 panel-border-l clinician-panel overflow-hidden">
+               class="flex-col w-full lg:!flex lg:w-[360px] flex-shrink-0 panel-border-l clinician-panel overflow-hidden"
+               :class="mobilePanel === 'chat' ? 'flex' : 'hidden'"
             <div id="chat-panel" class="h-full">
                 <div class="flex items-center justify-center h-full" style="color: var(--color-text-secondary);">
                     <div class="text-center">

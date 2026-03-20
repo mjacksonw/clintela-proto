@@ -81,7 +81,7 @@ function clinicianDashboard() {
             const url = tabUrls[tab];
             if (!url) return;
 
-            const target = document.getElementById('tab-content') || document.getElementById('detail-panel');
+            const target = document.getElementById('detail-panel');
             if (!target) return;
 
             // Use HTMX to load
