@@ -76,7 +76,7 @@
 {% endif %}
 
 <!-- Welcome / Care Team -->
-<div class="card animate-in animate-in-delay-2">
+<div class="card animate-in animate-in-delay-2 mb-6">
     <div class="flex items-center gap-2 mb-3">
         <i data-lucide="heart-handshake" class="w-5 h-5" style="color: #0D9488;"></i>
         <h2 class="text-lg font-semibold">Your Care Team</h2>
@@ -90,6 +90,34 @@
         {% endif %}
         Use the chat anytime to ask questions about your recovery.
     </p>
+</div>
+
+<!-- Quick links -->
+<div class="grid grid-cols-2 gap-3 animate-in animate-in-delay-3">
+    <a href="{% url 'patients:caregivers' %}"
+       class="card flex items-center gap-3 no-underline group"
+       style="padding: 16px;">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+             style="background-color: #D1FAE5; color: #065F46;">
+            <i data-lucide="users" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+            <p class="text-sm font-semibold group-hover:underline" style="color: var(--color-text);">Caregivers</p>
+            <p class="text-xs" style="color: var(--color-text-secondary);">Invite family</p>
+        </div>
+    </a>
+    <a href="{% url 'patients:consent' %}"
+       class="card flex items-center gap-3 no-underline group"
+       style="padding: 16px;">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+             style="background-color: #DBEAFE; color: #1E40AF;">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+            <p class="text-sm font-semibold group-hover:underline" style="color: var(--color-text);">Privacy</p>
+            <p class="text-xs" style="color: var(--color-text-secondary);">Manage consent</p>
+        </div>
+    </a>
 </div>
 
 {% endblock %}

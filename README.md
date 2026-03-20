@@ -22,7 +22,7 @@ Clintela deploys a multi-agent system that augments clinical teams with intellig
 
 - **Documentation Agent**: Creates structured summaries for clinicians, handoff notes, and chart-ready drafts.
 
-- **Specialist Agents**: Domain experts in Cardiology, Social Work, Nutrition, PT/Rehab, Palliative Care, and Pharmacy that provide consultative support.
+- **Specialist Agents**: RAG-backed domain experts in Cardiology, Pharmacy, Nutrition, PT/Rehab, Social Work, and Palliative Care — each retrieves evidence from the clinical knowledge base before responding, falling back to human escalation only when confidence is low.
 
 ## Three Interfaces
 
@@ -59,7 +59,7 @@ Metrics and oversight for clinical leadership:
 ### Core Stack
 
 - **Web Framework**: Django (request-based, idiomatic Python)
-- **Database**: PostgreSQL (relational data, document store for RAG, key-value caching)
+- **Database**: PostgreSQL + pgvector (relational data, vector embeddings for RAG, key-value caching)
 - **AI/ML**: LangChain / LangGraph for multi-agent orchestration
 - **Real-time**: WebSockets (Django Channels) for chat and live notifications
 - **Task Queue**: Celery + Redis for async notification delivery and scheduled reminders
@@ -112,7 +112,7 @@ Non-LLM workflows handle: permissions, thresholds, escalation rules, retries, ti
 
 This repository contains the prototype implementation of Clintela's user interfaces and core systems.
 
-**Current Phase**: Phase 3 complete — notification engine, SMS, voice input, WebSocket notifications, and Celery task queue
+**Current Phase**: Phase 4 complete — clinical knowledge RAG, pgvector hybrid search, 6 RAG-backed specialist agents, patient lifecycle state machine, caregiver invitation flow, consent management, and knowledge health admin dashboard
 
 ---
 
@@ -129,6 +129,7 @@ This repository contains the prototype implementation of Clintela's user interfa
 - [Security & Compliance](./docs/security.md)
 - [Testing Guide](./docs/testing.md)
 - [Phase 3 Acceptance Testing](./docs/ACCEPTANCE-TESTING-PHASE3.md) — Manual QA guide for SMS, voice, notifications, and WebSocket features
+- [Phase 4 Plan](./docs/plans/2026-03-20-phase4-clinical-knowledge-rag.md) — Clinical knowledge RAG design and implementation notes
 - [TODOs](./TODOS.md) — Deferred work and future phases
 
 ---

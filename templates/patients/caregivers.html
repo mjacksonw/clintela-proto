@@ -1,0 +1,201 @@
+{% extends "base_patient.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}My Caregivers — Clintela{% endblock %}
+
+{% block dashboard_content %}
+
+<!-- Page header -->
+<div class="mb-6 animate-in">
+    <a href="{% url 'patients:dashboard' %}" class="inline-flex items-center gap-1.5 text-sm font-medium mb-4 py-2"
+       style="color: var(--color-primary); min-height: 44px;">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        Back to Dashboard
+    </a>
+    <h1 class="text-2xl font-semibold" style="letter-spacing: -0.02em;">My Caregivers</h1>
+    <p class="mt-1 text-base" style="color: var(--color-text-secondary);">
+        Invite family members to follow your recovery. They'll get read-only access to your status.
+    </p>
+</div>
+
+{% if messages %}
+<div class="mb-4 animate-in">
+    {% for msg in messages %}
+    <div class="px-4 py-3 rounded-lg text-sm flex items-center gap-2 mb-2"
+         style="{% if msg.tags == 'success' %}background-color: #D1FAE5; color: #065F46;{% elif msg.tags == 'error' %}background-color: #FEE2E2; color: #991B1B;{% else %}background-color: #DBEAFE; color: #1E40AF;{% endif %}">
+        <i data-lucide="{% if msg.tags == 'success' %}check-circle{% elif msg.tags == 'error' %}alert-circle{% else %}info{% endif %}" class="w-4 h-4 flex-shrink-0"></i>
+        {{ msg }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Active caregivers -->
+{% if relationships %}
+<div class="mb-6">
+    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+        <i data-lucide="users" class="w-5 h-5" style="color: #0D9488;"></i>
+        Active Caregivers
+    </h2>
+    <div class="space-y-3">
+        {% for rel in relationships %}
+        <div class="card animate-in" style="animation-delay: {{ forloop.counter0 }}50ms;">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                         style="background-color: #D1FAE5; color: #065F46;">
+                        <i data-lucide="user-check" class="w-5 h-5"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-medium truncate">{{ rel.caregiver.user.get_full_name }}</p>
+                        <p class="text-sm capitalize" style="color: var(--color-text-secondary);">
+                            {{ rel.relationship }}
+                            {% if rel.accepted_at %}&middot; Joined {{ rel.accepted_at|naturaltime }}{% endif %}
+                        </p>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'patients:caregiver_revoke' %}"
+                      onsubmit="return confirm('Remove access for {{ rel.caregiver.user.get_full_name }}?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="relationship_id" value="{{ rel.id }}">
+                    <button type="submit"
+                            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                            style="color: #DC2626; background: transparent;"
+                            onmouseover="this.style.backgroundColor='#FEE2E2'"
+                            onmouseout="this.style.backgroundColor='transparent'">
+                        Remove
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Pending invitations -->
+{% if invitations %}
+<div class="mb-6">
+    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+        <i data-lucide="clock" class="w-5 h-5" style="color: #D97706;"></i>
+        Pending Invitations
+    </h2>
+    <div class="space-y-3">
+        {% for inv in invitations %}
+        <div class="card animate-in">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                         style="background-color: #FEF3C7; color: #92400E;">
+                        <i data-lucide="user-plus" class="w-5 h-5"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-medium truncate">{{ inv.name }}</p>
+                        <p class="text-sm capitalize" style="color: var(--color-text-secondary);">
+                            {{ inv.relationship }} &middot; Sent {{ inv.created_at|naturaltime }}
+                        </p>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'patients:caregiver_revoke' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="invitation_id" value="{{ inv.id }}">
+                    <button type="submit"
+                            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                            style="color: var(--color-text-secondary); background: transparent;"
+                            onmouseover="this.style.backgroundColor='var(--color-border)'"
+                            onmouseout="this.style.backgroundColor='transparent'">
+                        Cancel
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Invite form -->
+<div class="card animate-in" style="animation-delay: 150ms;">
+    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+        <i data-lucide="user-plus" class="w-5 h-5" style="color: var(--color-primary);"></i>
+        Invite a Caregiver
+    </h2>
+    <form method="post" action="{% url 'patients:caregiver_invite' %}" class="space-y-4">
+        {% csrf_token %}
+
+        <div>
+            <label for="name" class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
+                Full Name <span style="color: #DC2626;">*</span>
+            </label>
+            <input type="text" id="name" name="name" required
+                   class="w-full px-4 py-3 rounded-lg border text-base"
+                   style="border-color: var(--color-border); background-color: var(--color-surface); color: var(--color-text);"
+                   placeholder="e.g. Jane Smith">
+        </div>
+
+        <div>
+            <label for="relationship" class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
+                Relationship <span style="color: #DC2626;">*</span>
+            </label>
+            <select id="relationship" name="relationship" required
+                    class="w-full px-4 py-3 rounded-lg border text-base"
+                    style="border-color: var(--color-border); background-color: var(--color-surface); color: var(--color-text);">
+                <option value="">Select relationship</option>
+                {% for value, label in relationship_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="email" class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
+                Email
+            </label>
+            <input type="email" id="email" name="email"
+                   class="w-full px-4 py-3 rounded-lg border text-base"
+                   style="border-color: var(--color-border); background-color: var(--color-surface); color: var(--color-text);"
+                   placeholder="jane@example.com">
+        </div>
+
+        <div>
+            <label for="phone" class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
+                Phone Number
+            </label>
+            <input type="tel" id="phone" name="phone"
+                   class="w-full px-4 py-3 rounded-lg border text-base"
+                   style="border-color: var(--color-border); background-color: var(--color-surface); color: var(--color-text);"
+                   placeholder="+1 (555) 000-0000">
+        </div>
+
+        <p class="text-xs" style="color: var(--color-text-secondary);">
+            At least one of email or phone is required. We'll send them a link to accept the invitation.
+        </p>
+
+        <button type="submit"
+                class="w-full px-6 py-3 rounded-lg text-base font-semibold text-white transition-all"
+                style="background-color: var(--color-primary);"
+                onmouseover="this.style.opacity='0.9'"
+                onmouseout="this.style.opacity='1'">
+            Send Invitation
+        </button>
+    </form>
+</div>
+
+<!-- How it works -->
+<div class="mt-6 px-4 py-3 rounded-lg text-sm animate-in" style="animation-delay: 200ms; background-color: var(--color-surface); border: 1px solid var(--color-border);">
+    <div class="flex items-start gap-2">
+        <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color: var(--color-primary);"></i>
+        <div style="color: var(--color-text-secondary);">
+            <p class="font-medium" style="color: var(--color-text);">How it works</p>
+            <ol class="mt-1 space-y-1 list-decimal list-inside">
+                <li>You send an invitation with their name and contact</li>
+                <li>They receive a link and verify using your access code</li>
+                <li>Once verified, they can see your recovery status</li>
+                <li>You can remove their access at any time</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

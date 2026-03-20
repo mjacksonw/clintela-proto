@@ -126,12 +126,12 @@ Patient Message: "{message}"
 Available Agents:
 - care_coordinator: General questions, emotional support, reminders
 - nurse_triage: Symptom assessment, clinical questions, recovery guidance
-- cardiology_specialist: Cardiac-specific concerns (placeholder)
-- social_work_specialist: Social determinants, resources (placeholder)
-- nutrition_specialist: Dietary guidance (placeholder)
-- pt_rehab_specialist: Physical therapy questions (placeholder)
-- palliative_specialist: Symptom management (placeholder)
-- pharmacy_specialist: Medication questions (placeholder)
+- cardiology_specialist: Cardiac-specific concerns (RAG-backed)
+- social_work_specialist: Social determinants, resources (RAG-backed)
+- nutrition_specialist: Dietary guidance (RAG-backed)
+- pt_rehab_specialist: Physical therapy questions (RAG-backed)
+- palliative_specialist: Symptom management (RAG-backed)
+- pharmacy_specialist: Medication questions (RAG-backed)
 
 Decision Rules:
 - CRITICAL (pain >7/10, bleeding, fever >101°F, breathing difficulty): Escalate immediately
@@ -352,35 +352,41 @@ Format:
 
 ---
 
-## Specialist Agents (Placeholders)
+## Specialist Agents (RAG-Backed)
 
 These agents are invoked for domain-specific questions. They are **consultative**, not autonomous.
 
-### Cardiology Specialist
+All six specialists share the `RAGSpecialistAgent` base class (`apps/agents/specialists.py`). When `ENABLE_RAG=True`, each specialist:
+1. Queries the clinical knowledge base via `KnowledgeRetrievalService` with a domain-scoped search
+2. Constructs a response grounded in retrieved documents (with confidence scoring)
+3. Records `MessageCitation` records linking the reply to source documents
+4. Falls back to human escalation only when retrieval confidence is below threshold
+
+When `ENABLE_RAG=False`, specialists escalate to human clinicians as before.
+
+### Cardiology Specialist (`CardiologySpecialist`)
 **Scope:** Cardiac-specific recovery concerns, heart rate questions, chest pain assessment
 **Trigger:** Keywords like "heart," "chest pain," "palpitations," "cardiac"
 
-### Social Work Specialist
-**Scope:** Social determinants of health, resource connection, transportation, home care
-**Trigger:** Keywords like "transportation," "home care," "insurance," "resources"
+### Pharmacy Specialist (`PharmacySpecialist`)
+**Scope:** Medication questions, drug interactions, side effects, dosing
+**Trigger:** Keywords like "medication," "drug," "side effect," "prescription," "dose"
 
-### Nutrition Specialist
+### Nutrition Specialist (`NutritionSpecialist`)
 **Scope:** Dietary guidance, meal planning, nutrition for recovery
 **Trigger:** Keywords like "diet," "food," "eating," "nutrition," "meals"
 
-### PT/Rehab Specialist
+### PT/Rehab Specialist (`PTRehabSpecialist`)
 **Scope:** Physical therapy questions, exercise guidance, mobility concerns
 **Trigger:** Keywords like "exercise," "physical therapy," "walking," "mobility"
 
-### Palliative Care Specialist
+### Social Work Specialist (`SocialWorkSpecialist`)
+**Scope:** Social determinants of health, resource connection, transportation, home care
+**Trigger:** Keywords like "transportation," "home care," "insurance," "resources"
+
+### Palliative Care Specialist (`PalliativeSpecialist`)
 **Scope:** Symptom management, comfort care, quality of life
 **Trigger:** Keywords like "pain management," "comfort," "symptom control"
-
-### Pharmacy Specialist
-**Scope:** Medication questions, drug interactions, side effects
-**Trigger:** Keywords like "medication," "drug," "side effect," "prescription"
-
-**Note:** These specialists are initially implemented as placeholders that route to human specialists or provide general guidance. They become fully AI-powered as domain-specific training data and content is developed.
 
 ---
 

@@ -392,9 +392,12 @@ class TestGetAgent:
         assert isinstance(agent, DocumentationAgent)
 
     def test_returns_specialist_with_type(self):
-        """Test factory returns specialist with proper type."""
+        """Test factory returns RAG-backed specialist with proper type."""
+        from apps.agents.specialists import CardiologySpecialist, RAGSpecialistAgent
+
         agent = get_agent("specialist_cardiology")
-        assert isinstance(agent, PlaceholderSpecialistAgent)
+        assert isinstance(agent, RAGSpecialistAgent)
+        assert isinstance(agent, CardiologySpecialist)
         assert agent.specialty_name == "Cardiology"
 
     def test_raises_for_unknown_type(self):

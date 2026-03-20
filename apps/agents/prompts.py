@@ -78,6 +78,14 @@ Guidelines:
 - NEVER prescribe or change medications
 - NEVER provide definitive medical advice
 
+{rag_context}
+
+RULES for clinical evidence (if present above):
+- Base your response on the clinical evidence when relevant
+- Cite the source naturally (e.g., "According to the ACC Recovery Guidelines...")
+- If the evidence doesn't address the question, say so honestly
+- If confidence is low even with evidence, let the patient know you'll involve a nurse
+
 Response:
 """
 
@@ -134,6 +142,14 @@ Guidelines:
 - NEVER diagnose conditions
 - NEVER prescribe or change medications
 - ALWAYS escalate pain 8+/10, high fever, bleeding, breathing issues, chest pain
+
+{rag_context}
+
+RULES for clinical evidence (if present above):
+- Use clinical evidence to support your assessment when relevant
+- Cite the source naturally in your response text
+- Clinical evidence supplements but does not override your clinical judgment
+- Critical symptoms ALWAYS trigger escalation regardless of evidence
 
 Output Format:
 {{
@@ -328,12 +344,14 @@ def build_care_coordinator_prompt(
     patient_context: str,
     conversation_history: str,
     message: str,
+    rag_context: str = "",
 ) -> str:
     """Build care coordinator agent prompt."""
     return CARE_COORDINATOR_PROMPT.format(
         patient_context=patient_context,
         conversation_history=conversation_history,
         message=message,
+        rag_context=rag_context,
     )
 
 
@@ -346,6 +364,7 @@ def build_nurse_triage_prompt(
     allergies: list[str],
     pathway_context: str,
     message: str,
+    rag_context: str = "",
 ) -> str:
     """Build nurse triage agent prompt."""
     return NURSE_TRIAGE_PROMPT.format(
@@ -357,6 +376,7 @@ def build_nurse_triage_prompt(
         allergies=", ".join(allergies) if allergies else "None",
         pathway_context=pathway_context,
         message=message,
+        rag_context=rag_context,
     )
 
 
@@ -379,11 +399,121 @@ def build_documentation_prompt(
     )
 
 
-def build_placeholder_specialist_prompt(specialty: str, message: str) -> str:
+def build_placeholder_specialist_prompt(specialty: str, message: str, rag_context: str = "") -> str:
     """Build placeholder specialist prompt."""
     return PLACEHOLDER_SPECIALIST_PROMPT.format(
         specialty=specialty,
         message=message,
+    )
+
+
+# Specialist prompt instructions keyed by agent_type
+SPECIALIST_INSTRUCTIONS = {
+    "specialist_cardiology": (
+        "You are the Cardiology Specialist for Clintela. You provide cardiac recovery guidance.\n\n"
+        "Your expertise includes:\n"
+        "- Post-cardiac surgery recovery (CABG, valve replacement, stent placement)\n"
+        "- Cardiac medication guidance (not prescribing — explain what to discuss with prescriber)\n"
+        "- Activity restrictions and exercise progression after cardiac procedures\n"
+        "- Heart rhythm monitoring and when to be concerned\n"
+        "- Blood pressure and heart rate expectations during recovery"
+    ),
+    "specialist_pharmacy": (
+        "You are the Pharmacy Specialist for Clintela. You answer medication questions.\n\n"
+        "Your expertise includes:\n"
+        "- Medication side effects and what to expect\n"
+        "- Drug interactions patients should know about\n"
+        "- Timing and administration guidance\n"
+        "- IMPORTANT: You NEVER prescribe or change medications. You explain what to discuss "
+        "with the prescribing physician."
+    ),
+    "specialist_nutrition": (
+        "You are the Nutrition Specialist for Clintela. You provide dietary guidance.\n\n"
+        "Your expertise includes:\n"
+        "- Post-surgical dietary restrictions and progressions\n"
+        "- Hydration requirements during recovery\n"
+        "- Foods that support healing (protein, vitamins)\n"
+        "- Surgery-type-aware dietary restrictions (e.g., cardiac diet, bowel surgery)"
+    ),
+    "specialist_pt_rehab": (
+        "You are the PT/Rehab Specialist for Clintela. You guide physical recovery.\n\n"
+        "Your expertise includes:\n"
+        "- Post-surgical mobility and exercise guidance\n"
+        "- Phase-appropriate activity levels based on recovery timeline\n"
+        "- Pain management during physical therapy\n"
+        "- When to push vs. rest during recovery"
+    ),
+    "specialist_social_work": (
+        "You are the Social Work Specialist for Clintela. You support non-clinical needs.\n\n"
+        "Your expertise includes:\n"
+        "- Insurance and financial assistance navigation\n"
+        "- Transportation to follow-up appointments\n"
+        "- Home care coordination\n"
+        "- Emotional support and mental health resources\n"
+        "- Caregiver support resources"
+    ),
+    "specialist_palliative": (
+        "You are the Palliative Care Specialist for Clintela. You focus on comfort and quality of life.\n\n"
+        "Your expertise includes:\n"
+        "- Pain management education (not prescribing)\n"
+        "- Comfort measures and quality of life support\n"
+        "- Symptom management guidance\n"
+        "- IMPORTANT: You are conservative — escalate readily when symptoms are concerning"
+    ),
+}
+
+SPECIALIST_PROMPT = """{{specialist_instructions}}
+
+Patient Context:
+{{patient_context}}
+
+Patient Message: "{{message}}"
+
+{{rag_context}}
+
+RULES for clinical evidence (if present above):
+- Use clinical evidence to support your specialist guidance
+- Cite sources naturally when referencing guidelines
+- If the evidence doesn't cover this question, be honest and escalate if needed
+- NEVER diagnose or prescribe — explain what to discuss with the care team
+
+Guidelines:
+- Be specific and evidence-based
+- Keep responses concise and actionable
+- Escalate to human clinician when uncertain or when the question is outside your scope
+- Use the patient's name and acknowledge their concern
+
+Response:
+"""
+
+
+def build_specialist_prompt(
+    agent_type: str,
+    patient_context: str,
+    message: str,
+    rag_context: str = "",
+) -> str:
+    """Build specialist agent prompt with domain-specific instructions.
+
+    Args:
+        agent_type: The specialist type (e.g., 'specialist_cardiology')
+        patient_context: Formatted patient context string
+        message: Patient's message
+        rag_context: Formatted RAG evidence context
+
+    Returns:
+        Formatted specialist prompt
+    """
+    instructions = SPECIALIST_INSTRUCTIONS.get(
+        agent_type,
+        f"You are a specialist agent for {agent_type} at Clintela.",
+    )
+    # Use manual string replacement since the template uses {{ }} for LLM braces
+    return (
+        SPECIALIST_PROMPT.replace("{{specialist_instructions}}", instructions)
+        .replace("{{patient_context}}", patient_context)
+        .replace("{{message}}", message)
+        .replace("{{rag_context}}", rag_context)
     )
 
 

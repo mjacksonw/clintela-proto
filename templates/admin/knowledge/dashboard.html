@@ -1,0 +1,176 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Knowledge Health Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-stats {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    .stat-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 16px 24px;
+        min-width: 140px;
+        text-align: center;
+    }
+    .stat-card .stat-value {
+        font-size: 2em;
+        font-weight: bold;
+        color: #417690;
+    }
+    .stat-card .stat-label {
+        font-size: 0.85em;
+        color: #666;
+        margin-top: 4px;
+    }
+    .dashboard-section {
+        margin-bottom: 32px;
+    }
+    .dashboard-section h3 {
+        margin-bottom: 12px;
+        color: #417690;
+    }
+    .freshness-fresh { color: #28a745; font-weight: bold; }
+    .freshness-aging { color: #ffc107; font-weight: bold; }
+    .freshness-stale { color: #dc3545; font-weight: bold; }
+    .dashboard-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .dashboard-table th,
+    .dashboard-table td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #dee2e6;
+        text-align: left;
+    }
+    .dashboard-table th {
+        background: #f8f9fa;
+        font-weight: bold;
+    }
+    .gap-count {
+        display: inline-block;
+        background: #e9ecef;
+        border-radius: 12px;
+        padding: 2px 10px;
+        font-size: 0.85em;
+        font-weight: bold;
+        color: #495057;
+    }
+    .empty-state {
+        color: #999;
+        font-style: italic;
+        padding: 16px;
+    }
+</style>
+
+<h2>Knowledge Health Dashboard</h2>
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-value">{{ source_count }}</div>
+        <div class="stat-label">Active Sources</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ chunk_count|default:"0" }}</div>
+        <div class="stat-label">Total Chunks</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ gap_count }}</div>
+        <div class="stat-label">Knowledge Gaps</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{% if avg_age_days is not None %}{{ avg_age_days }}d{% else %}--{% endif %}</div>
+        <div class="stat-label">Avg Source Age</div>
+    </div>
+</div>
+
+<div class="dashboard-section">
+    <h3>Source Freshness</h3>
+    {% if source_rows %}
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Source</th>
+                <th>Chunks</th>
+                <th>Last Ingested</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in source_rows %}
+            <tr>
+                <td>{{ row.name }}</td>
+                <td>{{ row.chunks }}</td>
+                <td>{% if row.days is not None %}{{ row.days }} days ago{% else %}Never{% endif %}</td>
+                <td>
+                    <span class="freshness-{{ row.freshness }}">
+                        {% if row.freshness == "fresh" %}Fresh
+                        {% elif row.freshness == "aging" %}Aging
+                        {% else %}Stale{% endif %}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No sources yet. Run an ingestion command to get started.</p>
+    {% endif %}
+</div>
+
+<div class="dashboard-section">
+    <h3>Top Knowledge Gaps (Unanswered Questions)</h3>
+    {% if top_gaps %}
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Question</th>
+                <th>Times Asked</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for gap in top_gaps %}
+            <tr>
+                <td>{{ gap.query|truncatewords:20 }}</td>
+                <td><span class="gap-count">&times;{{ gap.count }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No knowledge gaps recorded yet.</p>
+    {% endif %}
+</div>
+
+<div class="dashboard-section">
+    <h3>Most Cited Documents</h3>
+    {% if most_cited %}
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Document</th>
+                <th>Source</th>
+                <th>Citations</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in most_cited %}
+            <tr>
+                <td>{{ doc.title|truncatewords:10 }}</td>
+                <td>{{ doc.source__name }}</td>
+                <td><span class="gap-count">{{ doc.citation_count }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No citations recorded yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

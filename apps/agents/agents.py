@@ -17,6 +17,9 @@ from apps.agents.prompts import (
 
 logger = logging.getLogger(__name__)
 
+# Confidence scoring constants
+CONFIDENCE_ESCALATION_THRESHOLD = 0.70
+
 
 class AgentResult:
     """Result from an agent invocation."""
@@ -49,11 +52,32 @@ class AgentResult:
         }
 
 
+def _rag_confidence_adjustment(rag_top_similarity: float | None) -> float:
+    """Calculate confidence adjustment from RAG similarity score.
+
+    Args:
+        rag_top_similarity: Best similarity score, or None if RAG disabled.
+
+    Returns:
+        Adjustment value (positive = boost, negative = penalty).
+    """
+    if rag_top_similarity is None:
+        return 0.0
+    if rag_top_similarity > 0.85:
+        return 0.10  # Strong RAG evidence
+    if rag_top_similarity >= 0.70:
+        return 0.05  # Moderate RAG evidence
+    if rag_top_similarity == 0.0:
+        return -0.05  # No RAG results when RAG is enabled
+    return 0.0
+
+
 def calculate_confidence_score(
     response: str,
     agent_type: str,
     has_critical_keywords: bool = False,
     llm_finish_reason: str | None = None,
+    rag_top_similarity: float | None = None,
 ) -> float:
     """Calculate confidence score for an agent response.
 
@@ -62,6 +86,7 @@ def calculate_confidence_score(
         agent_type: Type of agent
         has_critical_keywords: Whether critical keywords were detected
         llm_finish_reason: LLM finish reason (e.g., 'stop', 'length')
+        rag_top_similarity: Best similarity score from RAG results (None if RAG disabled)
 
     Returns:
         Confidence score between 0 and 1
@@ -85,9 +110,11 @@ def calculate_confidence_score(
     if has_critical_keywords:
         base_confidence -= 0.30
 
+    # RAG-based adjustments
+    base_confidence += _rag_confidence_adjustment(rag_top_similarity)
+
     # Agent-specific adjustments
     if agent_type == "nurse_triage":
-        # Nurse triage should be more conservative
         base_confidence -= 0.05
 
     return max(0.0, min(1.0, base_confidence))
@@ -295,6 +322,7 @@ Status: {patient.get("status", "unknown")}
             patient_context=patient_context,
             conversation_history=history_str,
             message=message,
+            rag_context=context.get("rag_context", ""),
         )
 
         messages = self._build_messages(
@@ -306,15 +334,17 @@ Status: {patient.get("status", "unknown")}
             response = await self._call_llm(messages, temperature=0.8)
             content = response.get("content", "I'm here to help. Could you tell me more?")
 
-            # Calculate confidence score
+            # Calculate confidence score with RAG adjustment
+            rag_top_sim = context.get("rag_top_similarity")
             confidence = calculate_confidence_score(
                 response=content,
                 agent_type="care_coordinator",
                 llm_finish_reason=response.get("finish_reason"),
+                rag_top_similarity=rag_top_sim,
             )
 
             # Check if confidence is below threshold
-            should_escalate = confidence < 0.70
+            should_escalate = confidence < CONFIDENCE_ESCALATION_THRESHOLD
 
             return AgentResult(
                 response=content,
@@ -439,6 +469,7 @@ class NurseTriageAgent(BaseAgent):
             allergies=patient.get("allergies", []),
             pathway_context=json.dumps(pathway, indent=2),
             message=message,
+            rag_context=context.get("rag_context", ""),
         )
 
         messages = self._build_messages(
@@ -455,19 +486,28 @@ class NurseTriageAgent(BaseAgent):
             else:
                 result = response
 
-            severity = result.get("severity", "green")
+            severity = result.get("severity", "green").lower().strip()
+            if severity not in {"green", "yellow", "orange", "red"}:
+                logger.warning("Unknown triage severity from LLM: %r, defaulting to orange", severity)
+                severity = "orange"
             response_text = result.get("response", result.get("recommendation", ""))
 
-            # Calculate confidence score
+            # Calculate confidence score with RAG adjustment
+            rag_top_sim = context.get("rag_top_similarity")
             confidence = calculate_confidence_score(
                 response=response_text,
                 agent_type="nurse_triage",
                 has_critical_keywords=severity in ["orange", "red"],
                 llm_finish_reason=response.get("finish_reason"),
+                rag_top_similarity=rag_top_sim,
             )
 
             # Escalate if severity is high or confidence is low
-            escalate = result.get("escalate", False) or severity in ["orange", "red"] or confidence < 0.70
+            escalate = (
+                result.get("escalate", False)
+                or severity in ["orange", "red"]
+                or confidence < CONFIDENCE_ESCALATION_THRESHOLD
+            )
 
             return AgentResult(
                 response=response_text,
@@ -481,7 +521,7 @@ class NurseTriageAgent(BaseAgent):
                 },
                 escalate=escalate,
                 escalation_reason=result.get("escalation_reason", "")
-                or ("Low confidence score" if confidence < 0.70 else ""),
+                or ("Low confidence score" if confidence < CONFIDENCE_ESCALATION_THRESHOLD else ""),
             )
         except (json.JSONDecodeError, LLMError) as e:
             logger.error(f"Nurse Triage failed: {e}")
@@ -641,23 +681,19 @@ def get_agent(agent_type: str, llm_client: LLMClient | None = None) -> BaseAgent
     Raises:
         ValueError: If agent type is unknown
     """
-    agents = {
+    from apps.agents.specialists import SPECIALIST_REGISTRY
+
+    core_agents: dict[str, type[BaseAgent]] = {
         "supervisor": SupervisorAgent,
         "care_coordinator": CareCoordinatorAgent,
         "nurse_triage": NurseTriageAgent,
         "documentation": DocumentationAgent,
-        "specialist_cardiology": PlaceholderSpecialistAgent,
-        "specialist_social_work": PlaceholderSpecialistAgent,
-        "specialist_nutrition": PlaceholderSpecialistAgent,
-        "specialist_pt_rehab": PlaceholderSpecialistAgent,
-        "specialist_palliative": PlaceholderSpecialistAgent,
-        "specialist_pharmacy": PlaceholderSpecialistAgent,
     }
 
-    if agent_type not in agents:
-        raise ValueError(f"Unknown agent type: {agent_type}")
+    if agent_type in core_agents:
+        return core_agents[agent_type](llm_client)
 
-    if agent_type.startswith("specialist_"):
-        return agents[agent_type](agent_type, llm_client)
+    if agent_type in SPECIALIST_REGISTRY:
+        return SPECIALIST_REGISTRY[agent_type](llm_client)
 
-    return agents[agent_type](llm_client)
+    raise ValueError(f"Unknown agent type: {agent_type}")

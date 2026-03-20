@@ -12,7 +12,8 @@ from apps.agents.models import (
     ConversationState,
     Escalation,
 )
-from apps.patients.models import Hospital, Patient
+from apps.caregivers.models import Caregiver, CaregiverInvitation, CaregiverRelationship
+from apps.patients.models import ConsentRecord, Hospital, Patient
 
 
 class HospitalFactory(factory.django.DjangoModelFactory):
@@ -126,3 +127,48 @@ class AgentAuditLogFactory(factory.django.DjangoModelFactory):
     details = factory.LazyFunction(dict)
     ip_address = "127.0.0.1"
     user_agent = "Mozilla/5.0 (Test)"
+
+
+class CaregiverFactory(factory.django.DjangoModelFactory):
+    """Factory for Caregiver model."""
+
+    class Meta:
+        model = Caregiver
+
+    user = factory.SubFactory(UserFactory, role="caregiver")
+    is_verified = True
+    is_active = True
+
+
+class CaregiverRelationshipFactory(factory.django.DjangoModelFactory):
+    """Factory for CaregiverRelationship model."""
+
+    class Meta:
+        model = CaregiverRelationship
+
+    caregiver = factory.SubFactory(CaregiverFactory)
+    patient = factory.SubFactory(PatientFactory)
+    relationship = "spouse"
+
+
+class CaregiverInvitationFactory(factory.django.DjangoModelFactory):
+    """Factory for CaregiverInvitation model."""
+
+    class Meta:
+        model = CaregiverInvitation
+
+    patient = factory.SubFactory(PatientFactory)
+    name = factory.Faker("name")
+    email = factory.Faker("email")
+    relationship = "spouse"
+
+
+class ConsentRecordFactory(factory.django.DjangoModelFactory):
+    """Factory for ConsentRecord model."""
+
+    class Meta:
+        model = ConsentRecord
+
+    patient = factory.SubFactory(PatientFactory)
+    consent_type = "ai_interaction"
+    granted = True
