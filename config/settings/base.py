@@ -69,6 +69,7 @@ LOCAL_APPS = [
     "apps.pathways",
     "apps.notifications",
     "apps.analytics",
+    "apps.knowledge",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -356,3 +357,16 @@ ENABLE_WEBSOCKETS = env("ENABLE_WEBSOCKETS", default=False)
 ENABLE_CELERY = env("ENABLE_CELERY", default=False)
 ENABLE_SMS = env("ENABLE_SMS", default=False)
 ENABLE_VOICE = env("ENABLE_VOICE", default=False)
+ENABLE_RAG = env("ENABLE_RAG", default=False)
+
+# =============================================================================
+# EMBEDDING / RAG
+# =============================================================================
+EMBEDDING_MODEL = env("EMBEDDING_MODEL", default="nomic-embed-text")
+EMBEDDING_DIMENSIONS = env.int("EMBEDDING_DIMENSIONS", default=768)
+EMBEDDING_BASE_URL = env("EMBEDDING_BASE_URL", default="http://localhost:11434")
+
+RAG_TOP_K = env.int("RAG_TOP_K", default=5)
+RAG_SIMILARITY_THRESHOLD = env.float("RAG_SIMILARITY_THRESHOLD", default=0.7)
+RAG_VECTOR_WEIGHT = env.float("RAG_VECTOR_WEIGHT", default=0.7)
+RAG_TEXT_WEIGHT = env.float("RAG_TEXT_WEIGHT", default=0.3)

@@ -83,6 +83,13 @@ class AgentMessage(models.Model):
     escalation_triggered = models.BooleanField(default=False)
     escalation_reason = models.TextField(blank=True)
 
+    # RAG citation tracking
+    cited_documents = models.ManyToManyField(
+        "knowledge.KnowledgeDocument",
+        through="MessageCitation",
+        blank=True,
+    )
+
     # Additional metadata
     metadata = models.JSONField(default=dict, blank=True)
 
@@ -226,3 +233,44 @@ class Escalation(models.Model):
 
     def __str__(self):
         return f"{self.severity} - {self.patient} - {self.status}"
+
+
+class MessageCitation(models.Model):
+    """Through model linking AgentMessage to KnowledgeDocument.
+
+    Tracks which knowledge chunks were retrieved and used to generate
+    a given agent response, with similarity scores for analytics.
+    """
+
+    agent_message = models.ForeignKey(
+        AgentMessage,
+        on_delete=models.CASCADE,
+        related_name="citations",
+    )
+    knowledge_doc = models.ForeignKey(
+        "knowledge.KnowledgeDocument",
+        on_delete=models.CASCADE,
+        related_name="citations",
+    )
+    similarity_score = models.FloatField(
+        help_text="Combined similarity score from hybrid search",
+    )
+    retrieved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "agents_message_citation"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["agent_message", "knowledge_doc"],
+                name="uq_citation_message_doc",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["knowledge_doc"],
+                name="idx_citation_knowledge_doc",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Citation: {self.knowledge_doc} (score={self.similarity_score:.2f})"
