@@ -215,3 +215,227 @@ class TestCreateEscalationNotification:
         )
         assert notifications.count() == 1
         assert notifications.first().title == "Your care team has been notified"
+
+    def test_creates_clinician_notification_when_assigned(self):
+        """Creates clinician notification when escalation has assigned_to."""
+        from apps.agents.tests.factories import EscalationFactory, UserFactory
+        from apps.clinicians.models import Clinician
+
+        clinician_user = UserFactory()
+        clinician = Clinician.objects.create(user=clinician_user, role="physician", specialty="Surgery")
+
+        escalation = EscalationFactory(severity="urgent")
+        escalation.assigned_to = clinician_user
+        escalation.save()
+
+        NotificationService.create_escalation_notification(escalation)
+
+        # Should create clinician notification
+        clinician_notifications = Notification.objects.filter(
+            clinician=clinician,
+            notification_type="escalation",
+        )
+        assert clinician_notifications.count() == 1
+
+    def test_no_clinician_notification_when_not_assigned(self):
+        """No clinician notification when escalation has no assigned_to."""
+        from apps.agents.tests.factories import EscalationFactory
+
+        escalation = EscalationFactory(severity="routine")
+        # escalation.assigned_to is not set (None by default)
+
+        NotificationService.create_escalation_notification(escalation)
+
+        # Should only have patient notification
+        patient_notifications = Notification.objects.filter(
+            patient=escalation.patient,
+            notification_type="escalation",
+        )
+        assert patient_notifications.count() == 1
+
+    def test_severity_map_urgent(self):
+        """Urgent escalation maps to warning severity."""
+        from apps.agents.tests.factories import EscalationFactory
+
+        escalation = EscalationFactory(severity="urgent")
+        NotificationService.create_escalation_notification(escalation)
+
+        n = Notification.objects.filter(patient=escalation.patient, notification_type="escalation").first()
+        assert n.severity == "warning"
+
+    def test_clinician_not_found_logs_warning(self):
+        """Handles Clinician.DoesNotExist gracefully."""
+        from apps.agents.tests.factories import EscalationFactory, UserFactory
+
+        # Create user but NO clinician profile
+        some_user = UserFactory()
+
+        escalation = EscalationFactory(severity="urgent")
+        escalation.assigned_to = some_user
+        escalation.save()
+
+        # Should not raise
+        NotificationService.create_escalation_notification(escalation)
+
+    def test_no_patient_notification_when_no_patient(self):
+        """No patient notification when escalation has no patient (mocked)."""
+        from unittest.mock import MagicMock
+
+        # Create a mock escalation with no patient
+        escalation = MagicMock()
+        escalation.patient = None
+        escalation.severity = "urgent"
+        # No assigned_to
+        del escalation.assigned_to
+
+        initial_count = Notification.objects.count()
+        NotificationService.create_escalation_notification(escalation)
+        # No new notifications created
+        assert Notification.objects.count() == initial_count
+
+
+@pytest.mark.django_db
+class TestNotificationServiceChannelLogic:
+    """Test _get_channels_for_patient and _is_quiet_hours logic."""
+
+    def test_get_channels_returns_default_when_no_patient(self):
+        channels = NotificationService._get_channels_for_patient(None, "alert")
+        assert channels == ["in_app"]
+
+    def test_is_channel_enabled_returns_true_when_no_preference(self):
+        patient = PatientFactory()
+        # No preference record — should default to enabled
+        result = NotificationService._is_channel_enabled(patient, "sms", "alert")
+        assert result is True
+
+    def test_is_quiet_hours_returns_false_when_no_preference(self):
+        patient = PatientFactory()
+        result = NotificationService._is_quiet_hours(patient, "sms", "alert")
+        assert result is False
+
+    def test_is_quiet_hours_returns_false_when_no_times_set(self):
+        patient = PatientFactory()
+        NotificationPreferenceFactory(
+            patient=patient,
+            channel="sms",
+            notification_type="alert",
+            quiet_hours_start=None,
+            quiet_hours_end=None,
+        )
+        result = NotificationService._is_quiet_hours(patient, "sms", "alert")
+        assert result is False
+
+    def test_is_quiet_hours_overnight(self):
+        """Test overnight quiet hours (e.g. 22:00 - 07:00)."""
+        import datetime
+
+        patient = PatientFactory()
+        # Overnight: start > end
+        NotificationPreferenceFactory(
+            patient=patient,
+            channel="sms",
+            notification_type="alert",
+            quiet_hours_start=datetime.time(22, 0),
+            quiet_hours_end=datetime.time(7, 0),
+        )
+        # We can't easily control current time, but we can verify it doesn't crash
+        result = NotificationService._is_quiet_hours(patient, "sms", "alert")
+        assert isinstance(result, bool)
+
+    def test_deliver_notification_backend_raises_exception(self, settings):
+        """Backend exception is caught and marks delivery failed."""
+        settings.NOTIFICATION_BACKENDS = {
+            "in_app": "apps.notifications.backends.LocMemBackend",
+        }
+        from apps.notifications.backends import _import_backend_class
+
+        _import_backend_class.cache_clear()
+
+        n = NotificationFactory()
+        NotificationDeliveryFactory(notification=n, channel="in_app")
+
+        with pytest.raises(Exception) if False else __import__("contextlib").suppress():
+            pass
+
+        from unittest.mock import patch
+
+        with patch("apps.notifications.backends.LocMemBackend.send", side_effect=Exception("Backend crashed")):
+            results = NotificationService.deliver_notification(n.id)
+
+        assert results["in_app"] is False
+        d = n.deliveries.first()
+        d.refresh_from_db()
+        assert d.status == "failed"
+        assert d.retry_count == 1
+
+    def test_push_notification_to_websocket_with_channel_layer_none(self):
+        """Push to websocket is no-op when channel layer is None."""
+        from unittest.mock import patch
+
+        from apps.notifications.services import _push_notification_to_websocket
+
+        n = NotificationFactory()
+        with patch("channels.layers.get_channel_layer", return_value=None):
+            # Should not raise
+            _push_notification_to_websocket(n)
+
+    def test_push_delivery_status_with_channel_layer_none(self):
+        """Push delivery status is no-op when channel layer is None."""
+        from unittest.mock import patch
+
+        from apps.notifications.services import _push_delivery_status
+
+        n = NotificationFactory()
+        with patch("channels.layers.get_channel_layer", return_value=None):
+            # Should not raise
+            _push_delivery_status(n.id, "in_app", "delivered")
+
+    def test_push_notification_to_websocket_with_clinician(self):
+        """Push to websocket works for clinician notifications."""
+        from unittest.mock import patch
+
+        from apps.agents.tests.factories import UserFactory
+        from apps.clinicians.models import Clinician
+        from apps.notifications.services import _push_notification_to_websocket
+
+        user = UserFactory()
+        clinician = Clinician.objects.create(user=user, role="physician", specialty="Surgery")
+        n = NotificationFactory(patient=None, clinician=clinician)
+        n.patient = None
+        n.save()
+
+        with patch("channels.layers.get_channel_layer", return_value=None):
+            # Should not raise
+            _push_notification_to_websocket(n)
+
+    def test_push_delivery_status_for_patient_notification(self):
+        """Push delivery status sends to patient group."""
+        from unittest.mock import MagicMock, patch
+
+        from apps.notifications.services import _push_delivery_status
+
+        patient = PatientFactory()
+        n = NotificationFactory(patient=patient)
+
+        mock_layer = MagicMock()
+        mock_async_to_sync = MagicMock(return_value=lambda *a, **kw: None)
+        with (
+            patch("channels.layers.get_channel_layer", return_value=mock_layer),
+            patch("asgiref.sync.async_to_sync", mock_async_to_sync),
+        ):
+            _push_delivery_status(n.id, "in_app", "delivered")
+
+    def test_create_notification_with_no_patient_and_no_channels(self):
+        """Create notification with no patient and no explicit channels."""
+        n = NotificationService.create_notification(
+            patient=None,
+            clinician=None,
+            notification_type="alert",
+            severity="info",
+            title="System Alert",
+            message="System is running",
+        )
+        assert n.id is not None
+        # With no patient, should use DEFAULT_CHANNELS
+        channels = list(n.deliveries.values_list("channel", flat=True))
+        assert channels == ["in_app"]

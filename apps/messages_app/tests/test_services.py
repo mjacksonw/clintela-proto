@@ -140,3 +140,110 @@ class TestHandleInboundSms:
         assert "re-subscribed" in result["response"].lower()
         prefs = NotificationPreference.objects.filter(patient=patient, channel="sms", enabled=True)
         assert prefs.count() == 4
+
+    def test_non_patient_user_returns_none(self):
+        """SMS from a user without a patient_profile is ignored."""
+        from apps.accounts.models import User
+
+        # Create a user without a patient profile
+        User.objects.create_user(
+            username="staffonly",
+            phone_number="+15550000001",
+        )
+
+        result = SMSService().handle_inbound_sms(
+            from_number="+15550000001",
+            body="Hello",
+        )
+
+        assert result is None
+
+    def test_inbound_sms_processes_through_ai(self, settings):
+        """Normal inbound SMS is processed via AI and response sent."""
+        from unittest.mock import patch
+
+        settings.SMS_BACKEND = "apps.messages_app.backends.LocMemSMSBackend"
+        settings.ENABLE_SMS = True
+        from apps.messages_app.backends import _import_sms_backend_class
+
+        _import_sms_backend_class.cache_clear()
+        LocMemSMSBackend.reset()
+
+        patient = PatientFactory()
+
+        with patch("apps.agents.services.process_patient_message") as mock_process:
+            mock_process.return_value = {
+                "response_text": "I understand. Please rest and stay hydrated.",
+                "agent_message": None,
+                "escalate": False,
+            }
+            result = SMSService().handle_inbound_sms(
+                from_number=str(patient.user.phone_number),
+                body="My knee hurts",
+            )
+
+        assert result is not None
+        assert "response" in result
+        mock_process.assert_called_once_with(patient, "My knee hurts", channel="sms")
+
+    def test_inbound_sms_response_send_failure_is_swallowed(self, settings):
+        """Failed response SMS send does not raise."""
+        from unittest.mock import patch
+
+        settings.SMS_BACKEND = "apps.messages_app.backends.LocMemSMSBackend"
+        settings.ENABLE_SMS = True
+        from apps.messages_app.backends import _import_sms_backend_class
+
+        _import_sms_backend_class.cache_clear()
+
+        patient = PatientFactory()
+
+        with patch("apps.agents.services.process_patient_message") as mock_process:
+            mock_process.return_value = {
+                "response_text": "Here is my response.",
+                "agent_message": None,
+                "escalate": False,
+            }
+            with patch.object(SMSService, "send_sms", side_effect=Exception("SMS error")):
+                result = SMSService().handle_inbound_sms(
+                    from_number=str(patient.user.phone_number),
+                    body="Hello",
+                )
+
+        # Should still return the result despite send failure
+        assert result is not None
+
+
+@pytest.mark.django_db
+class TestSendSmsRateLimit:
+    def setup_method(self):
+        LocMemSMSBackend.reset()
+
+    def test_rate_limited_returns_rate_limited_status(self, settings):
+        """Patient exceeding rate limit gets 'rate_limited' status."""
+        settings.SMS_BACKEND = "apps.messages_app.backends.LocMemSMSBackend"
+        settings.ENABLE_SMS = True
+        settings.SMS_RATE_LIMIT_PER_HOUR = 2
+        from apps.messages_app.backends import _import_sms_backend_class
+
+        _import_sms_backend_class.cache_clear()
+
+        patient = PatientFactory()
+
+        # Create outbound messages to hit rate limit
+        from apps.messages_app.models import Message
+
+        Message.objects.create(patient=patient, channel="sms", direction="outbound", content="msg1")
+        Message.objects.create(patient=patient, channel="sms", direction="outbound", content="msg2")
+
+        result = SMSService().send_sms(patient, "Third message")
+        assert result["status"] == "rate_limited"
+
+    def test_sms_disabled_raises_in_non_debug(self, settings):
+        """SMS disabled raises when not in DEBUG."""
+        settings.ENABLE_SMS = False
+        settings.DEBUG = False
+
+        patient = PatientFactory()
+        with pytest.raises(ValueError, match="SMS is disabled"):
+            SMSService().send_sms(patient, "Hello")
