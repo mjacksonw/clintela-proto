@@ -134,7 +134,7 @@ class Patient(models.Model):
         allowed = self.LIFECYCLE_TRANSITIONS.get(self.lifecycle_status, [])
         if new_status not in allowed:
             raise InvalidLifecycleTransitionError(
-                f"Cannot transition from '{self.lifecycle_status}' to '{new_status}'. " f"Allowed: {allowed}"
+                f"Cannot transition from '{self.lifecycle_status}' to '{new_status}'. Allowed: {allowed}"
             )
 
         old_status = self.lifecycle_status

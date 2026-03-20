@@ -191,7 +191,7 @@ class PDFParser:
 
                 if not all_text:
                     logger.warning(
-                        "PDF has no extractable text (scanned?): %s — skipping. " "See TODO-011 for OCR support.",
+                        "PDF has no extractable text (scanned?): %s — skipping. See TODO-011 for OCR support.",
                         file_path.name,
                     )
                     return []

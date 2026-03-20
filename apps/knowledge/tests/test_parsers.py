@@ -75,7 +75,7 @@ class TestHTMLParser:
 
     def test_splits_on_headings(self):
         parser = HTMLParser()
-        html = "<h1>Section One</h1><p>Content one.</p>" "<h2>Section Two</h2><p>Content two.</p>"
+        html = "<h1>Section One</h1><p>Content one.</p><h2>Section Two</h2><p>Content two.</p>"
         sections = parser.parse(html)
         assert len(sections) == 2
         assert sections[0].title == "Section One"
@@ -83,9 +83,7 @@ class TestHTMLParser:
 
     def test_removes_script_and_style(self):
         parser = HTMLParser()
-        html = (
-            "<p>Real content.</p>" "<script>alert('bad')</script>" "<style>.x{color:red}</style>" "<p>More content.</p>"
-        )
+        html = "<p>Real content.</p><script>alert('bad')</script><style>.x{color:red}</style><p>More content.</p>"
         sections = parser.parse(html)
         content = " ".join(s.content for s in sections)
         assert "alert" not in content
@@ -116,9 +114,7 @@ class TestHTMLParserExtended:
 
     def test_removes_nav_footer_header(self):
         parser = HTMLParser()
-        html = (
-            "<header>Site header</header>" "<nav>Nav links</nav>" "<p>Body content.</p>" "<footer>Footer text</footer>"
-        )
+        html = "<header>Site header</header><nav>Nav links</nav><p>Body content.</p><footer>Footer text</footer>"
         sections = parser.parse(html)
         content = " ".join(s.content for s in sections)
         assert "Site header" not in content
@@ -144,11 +140,7 @@ class TestHTMLParserExtended:
 
     def test_h2_through_h6_create_sections(self):
         parser = HTMLParser()
-        html = (
-            "<h2>Alpha</h2><p>Alpha content.</p>"
-            "<h3>Beta</h3><p>Beta content.</p>"
-            "<h4>Gamma</h4><p>Gamma content.</p>"
-        )
+        html = "<h2>Alpha</h2><p>Alpha content.</p><h3>Beta</h3><p>Beta content.</p><h4>Gamma</h4><p>Gamma content.</p>"
         sections = parser.parse(html)
         assert len(sections) == 3
         assert sections[0].title == "Alpha"

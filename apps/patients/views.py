@@ -253,7 +253,7 @@ def patient_consent_view(request):
             "type": "ai_interaction",
             "label": "AI-Powered Care Assistance",
             "description": (
-                "Allow Clintela's AI agents to help answer your recovery questions " "using clinical knowledge."
+                "Allow Clintela's AI agents to help answer your recovery questions using clinical knowledge."
             ),
             "icon": "bot",
             "color": "var(--color-primary)",
@@ -262,7 +262,7 @@ def patient_consent_view(request):
             "type": "data_sharing_caregiver",
             "label": "Share with Caregivers",
             "description": (
-                "Allow your invited family members or caregivers to view your " "recovery status and chat history."
+                "Allow your invited family members or caregivers to view your recovery status and chat history."
             ),
             "icon": "users",
             "color": "#0D9488",
