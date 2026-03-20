@@ -31,7 +31,7 @@ class Command(BaseCommand):
             help="Source type",
         )
         parser.add_argument("--hospital", help="Hospital code (for tenant-scoped documents)")
-        parser.add_argument("--version", default="", help="Document version")
+        parser.add_argument("--doc-version", default="", help="Document version")
         parser.add_argument("--url", default="", help="Source URL")
 
     def handle(self, *args, **options):
@@ -52,7 +52,7 @@ class Command(BaseCommand):
             source_type=source_type,
             hospital=hospital,
             defaults={
-                "version": options.get("version", ""),
+                "version": options.get("doc_version", ""),
                 "url": options.get("url", ""),
             },
         )
