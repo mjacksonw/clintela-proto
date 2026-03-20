@@ -1,0 +1,76 @@
+<!-- Care Plan tab content -->
+<div class="p-4 animate-in">
+    <h2 class="text-base font-semibold mb-3" style="color: var(--color-text);">Care Plan</h2>
+
+    {% if active_pathway %}
+    <div class="mb-4 p-3 rounded-md" style="background-color: var(--color-bg);">
+        <div class="text-xs" style="color: var(--color-text-secondary);">Active Pathway</div>
+        <div class="text-sm font-semibold" style="color: var(--color-text);">{{ active_pathway.pathway.name }}</div>
+        <div class="text-xs mt-1" style="color: var(--color-text-secondary);">
+            {{ active_pathway.pathway.duration_days }} day program &middot; Started {{ active_pathway.started_at|date:"M j, Y" }}
+        </div>
+    </div>
+
+    <!-- Milestone timeline -->
+    <div class="relative">
+        <!-- Vertical line -->
+        <div class="absolute left-3 top-0 bottom-0 w-px" style="background-color: var(--color-border);"></div>
+
+        <div class="space-y-3">
+            {% for item in milestones %}
+            {% with m=item.milestone ck=item.checkin %}
+            <div class="flex items-start gap-3 relative">
+                <!-- Dot on timeline -->
+                <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 z-10
+                            {% if ck and ck.completed_at %}bg-green-100 dark:bg-green-900/30{% elif ck and ck.skipped %}bg-gray-100 dark:bg-gray-800{% elif ck %}bg-teal-100 dark:bg-teal-900/30{% else %}border-2{% endif %}"
+                     style="{% if not ck %}border-color: var(--color-border); background-color: var(--color-surface);{% endif %}">
+                    {% if ck and ck.completed_at %}
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-green-600"></i>
+                    {% elif ck and ck.skipped %}
+                    <i data-lucide="minus" class="w-3.5 h-3.5" style="color: var(--color-text-secondary);"></i>
+                    {% elif ck %}
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-teal-600"></i>
+                    {% else %}
+                    <div class="w-2 h-2 rounded-full" style="background-color: var(--color-border);"></div>
+                    {% endif %}
+                </div>
+
+                <!-- Content -->
+                <div class="flex-1 min-w-0 pb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium" style="color: var(--color-text);">
+                            Day {{ m.day }}: {{ m.title }}
+                        </span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded-full
+                                     {% if m.phase == 'early' %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300{% elif m.phase == 'middle' %}bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300{% else %}bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300{% endif %}">
+                            {{ m.phase }}
+                        </span>
+                    </div>
+                    <p class="text-xs mt-0.5" style="color: var(--color-text-secondary);">{{ m.description }}</p>
+                    {% if ck %}
+                    <div class="mt-1 text-[11px]" style="color: var(--color-text-secondary);">
+                        {% if ck.completed_at %}
+                        Completed {{ ck.completed_at|date:"M j, g:i A" }}
+                        {% elif ck.skipped %}
+                        Skipped
+                        {% else %}
+                        Sent {{ ck.sent_at|date:"M j, g:i A" }} &middot; Awaiting response
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+    </div>
+
+    {% else %}
+    <div class="text-center py-8">
+        <i data-lucide="map" class="w-10 h-10 mx-auto mb-2 opacity-30" style="color: var(--color-text-secondary);"></i>
+        <p class="text-sm" style="color: var(--color-text-secondary);">
+            No care pathway assigned yet. Assign one in the Tools tab.
+        </p>
+    </div>
+    {% endif %}
+</div>

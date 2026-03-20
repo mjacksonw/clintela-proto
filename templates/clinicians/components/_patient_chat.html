@@ -1,0 +1,50 @@
+<!-- Patient chat panel (right side) -->
+<div class="flex flex-col h-full">
+    {% if not conversation %}
+    <div class="flex items-center justify-center h-full" style="color: var(--color-text-secondary);">
+        <div class="text-center">
+            <i data-lucide="message-circle" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+            <p class="text-sm">No conversation yet. The patient hasn't messaged.</p>
+        </div>
+    </div>
+    {% else %}
+    <!-- Chat header -->
+    <div class="px-3 py-2 border-b flex-shrink-0 flex items-center justify-between" style="border-color: var(--color-border);">
+        <div class="text-sm font-semibold" style="color: var(--color-text);">
+            {{ patient.user.first_name }}'s Chat
+        </div>
+        <span class="text-[10px] px-1.5 py-0.5 rounded-full"
+              style="background-color: var(--color-bg); color: var(--color-text-secondary);">
+            {{ messages|length }} messages
+        </span>
+    </div>
+
+    <!-- Messages -->
+    <div id="chat-messages" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+        {% for msg in messages %}
+        <div class="flex {% if msg.role == 'user' %}justify-end{% else %}justify-start{% endif %}">
+            <div class="max-w-[85%] px-3 py-2 rounded-lg text-sm
+                        {% if msg.role == 'user' %}bg-blue-500 text-white
+                        {% elif msg.agent_type == 'clinician' %}bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800
+                        {% else %}{% endif %}"
+                 {% if msg.role == 'assistant' and msg.agent_type != 'clinician' %}style="background-color: var(--color-bg); color: var(--color-text);"{% endif %}>
+                {% if msg.agent_type == "clinician" %}
+                <div class="text-[10px] font-medium mb-0.5 text-teal-700 dark:text-teal-300">
+                    {{ msg.metadata.clinician_name|default:"Clinician" }}
+                </div>
+                {% elif msg.role == "assistant" and msg.agent_type %}
+                <div class="text-[10px] mb-0.5" style="color: var(--color-text-secondary);">
+                    {{ msg.agent_type|title }}
+                </div>
+                {% endif %}
+                <div class="agent-message-content">{{ msg.content }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Take control bar + message input -->
+    {% include "clinicians/components/_take_control_bar.html" %}
+
+    {% endif %}
+</div>

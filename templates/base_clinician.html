@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<style type="text/tailwindcss">
+    /* Clinician-specific tokens: 14px base, 16px card padding, 48px row height */
+    .clinician-panel {
+        background-color: var(--color-surface);
+        border-color: var(--color-border);
+    }
+
+    /* Triage color dots */
+    .triage-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .triage-green  { background-color: #059669; }
+    .triage-yellow { background-color: #D97706; }
+    .triage-orange { background-color: #EA580C; }
+    .triage-red    { background-color: #DC2626; }
+
+    /* Pulsing escalation badge */
+    @keyframes pulse-badge {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+    .badge-pulse { animation: pulse-badge 2s ease-in-out infinite; }
+
+    /* Skeleton loading */
+    .skeleton {
+        background: linear-gradient(90deg, var(--color-border) 25%, transparent 50%, var(--color-border) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.5s ease-in-out infinite;
+        border-radius: 4px;
+    }
+    @keyframes skeleton-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* Panel seamless borders */
+    .panel-border-r { border-right: 1px solid var(--color-border); }
+    .panel-border-l { border-left: 1px solid var(--color-border); }
+</style>
+{% endblock %}
+
+{% block body %}
+<div x-data="clinicianDashboard()"
+     @keydown.window="handleKeydown($event)"
+     class="h-screen flex flex-col overflow-hidden">
+
+    {% include "clinicians/components/_header.html" %}
+
+    <!-- Three-panel layout -->
+    <div class="flex flex-1 overflow-hidden" style="height: calc(100vh - 56px);">
+
+        <!-- LEFT PANEL: Patient List (280px) -->
+        <aside role="region"
+               aria-label="Patient list"
+               class="hidden lg:flex flex-col w-[280px] flex-shrink-0 panel-border-r clinician-panel overflow-hidden">
+            <div id="patient-list-panel"
+                 hx-get="{% url 'clinicians:patient_list' %}"
+                 hx-trigger="load"
+                 hx-target="#patient-list-panel"
+                 class="flex flex-col h-full overflow-hidden">
+                <!-- Skeleton while loading -->
+                {% include "clinicians/components/_patient_list_skeleton.html" %}
+            </div>
+        </aside>
+
+        <!-- CENTER PANEL: Patient Detail (flex-1) -->
+        <main role="main"
+              id="main-content"
+              tabindex="-1"
+              class="flex-1 overflow-y-auto min-h-0 clinician-panel"
+              style="min-width: 400px;">
+            <div id="detail-panel" class="h-full">
+                {% block detail_content %}
+                <div class="flex items-center justify-center h-full" style="color: var(--color-text-secondary);">
+                    <div class="text-center">
+                        <i data-lucide="users" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
+                        <p class="text-sm">Select a patient from the list to see their details.</p>
+                    </div>
+                </div>
+                {% endblock %}
+            </div>
+        </main>
+
+        <!-- RIGHT PANEL: Patient Chat (360px) -->
+        <aside role="complementary"
+               aria-label="Patient chat"
+               class="hidden lg:flex flex-col w-[360px] flex-shrink-0 panel-border-l clinician-panel overflow-hidden">
+            <div id="chat-panel" class="h-full">
+                <div class="flex items-center justify-center h-full" style="color: var(--color-text-secondary);">
+                    <div class="text-center">
+                        <i data-lucide="message-square" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
+                        <p class="text-sm">Patient chat will appear here.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Tablet: Chat drawer -->
+    <div x-show="chatDrawerOpen"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="translate-x-full"
+         x-transition:enter-end="translate-x-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="translate-x-0"
+         x-transition:leave-end="translate-x-full"
+         class="lg:hidden fixed right-0 top-14 bottom-0 w-[320px] z-40 clinician-panel panel-border-l overflow-y-auto shadow-xl"
+         x-cloak>
+        <div class="flex items-center justify-between px-3 py-2 border-b" style="border-color: var(--color-border);">
+            <span class="text-sm font-semibold">Patient Chat</span>
+            <button @click="chatDrawerOpen = false" class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <div id="chat-drawer-content"></div>
+    </div>
+
+    <!-- Mobile: Bottom navigation -->
+    <nav class="lg:hidden fixed bottom-0 inset-x-0 h-14 flex items-center justify-around border-t z-30"
+         style="background-color: var(--color-surface); border-color: var(--color-border);">
+        <button @click="mobilePanel = 'list'" class="flex flex-col items-center gap-0.5 py-1 px-3"
+                :class="mobilePanel === 'list' ? 'text-teal-600' : ''">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span class="text-[10px]">Patients</span>
+        </button>
+        <button @click="mobilePanel = 'detail'" class="flex flex-col items-center gap-0.5 py-1 px-3"
+                :class="mobilePanel === 'detail' ? 'text-teal-600' : ''">
+            <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+            <span class="text-[10px]">Details</span>
+        </button>
+        <button @click="mobilePanel = 'chat'" class="flex flex-col items-center gap-0.5 py-1 px-3"
+                :class="mobilePanel === 'chat' ? 'text-teal-600' : ''">
+            <i data-lucide="message-square" class="w-5 h-5"></i>
+            <span class="text-[10px]">Chat</span>
+        </button>
+    </nav>
+
+    <!-- Next appointment toast -->
+    {% if next_appointment %}
+    {% include "clinicians/components/_next_appointment_toast.html" %}
+    {% endif %}
+
+    <!-- Keyboard help modal -->
+    {% include "clinicians/components/_keyboard_help.html" %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/clinician-dashboard.js' %}"></script>
+{% endblock %}

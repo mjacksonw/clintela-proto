@@ -1,0 +1,168 @@
+<!-- Details tab content -->
+<div class="p-4 animate-in">
+    <!-- Patient header -->
+    <div class="flex items-center gap-3 mb-4">
+        <span class="triage-dot triage-{{ patient.status }}"></span>
+        <div>
+            <h2 class="text-base font-semibold" style="color: var(--color-text);">{{ patient.user.get_full_name }}</h2>
+            <div class="flex items-center gap-2 text-xs" style="color: var(--color-text-secondary);">
+                <span>{{ patient.get_status_display }}</span>
+                <span>&middot;</span>
+                <span>{{ patient.get_lifecycle_status_display }}</span>
+                {% with days=patient.days_post_op %}
+                {% if days is not None %}
+                <span>&middot;</span>
+                <span class="font-mono">Day {{ days }} post-op</span>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Surgery info -->
+    <div class="mb-4 p-3 rounded-md text-sm" style="background-color: var(--color-bg);">
+        <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+                <span style="color: var(--color-text-secondary);">Surgery</span>
+                <p class="font-medium" style="color: var(--color-text);">{{ patient.surgery_type|default:"—" }}</p>
+            </div>
+            <div>
+                <span style="color: var(--color-text-secondary);">Hospital</span>
+                <p class="font-medium" style="color: var(--color-text);">{{ patient.hospital.name|default:"—" }}</p>
+            </div>
+            <div>
+                <span style="color: var(--color-text-secondary);">MRN</span>
+                <p class="font-mono font-medium" style="color: var(--color-text);">{{ patient.mrn|default:"—" }}</p>
+            </div>
+            <div>
+                <span style="color: var(--color-text-secondary);">Surgery Date</span>
+                <p class="font-medium" style="color: var(--color-text);">{{ patient.surgery_date|date:"M j, Y"|default:"—" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Escalations -->
+    {% if escalations %}
+    <div class="mb-4">
+        <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-semibold" style="color: var(--color-text);">
+                Escalations
+                <span class="text-red-500 text-xs font-normal">({{ escalations|length }})</span>
+            </h3>
+            {% if escalations|length > 1 %}
+            <form method="post" action="{% url 'clinicians:bulk_acknowledge' %}" class="inline">
+                {% csrf_token %}
+                {% for esc in escalations %}
+                {% if esc.status == "pending" %}
+                <input type="hidden" name="escalation_ids" value="{{ esc.id }}">
+                {% endif %}
+                {% endfor %}
+                <button type="submit" class="text-[11px] text-teal-600 hover:text-teal-700 font-medium"
+                        hx-post="{% url 'clinicians:bulk_acknowledge' %}"
+                        hx-include="closest form"
+                        hx-swap="none">
+                    Acknowledge All
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="space-y-2">
+            {% for esc in escalations %}
+            {% include "clinicians/components/_escalation_badge.html" with escalation=esc %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Timeline -->
+    <div class="mb-4">
+        <h3 class="text-sm font-semibold mb-2" style="color: var(--color-text);">Timeline</h3>
+        {% if timeline %}
+        <div class="space-y-1">
+            {% for group in timeline %}
+            <div class="border rounded-md" style="border-color: var(--color-border);">
+                <button class="w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-800"
+                        hx-get="{% url 'clinicians:timeline_day' patient.id group.date|date:'Y-m-d' %}"
+                        hx-target="#timeline-{{ group.date|date:'Ymd' }}"
+                        hx-swap="innerHTML">
+                    <span class="font-medium" style="color: var(--color-text);">{{ group.date|date:"M j, Y" }}</span>
+                    <span style="color: var(--color-text-secondary);">
+                        {% if group.counts.escalation %}{{ group.counts.escalation }} escalation{{ group.counts.escalation|pluralize }}, {% endif %}
+                        {% if group.counts.conversation %}{{ group.counts.conversation }} conversation{{ group.counts.conversation|pluralize }}, {% endif %}
+                        {% if group.counts.note %}{{ group.counts.note }} note{{ group.counts.note|pluralize }}, {% endif %}
+                        {% if group.counts.checkin %}{{ group.counts.checkin }} check-in{{ group.counts.checkin|pluralize }}, {% endif %}
+                        {% if group.counts.transition %}{{ group.counts.transition }} transition{{ group.counts.transition|pluralize }}{% endif %}
+                    </span>
+                </button>
+                <div id="timeline-{{ group.date|date:'Ymd' }}"></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-xs" style="color: var(--color-text-secondary);">No activity yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Notes -->
+    <div class="mb-4">
+        <h3 class="text-sm font-semibold mb-2" style="color: var(--color-text);">Notes</h3>
+        <!-- Add note form -->
+        <form hx-post="{% url 'clinicians:add_note' patient.id %}"
+              hx-target="#notes-list"
+              hx-swap="afterbegin"
+              hx-on::after-request="this.reset()"
+              class="mb-3">
+            {% csrf_token %}
+            <div class="flex gap-2">
+                <input type="text" name="content" placeholder="Add a quick note..."
+                       required
+                       class="flex-1 h-8 px-3 text-sm rounded-md border"
+                       style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+                <select name="note_type" class="h-8 px-2 text-xs rounded-md border"
+                        style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+                    <option value="quick_note">Quick Note</option>
+                    <option value="clinical_observation">Clinical</option>
+                    <option value="follow_up">Follow Up</option>
+                    <option value="care_plan_note">Care Plan</option>
+                </select>
+                <button type="submit" class="h-8 px-3 text-xs font-medium rounded-md bg-teal-600 text-white hover:bg-teal-700">
+                    Add
+                </button>
+            </div>
+        </form>
+        <div id="notes-list" class="space-y-2">
+            {% for note in notes %}
+            {% include "clinicians/components/_note_item.html" %}
+            {% empty %}
+            <p class="text-xs" style="color: var(--color-text-secondary);">No notes yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Export handoff -->
+    <div class="mb-4">
+        <button onclick="exportHandoff('{{ patient.id }}')"
+                class="flex items-center gap-1.5 text-xs font-medium text-teal-600 hover:text-teal-700">
+            <i data-lucide="clipboard-copy" class="w-3.5 h-3.5"></i>
+            Export Handoff Notes
+        </button>
+    </div>
+
+    <!-- Upcoming appointments -->
+    {% if appointments %}
+    <div class="mb-4">
+        <h3 class="text-sm font-semibold mb-2" style="color: var(--color-text);">Upcoming Appointments</h3>
+        <div class="space-y-1.5">
+            {% for appt in appointments %}
+            <div class="flex items-center justify-between p-2 rounded-md text-xs" style="background-color: var(--color-bg);">
+                <div>
+                    <span class="font-medium" style="color: var(--color-text);">{{ appt.get_appointment_type_display }}</span>
+                    <span style="color: var(--color-text-secondary);">with {{ appt.clinician.user.get_full_name }}</span>
+                </div>
+                <span class="font-mono" style="color: var(--color-text-secondary);">{{ appt.scheduled_start|date:"M j, g:i A" }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>

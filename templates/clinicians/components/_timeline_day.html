@@ -1,0 +1,42 @@
+<!-- Expanded timeline events for a single day -->
+<div class="px-3 py-2 border-t space-y-1.5" style="border-color: var(--color-border);">
+    {% for event in events %}
+    <div class="flex items-start gap-2 text-xs">
+        {% if event.event_type == "escalation" %}
+        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5"></i>
+        <div>
+            <span class="font-medium text-red-600 dark:text-red-400">Escalation ({{ event.severity }})</span>
+            <p style="color: var(--color-text);">{{ event.reason|truncatechars:100 }}</p>
+        </div>
+        {% elif event.event_type == "transition" %}
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5"></i>
+        <div>
+            <span class="font-medium" style="color: var(--color-text);">Status: {{ event.from_status }} &rarr; {{ event.to_status }}</span>
+            {% if event.reason %}<p style="color: var(--color-text-secondary);">{{ event.reason }}</p>{% endif %}
+        </div>
+        {% elif event.event_type == "conversation" %}
+        <i data-lucide="message-circle" class="w-3.5 h-3.5 text-teal-500 flex-shrink-0 mt-0.5"></i>
+        <div>
+            <span class="font-medium" style="color: var(--color-text);">Conversation ({{ event.agent_type }})</span>
+            <span style="color: var(--color-text-secondary);">— {{ event.status }}</span>
+        </div>
+        {% elif event.event_type == "checkin" %}
+        <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-purple-500 flex-shrink-0 mt-0.5"></i>
+        <div>
+            <span class="font-medium" style="color: var(--color-text);">{{ event.milestone__title }}</span>
+            {% if event.completed_at %}<span class="text-green-600"> — Completed</span>
+            {% elif event.skipped %}<span style="color: var(--color-text-secondary);"> — Skipped</span>
+            {% else %}<span class="text-amber-600"> — Sent</span>{% endif %}
+        </div>
+        {% elif event.event_type == "note" %}
+        <i data-lucide="file-text" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style="color: var(--color-text-secondary);"></i>
+        <div>
+            <span class="font-medium" style="color: var(--color-text);">Note ({{ event.note_type }})</span>
+            <p style="color: var(--color-text-secondary);">{{ event.content|truncatechars:80 }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <p class="text-xs" style="color: var(--color-text-secondary);">No events this day.</p>
+    {% endfor %}
+</div>

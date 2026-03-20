@@ -1,0 +1,82 @@
+<!-- Clinician dashboard header — 56px height, compact -->
+<header role="navigation" class="h-14 flex items-center justify-between px-4 border-b flex-shrink-0"
+        style="background-color: var(--color-surface); border-color: var(--color-border);">
+    <!-- Left: Logo + nav -->
+    <div class="flex items-center gap-4">
+        <a href="{% url 'clinicians:dashboard' %}" class="font-bold text-base" style="color: var(--color-text);">
+            Clintela
+        </a>
+        <nav class="hidden sm:flex items-center gap-1">
+            <a href="{% url 'clinicians:dashboard' %}"
+               class="px-3 py-1.5 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
+                      {% if request.resolver_match.url_name == 'dashboard' %}font-semibold text-teal-600{% endif %}"
+               style="{% if request.resolver_match.url_name != 'dashboard' %}color: var(--color-text-secondary);{% endif %}">
+                Dashboard
+            </a>
+            <a href="{% url 'clinicians:schedule' %}"
+               class="px-3 py-1.5 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
+                      {% if request.resolver_match.url_name == 'schedule' %}font-semibold text-teal-600{% endif %}"
+               style="{% if request.resolver_match.url_name != 'schedule' %}color: var(--color-text-secondary);{% endif %}">
+                Schedule
+            </a>
+        </nav>
+    </div>
+
+    <!-- Right: Notifications + user menu -->
+    <div class="flex items-center gap-2">
+        <!-- Notification bell -->
+        <div x-data="{ bellOpen: false, unreadCount: 0 }" class="relative">
+            <button @click="bellOpen = !bellOpen"
+                    class="relative p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                    aria-label="Notifications">
+                <i data-lucide="bell" class="w-5 h-5" style="color: var(--color-text-secondary);"></i>
+                <span x-show="unreadCount > 0" x-text="unreadCount"
+                      class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center"
+                      x-cloak></span>
+            </button>
+            <div x-show="bellOpen" @click.outside="bellOpen = false"
+                 class="absolute right-0 top-full mt-1 w-72 rounded-lg shadow-lg border py-2 z-50"
+                 style="background-color: var(--color-surface); border-color: var(--color-border);"
+                 x-cloak>
+                <div class="px-3 py-2 text-xs font-semibold" style="color: var(--color-text-secondary);">
+                    Notifications
+                </div>
+                <div class="px-3 py-4 text-center text-sm" style="color: var(--color-text-secondary);">
+                    No new notifications.
+                </div>
+            </div>
+        </div>
+
+        <!-- Dark mode toggle -->
+        <button onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); localStorage.setItem('clintela-theme', document.documentElement.getAttribute('data-theme'));"
+                class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                aria-label="Toggle dark mode">
+            <i data-lucide="moon" class="w-5 h-5 hidden dark:block" style="color: var(--color-text-secondary);"></i>
+            <i data-lucide="sun" class="w-5 h-5 dark:hidden" style="color: var(--color-text-secondary);"></i>
+        </button>
+
+        <!-- User menu -->
+        <div x-data="{ menuOpen: false }" class="relative">
+            <button @click="menuOpen = !menuOpen"
+                    class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+                <div class="w-7 h-7 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs font-semibold">
+                    {{ request.user.first_name.0 }}{{ request.user.last_name.0 }}
+                </div>
+                <span class="hidden sm:inline text-sm" style="color: var(--color-text);">
+                    {{ request.user.get_full_name }}
+                </span>
+                <i data-lucide="chevron-down" class="w-3.5 h-3.5" style="color: var(--color-text-secondary);"></i>
+            </button>
+            <div x-show="menuOpen" @click.outside="menuOpen = false"
+                 class="absolute right-0 top-full mt-1 w-48 rounded-lg shadow-lg border py-1 z-50"
+                 style="background-color: var(--color-surface); border-color: var(--color-border);"
+                 x-cloak>
+                <a href="{% url 'clinicians:logout' %}"
+                   class="block px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+                   style="color: var(--color-text);">
+                    Sign out
+                </a>
+            </div>
+        </div>
+    </div>
+</header>

@@ -1,0 +1,47 @@
+<!-- Shift handoff summary card — dismissible -->
+<div x-data="{ dismissed: false }" x-show="!dismissed" class="card mb-4 animate-in" style="padding: 16px;">
+    <div class="flex items-start justify-between">
+        <div class="flex-1">
+            {% if first_login %}
+            <h3 class="text-sm font-semibold mb-1" style="color: var(--color-text);">
+                Welcome to Clintela
+            </h3>
+            <p class="text-xs" style="color: var(--color-text-secondary);">
+                This is your first shift. Your patients are listed on the left.
+                Select one to view their details and chat history.
+            </p>
+            {% else %}
+            <h3 class="text-sm font-semibold mb-2" style="color: var(--color-text);">
+                Shift Handoff
+            </h3>
+            <div class="flex flex-wrap gap-3 text-xs">
+                {% if handoff.new_escalation_count > 0 %}
+                <span class="flex items-center gap-1 text-red-600 dark:text-red-400 font-medium">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                    {{ handoff.new_escalation_count }} new escalation{{ handoff.new_escalation_count|pluralize }}
+                </span>
+                {% endif %}
+                {% if handoff.resolved_count > 0 %}
+                <span class="flex items-center gap-1 text-green-600 dark:text-green-400">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    {{ handoff.resolved_count }} resolved
+                </span>
+                {% endif %}
+                {% if handoff.status_change_count > 0 %}
+                <span class="flex items-center gap-1" style="color: var(--color-text-secondary);">
+                    <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+                    {{ handoff.status_change_count }} status change{{ handoff.status_change_count|pluralize }}
+                </span>
+                {% endif %}
+                {% if handoff.new_escalation_count == 0 and handoff.resolved_count == 0 and handoff.status_change_count == 0 %}
+                <span style="color: var(--color-text-secondary);">No changes since your last shift.</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <button @click="dismissed = true" class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0"
+                aria-label="Dismiss">
+            <i data-lucide="x" class="w-4 h-4" style="color: var(--color-text-secondary);"></i>
+        </button>
+    </div>
+</div>
