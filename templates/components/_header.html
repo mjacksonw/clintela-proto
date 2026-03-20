@@ -28,7 +28,8 @@
              data-patient-id="{{ patient.id }}"
              x-on:keydown.escape="open = false">
             <button @click="open = !open"
-                    class="p-3 rounded-lg transition-colors hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800 relative"
+                    class="p-3 rounded-lg transition-colors hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800 relative
+                           focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                     :aria-label="bellLabel"
                     aria-haspopup="true"
                     :aria-expanded="open">
