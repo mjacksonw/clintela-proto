@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.6.1] - 2026-03-19
+
+### Changed
+- Implementation handoff document updated with Phase 3 details: project structure, environment variables, key files, testing summary, and resolved open questions
+- Contributing guide updated to reference Ruff instead of Black/isort
+
 ## [0.2.6.0] - 2026-03-19
 
 ### Added
