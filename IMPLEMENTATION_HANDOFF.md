@@ -65,7 +65,7 @@
 - Audit logging for HIPAA compliance
 
 ✅ **Testing**
-- 38 unit tests (all passing)
+- 641+ tests across all apps (92% coverage)
 - Live LLM acceptance testing completed
 - Critical keyword detection verified (9/9 scenarios)
 - Safety guardrails verified (2/2 scenarios)
@@ -86,7 +86,7 @@ make dev
 # Access at http://localhost:8000
 
 # 4. Run tests
-POSTGRES_PORT=5434 pytest apps/agents/tests/ -v
+POSTGRES_PORT=5434 pytest
 
 # 5. Test with live LLM
 python manage.py shell
@@ -112,10 +112,12 @@ python manage.py shell
 | **Linting** | Ruff | Replaces black/isort/flake8; faster and simpler |
 | **Dev Environment** | Docker-first | `make docker-up` for turn-key setup |
 | **Pre-commit** | Yes | Ruff + Django checks + security |
-| **WebSockets** | Django Channels | Real-time clinician dashboard (Phase 3) |
+| **WebSockets** | Django Channels | Real-time notifications for patients and clinicians |
 | **LLM** | Ollama Cloud | Prototyping; migrate to HIPAA-compliant before production |
 | **Agent Framework** | LangGraph | StateGraph for workflow orchestration |
-| **Auth** | Leaflet codes + DOB | Two-factor for patients; SAML for clinicians (Phase 3) |
+| **Auth** | Leaflet codes + DOB | Two-factor for patients; SAML for clinicians (future) |
+| **Task Queue** | Celery + Redis | Async notification delivery, scheduled reminders, voice cleanup |
+| **SMS** | Twilio (console in dev) | Backend abstraction with opt-out, rate limiting |
 | **Agent Architecture** | Supervisor + tools | Auditability, safety, control |
 
 ---
@@ -142,7 +144,7 @@ python manage.py shell
 - [x] Escalation workflows
 - [x] Dual-layer critical symptom detection
 - [x] Safety guardrails (no diagnose/prescribe)
-- [x] 38 tests passing
+- [x] 641+ tests passing (92% coverage)
 - [x] Live LLM acceptance testing
 
 ### Phase 2.5: Patient UI ✅ COMPLETE
@@ -207,39 +209,58 @@ python manage.py shell
 clintela/
 ├── config/                    # Django settings
 │   ├── settings/
-│   │   ├── base.py           # + OLLAMA_MODEL setting
-│   │   ├── development.py
+│   │   ├── base.py           # Core settings + SMS/notification/voice config
+│   │   ├── development.py    # Console backends, debug tools
 │   │   ├── production.py
-│   │   └── test.py
-│   ├── urls.py
+│   │   └── test.py           # LocMem backends, CELERY_ALWAYS_EAGER
+│   ├── urls.py               # Root URLs including SMS webhooks
+│   ├── celery.py             # Celery app configuration
 │   ├── wsgi.py
 │   └── asgi.py               # WebSocket routing
 ├── apps/
-│   ├── accounts/              # Custom User model
-│   ├── patients/              # Patient, Hospital
+│   ├── accounts/              # Custom User model (phone_number indexed)
+│   ├── patients/              # Patient, Hospital, voice views
 │   ├── caregivers/            # Caregiver relationships
 │   ├── clinicians/            # Provider profiles
-│   ├── agents/                # AI SYSTEM (NEW)
+│   ├── agents/                # AI multi-agent system
 │   │   ├── agents.py         # Agent implementations
 │   │   ├── workflow.py       # LangGraph workflow
 │   │   ├── llm_client.py     # Ollama Cloud client
 │   │   ├── prompts.py        # Agent prompts
-│   │   ├── services.py       # ConversationService, EscalationService
-│   │   ├── models.py         # AgentConversation, AgentMessage, Escalation
-│   │   ├── consumers.py      # WebSocket consumers
-│   │   ├── api.py            # REST API endpoints
-│   │   ├── tasks.py          # Celery tasks
-│   │   └── tests/            # 38 tests
+│   │   ├── services.py       # ConversationService, process_patient_message()
+│   │   ├── routing.py        # WebSocket routing (chat + notifications)
+│   │   ├── tasks.py          # Celery tasks (check-ins, summaries)
+│   │   └── tests/            # Agent tests
 │   ├── messages_app/          # SMS, chat, voice
+│   │   ├── backends.py       # SMS backends (Twilio/Console/LocMem)
+│   │   ├── services.py       # SMSService (send, inbound, opt-out)
+│   │   ├── transcription.py  # Three-tier transcription (Mock/Whisper/Remote)
+│   │   ├── views.py          # Twilio webhook endpoints
+│   │   ├── urls.py           # SMS webhook routes
+│   │   ├── tasks.py          # Voice cleanup periodic task
+│   │   └── tests/            # SMS, transcription, webhook tests
+│   ├── notifications/         # Multi-channel notification engine
+│   │   ├── backends.py       # Notification backends (InApp/Console/SMS/Email/LocMem)
+│   │   ├── services.py       # NotificationService (create, deliver, preferences)
+│   │   ├── consumers.py      # WebSocket notification consumers
+│   │   ├── tasks.py          # Async delivery + scheduled reminders
+│   │   └── tests/            # Notification tests
 │   ├── pathways/              # Clinical pathways
-│   │   └── models.py         # + PathwayMilestone, PatientMilestoneCheckin
-│   ├── notifications/         # Alerts
 │   └── analytics/             # Metrics
 ├── templates/
+│   ├── base_patient.html      # Patient layout with notification bell
+│   └── components/
+│       ├── _chat_input.html   # Chat + voice recorder
+│       ├── _message_bubble.html # Channel icons + delivery status
+│       ├── _header.html       # Notification bell + sound toggle
+│       └── _dev_toolbar.html  # SMS simulator, patient switcher
 ├── static/
+│   └── js/
+│       ├── notifications.js   # WebSocket notification client
+│       └── voice-recorder.js  # MediaRecorder voice input
 ├── docs/
-│   ├── AGENT_SYSTEM_ACCEPTANCE.md  # Testing guide + results
-│   ├── 2026-03-18-agent-system-design.md  # Architecture
+│   ├── ACCEPTANCE-TESTING-PHASE3.md  # Manual QA guide
+│   ├── AGENT_SYSTEM_ACCEPTANCE.md
 │   └── engineering-review.md
 ├── pyproject.toml
 ├── docker-compose.yml
@@ -266,7 +287,7 @@ POSTGRES_USER=clintela
 POSTGRES_PASSWORD=clintela
 POSTGRES_DB=clintela
 
-# Redis (port 6380)
+# Redis (port 6380) — used by Celery + Django Channels
 REDIS_URL=redis://localhost:6380/0
 
 # LLM (Ollama Cloud)
@@ -274,46 +295,62 @@ OLLAMA_API_KEY=your-key
 OLLAMA_BASE_URL=https://ollama.com/api
 OLLAMA_MODEL=kimi-k2.5:cloud  # or llama3.2, etc.
 
-# External Services (optional for dev)
+# External Services (optional for dev — console backends used by default)
 TWILIO_ACCOUNT_SID=your-sid
 TWILIO_AUTH_TOKEN=your-token
 TWILIO_PHONE_NUMBER=+1234567890
+ENABLE_SMS=False  # Gate for production SMS sending
+
+# SMS/Voice/Notifications (dev defaults — no external services needed)
+SMS_BACKEND=apps.messages_app.backends.ConsoleSMSBackend
+TRANSCRIPTION_BACKEND=apps.messages_app.transcription.MockTranscriptionClient
+SMS_RATE_LIMIT_PER_HOUR=10
+VOICE_MEMO_RETENTION_HOURS=24
 ```
 
 ---
 
 ## Key Files Added/Modified
 
-### New Files (Phase 2)
+### Phase 2: Agent System
 - `apps/agents/agents.py` - Agent implementations (Supervisor, Care Coordinator, Nurse Triage, etc.)
 - `apps/agents/workflow.py` - LangGraph StateGraph workflow
 - `apps/agents/llm_client.py` - Ollama Cloud LLM client with retry logic
 - `apps/agents/prompts.py` - Agent prompt templates with safety guardrails
-- `apps/agents/services.py` - ConversationService, ContextService, EscalationService
+- `apps/agents/services.py` - ConversationService, EscalationService, `process_patient_message()`
 - `apps/agents/models.py` - AgentConversation, AgentMessage, Escalation models
-- `apps/agents/consumers.py` - WebSocket consumers for real-time chat
-- `apps/agents/api.py` - REST API endpoints
-- `apps/agents/tasks.py` - Celery tasks for proactive check-ins
-- `apps/agents/routing.py` - WebSocket routing
-- `apps/agents/tests/test_agents.py` - Agent unit tests
-- `apps/agents/tests/test_llm_client.py` - LLM client tests
-- `docs/AGENT_SYSTEM_ACCEPTANCE.md` - Testing guide with live LLM results
-- `docs/plans/2026-03-18-agent-system-design.md` - Architecture document
 
-### Modified Files
-- `config/settings/base.py` - Added OLLAMA_MODEL setting
-- `config/asgi.py` - WebSocket routing setup
-- `apps/pathways/models.py` - Added PathwayMilestone, PatientMilestoneCheckin
+### Phase 3: Communication & Multi-modality
+- `config/celery.py` - Celery app configuration with Redis broker
+- `apps/messages_app/backends.py` - SMS backend abstraction (Twilio/Console/LocMem)
+- `apps/messages_app/services.py` - SMSService (send, inbound, opt-out, rate limiting)
+- `apps/messages_app/transcription.py` - Three-tier transcription (Mock/Whisper/Remote)
+- `apps/messages_app/views.py` - Twilio webhook endpoints (inbound + status)
+- `apps/messages_app/tasks.py` - Voice memo cleanup periodic task
+- `apps/notifications/backends.py` - Notification backends (InApp/Console/SMS/Email/LocMem)
+- `apps/notifications/services.py` - NotificationService (create, deliver, preferences, quiet hours)
+- `apps/notifications/consumers.py` - WebSocket notification consumers (patient + clinician)
+- `apps/notifications/tasks.py` - Async delivery + scheduled reminder tasks
+- `apps/notifications/models.py` - NotificationDelivery, NotificationPreference models
+- `static/js/notifications.js` - WebSocket notification client with auto-reconnect
+- `static/js/voice-recorder.js` - MediaRecorder voice input with timer/cancel/auto-stop
 
 ---
 
 ## Testing Summary
 
-### Unit Tests
+### Full Test Suite
 ```bash
-POSTGRES_PORT=5434 pytest apps/agents/tests/ -v
-# 38 passed, 1 warning (async mock)
+POSTGRES_PORT=5434 pytest
+# 641+ tests, 92% coverage
 ```
+
+### Test Coverage by App
+- `apps/agents/` - Agent routing, LLM client, services, tasks, workflow
+- `apps/messages_app/` - SMS backends, services, transcription, webhooks, cleanup
+- `apps/notifications/` - Backends, services, consumers, tasks, integration
+- `apps/patients/` - Views, voice input, dev toolbar
+- `tests/e2e/` - Playwright E2E tests (27 tests, run separately with `-p no:xdist`)
 
 ### Live LLM Acceptance Testing
 ✅ **Agent Routing** - 4/4 scenarios passed
@@ -321,35 +358,38 @@ POSTGRES_PORT=5434 pytest apps/agents/tests/ -v
 ✅ **Safety Guardrails** - 2/2 scenarios passed
 ✅ **Conversation Services** - All passed
 
-See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for detailed results.
+See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TESTING-PHASE3.md` for Phase 3 manual QA.
 
 ---
 
+## Resolved Questions (from Prior Sessions)
+
+1. **Authentication:** Leaflet code + DOB two-factor auth implemented. UUID-based leaflet codes with DOB verification flow and session management.
+2. **Communication Layer:** Twilio SMS with console backend for dev, WebSocket notifications via Django Channels, Celery + Redis for async delivery and scheduled reminders.
+3. **Notification Architecture:** Multi-channel (in-app, SMS, email) with pluggable backends, NotificationDelivery tracking, patient preferences with quiet hours.
+
 ## Open Questions for Next Session
 
-1. **Authentication Implementation:**
-   - Leaflet code generation strategy (UUID? Short codes?)
-   - DOB verification flow
-   - Session management for patients
+1. **Clinical Features (Phase 4):**
+   - Specialist agent implementations (Cardiology, Social Work, Nutrition, PT/Rehab, Palliative, Pharmacy)
+   - Patient status state machine (admitted → discharged → recovering → recovered)
+   - Advanced escalation workflows with clinician assignment
+   - Caregiver invitation flow and consent management
 
-2. **Communication Layer:**
-   - Twilio SMS integration
-   - WebSocket message broadcasting
-   - Notification queue design
-
-3. **Clinical Features:**
-   - Specialist agent implementations
-   - Advanced escalation workflows
+2. **Clinician Dashboard (Phase 5):**
+   - Triage view with severity color-coding
+   - Real-time status updates via WebSocket
+   - Patient detail views with conversation history
 
 ---
 
 ## What to Do in Next Session
 
 1. **Start with:** `python manage.py create_test_patient` to get an auth URL
-2. **Test the UI:** Visit the auth URL, enter DOB `06/15/1985`, explore dashboard + chat
-3. **Focus on:** Twilio SMS integration (Phase 3)
-4. **Then:** WebSocket real-time upgrades
-5. **Run tests:** `POSTGRES_PORT=5434 pytest` for unit tests, `pytest tests/e2e/ -o "addopts="` for E2E
+2. **Test the UI:** Visit the auth URL, enter DOB `06/15/1985`, explore dashboard + chat + voice + notifications
+3. **Test SMS:** Expand dev toolbar, use SMS simulator to send inbound messages
+4. **Focus on:** Phase 4 — Specialist agent implementations
+5. **Run tests:** `POSTGRES_PORT=5434 pytest` for full suite, `pytest tests/e2e/ -p no:xdist` for E2E
 6. **Verify:** Pre-commit hooks passing, coverage ≥90%
 
 ---
@@ -359,6 +399,7 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for detailed results.
 - **Design decisions:** DESIGN.md
 - **Architecture:** docs/engineering-review.md
 - **Agent system:** docs/AGENT_SYSTEM_ACCEPTANCE.md
+- **Phase 3 QA guide:** docs/ACCEPTANCE-TESTING-PHASE3.md
 - **Security requirements:** docs/security.md
 - **Dev workflow:** docs/development.md
 - **Deferred work:** TODOS.md
@@ -371,7 +412,9 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for detailed results.
 - **Phase 1 models** - All 9 apps with migrations
 - **Dev environment** - Makefile, pre-commit, CI workflow
 - **Agent system** (2026-03-19) - Multi-agent AI with LangGraph, live LLM testing
+- **Patient UI** (2026-03-19) - HTMX chat, dashboard, dark mode, E2E tests
+- **Phase 3 communication** (2026-03-19) - SMS, voice, notifications, Celery, dev toolbar
 
 ---
 
-*Phase 3 Complete — Communication & Multi-modality: SMS via Twilio, voice input with Whisper transcription, WebSocket notifications, Celery task queue, dev toolbar, and 92% test coverage. Ready for Phase 4: Clinical Features.*
+*Phase 3 Complete (v0.2.6.0) — Communication & Multi-modality: SMS via Twilio, voice input with Whisper transcription, WebSocket notifications, Celery task queue, notification engine, dev toolbar, and 92% test coverage. Ready for Phase 4: Clinical Features.*

@@ -1007,8 +1007,7 @@ LOGGING = {
 ### Code Style
 
 - Follow PEP 8
-- Use Black for formatting
-- Use isort for import sorting
+- Use Ruff for linting and formatting (`ruff check .` and `ruff format .`)
 - Write docstrings for all public functions
 - Keep functions focused and small
 
