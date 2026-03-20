@@ -274,7 +274,7 @@ The PDF parser (`apps/knowledge/parsers.py`) currently uses pdfplumber for text 
 
 **Effort:** Small (human: ~1 week / CC: ~30 min)
 **Priority:** P2
-**Blocked by:** Phase 4 Step 3 (ingestion pipeline)
+**Blocked by:** None — ingestion pipeline shipped in v0.2.7.0
 
 ---
 
@@ -298,7 +298,7 @@ The `KnowledgeRetrievalService.search()` method embeds the query on every call. 
 
 **Effort:** Small (human: ~3 days / CC: ~15 min)
 **Priority:** P3
-**Blocked by:** Phase 4 Step 2 (retrieval service)
+**Blocked by:** None — retrieval service shipped in v0.2.7.0
 
 ---
 
@@ -322,7 +322,18 @@ After a caregiver accepts an invitation and verifies with the patient's leaflet 
 
 **Effort:** Medium (human: ~1 week / CC: ~30 min)
 **Priority:** P2
-**Blocked by:** Phase 4 Step 7 (caregiver flow + consent)
+**Blocked by:** None — caregiver flow + consent shipped in v0.2.7.0
+
+---
+
+### TODO-014: Chat Sidebar Suggestion Chips Touch Target
+**What:** Increase suggestion chip height from 38px to 44px minimum WCAG touch target in `_chat_sidebar.html`.
+
+**Why:** Design review (2026-03-20) found chips below 44px minimum. Deferred because the chips are pre-existing code not changed in the Phase 4 branch.
+
+**Effort:** Tiny (human: ~5 min / CC: ~2 min)
+**Priority:** P3
+**Blocked by:** None
 
 ---
 
@@ -361,4 +372,4 @@ When deferring new work:
 ---
 
 *Last updated: 2026-03-20*
-*Source: CEO Review Scope Expansion + Phase 3 completion (v0.2.6.0) + Phase 4 Eng/Design review deferrals*
+*Source: CEO Review Scope Expansion + Phase 3 completion (v0.2.6.0) + Phase 4 completion (v0.2.7.0) + Design review deferrals*

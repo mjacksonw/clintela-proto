@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.7.0] - 2026-03-20
+
+### Added
+- Clinical knowledge RAG system with pgvector hybrid search (vector similarity + full-text ranking) for evidence-backed agent responses
+- Knowledge ingestion pipeline with PDF, Markdown, HTML, and text parsers, SHA-256 deduplication, and content sanitizer for prompt injection defense
+- Embedding client (Ollama nomic-embed-text) with mock client for testing and batch embedding support
+- Six RAG-backed specialist agents (Cardiology, Pharmacy, Nutrition, PT/Rehab, Social Work, Palliative) replacing placeholder escalation-only agents
+- Patient-facing citation display with expandable source list on chat message bubbles (Alpine.js x-collapse)
+- MessageCitation M2M through model linking agent messages to knowledge documents with similarity scores
+- Knowledge gap tracking — logs unanswered patient questions for admin visibility
+- Knowledge health admin dashboard with source freshness indicators, top knowledge gaps, and most-cited documents
+- Patient lifecycle state machine (pre_surgery → admitted → in_surgery → post_op → discharged → recovering → recovered) with atomic transitions and audit trail
+- Advanced escalation model with type classification, priority scoring, and SLA tracking
+- Caregiver invitation flow with token-based acceptance, leaflet code verification, and concurrent-safe atomic claim
+- Consent management with append-only audit trail (5 consent types: AI interaction, caregiver sharing, SMS, email, research)
+- Patient dashboard quick-link cards for Caregivers and Privacy pages
+- ACC guideline scraper and document ingestion management commands
+
+### Changed
+- Care Coordinator and Nurse Triage agents now use RAG evidence when ENABLE_RAG=True, with confidence bonus for strong matches
+- Specialist agents answer with clinical evidence instead of unconditionally escalating — escalation now based on confidence threshold
+- Agent error messages sanitized to prevent internal error details leaking to patients
+- Docker Compose postgres image switched to pgvector/pgvector:pg16
+
+### Fixed
+- Hardened concurrency controls: atomic invitation acceptance, optimistic locking on lifecycle transitions
+- Input validation strengthened across caregiver and consent endpoints
+- Toggle switch and back-link touch targets increased to 44px WCAG minimum
+
 ## [0.2.6.2] - 2026-03-19
 
 ### Fixed
