@@ -1,0 +1,115 @@
+<!-- Tools tab content -->
+<div class="p-4 animate-in space-y-4">
+    <h2 class="text-base font-semibold" style="color: var(--color-text);">Tools</h2>
+
+    <!-- Patient Info -->
+    <div class="p-3 rounded-md" style="background-color: var(--color-bg);">
+        <h3 class="text-xs font-semibold mb-2" style="color: var(--color-text-secondary);">Patient Info</h3>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+                <span style="color: var(--color-text-secondary);">MRN</span>
+                <p class="font-mono" style="color: var(--color-text);">{{ patient.mrn|default:"—" }}</p>
+            </div>
+            <div>
+                <span style="color: var(--color-text-secondary);">DOB</span>
+                <p style="color: var(--color-text);">{{ patient.date_of_birth|date:"M j, Y"|default:"—" }}</p>
+            </div>
+            <div>
+                <span style="color: var(--color-text-secondary);">Phone</span>
+                <p style="color: var(--color-text);">{{ patient.user.phone_number|default:"—" }}</p>
+            </div>
+            <div>
+                <span style="color: var(--color-text-secondary);">Hospital</span>
+                <p style="color: var(--color-text);">{{ patient.hospital.name|default:"—" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lifecycle Transition -->
+    {% if valid_transitions %}
+    <div class="p-3 rounded-md border" style="border-color: var(--color-border);">
+        <h3 class="text-xs font-semibold mb-2" style="color: var(--color-text);">Lifecycle Transition</h3>
+        <p class="text-[11px] mb-2" style="color: var(--color-text-secondary);">
+            Current: <span class="font-medium" style="color: var(--color-text);">{{ patient.get_lifecycle_status_display }}</span>
+        </p>
+        <form hx-post="{% url 'clinicians:lifecycle_transition' patient.id %}"
+              hx-target="closest div"
+              hx-swap="outerHTML">
+            {% csrf_token %}
+            <div class="flex gap-2">
+                <select name="new_status" class="flex-1 h-8 px-2 text-xs rounded-md border"
+                        style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+                    {% for status in valid_transitions %}
+                    <option value="{{ status }}">{{ status|title }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="h-8 px-3 text-xs font-medium rounded-md bg-teal-600 text-white hover:bg-teal-700">
+                    Transition
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Send Auth Text -->
+    <div class="p-3 rounded-md border" style="border-color: var(--color-border);">
+        <h3 class="text-xs font-semibold mb-1" style="color: var(--color-text);">Send Auth Text</h3>
+        <p class="text-[11px] mb-2" style="color: var(--color-text-secondary);">
+            Send a new authentication link via SMS to {{ patient.user.phone_number|default:"(no phone)" }}.
+        </p>
+        <button class="h-8 px-3 text-xs font-medium rounded-md border hover:bg-gray-50 dark:hover:bg-gray-800"
+                style="border-color: var(--color-border); color: var(--color-text);"
+                onclick="alert('SMS auth link sent (mock)');">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5 inline mr-1"></i>
+            Send Link
+        </button>
+    </div>
+
+    <!-- Consent Status -->
+    <div class="p-3 rounded-md border" style="border-color: var(--color-border);">
+        <h3 class="text-xs font-semibold mb-2" style="color: var(--color-text);">Consent Status</h3>
+        {% if consents %}
+        <div class="space-y-1">
+            {% for consent in consents %}
+            <div class="flex items-center justify-between text-xs">
+                <span style="color: var(--color-text);">{{ consent.get_consent_type_display }}</span>
+                {% if consent.granted %}
+                <span class="text-green-600 flex items-center gap-1">
+                    <i data-lucide="check-circle" class="w-3 h-3"></i> Granted
+                </span>
+                {% else %}
+                <span class="text-red-600 flex items-center gap-1">
+                    <i data-lucide="x-circle" class="w-3 h-3"></i> Revoked
+                </span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-[11px]" style="color: var(--color-text-secondary);">No consent records.</p>
+        {% endif %}
+    </div>
+
+    <!-- Caregivers -->
+    <div class="p-3 rounded-md border" style="border-color: var(--color-border);">
+        <h3 class="text-xs font-semibold mb-2" style="color: var(--color-text);">Caregivers</h3>
+        {% if caregivers %}
+        <div class="space-y-1.5">
+            {% for rel in caregivers %}
+            <div class="flex items-center justify-between text-xs">
+                <div>
+                    <span class="font-medium" style="color: var(--color-text);">{{ rel.caregiver.user.get_full_name }}</span>
+                    <span style="color: var(--color-text-secondary);">({{ rel.get_relationship_type_display }})</span>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full
+                             {% if rel.status == 'active' %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+                    {{ rel.get_status_display }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-[11px]" style="color: var(--color-text-secondary);">No caregivers linked.</p>
+        {% endif %}
+    </div>
+</div>

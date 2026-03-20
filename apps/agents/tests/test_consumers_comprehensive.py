@@ -40,11 +40,25 @@ def mock_scope_with_patient():
 
 
 @pytest.fixture
-def mock_scope_with_hospital():
-    """Mock scope with hospital_id URL parameter."""
+def mock_clinician_user():
+    """Mock authenticated clinician user for WebSocket scope."""
+    user = MagicMock()
+    user.is_authenticated = True
+    user.role = "clinician"
+    clinician = MagicMock()
+    clinician.is_active = True
+    clinician.hospitals.values_list.return_value = [123]
+    user.clinician_profile = clinician
+    return user
+
+
+@pytest.fixture
+def mock_scope_with_hospital(mock_clinician_user):
+    """Mock scope with hospital_id URL parameter and authenticated clinician."""
     return {
         "url_route": {"kwargs": {"hospital_id": "123"}},
         "client": ("127.0.0.1", 12345),
+        "user": mock_clinician_user,
     }
 
 
@@ -937,11 +951,12 @@ class TestClinicianDashboardConsumerConnect:
         )
         assert accept_called is True
 
-    async def test_connect_missing_hospital_id(self, mock_channel_layer):
-        """Test connection with missing hospital_id."""
+    async def test_connect_unauthenticated_rejected(self, mock_channel_layer):
+        """Test connection rejected when user is not authenticated."""
         scope = {
-            "url_route": {"kwargs": {}},
+            "url_route": {"kwargs": {"hospital_id": "123"}},
             "client": ("127.0.0.1", 12345),
+            # No user in scope — should be rejected
         }
 
         consumer = ClinicianDashboardConsumer()
@@ -949,17 +964,19 @@ class TestClinicianDashboardConsumerConnect:
         consumer.channel_layer = mock_channel_layer
         consumer.channel_name = "test-channel-1"
 
-        # Mock accept to not require base_scope
+        accept_called = False
+
         async def mock_accept():
-            pass
+            nonlocal accept_called
+            accept_called = True
 
         consumer.accept = mock_accept
 
         await consumer.connect()
 
-        # Should handle None hospital_id
-        assert consumer.hospital_id is None
-        assert consumer.room_group_name == "hospital_None"
+        # Should not accept or join group
+        assert accept_called is False
+        mock_channel_layer.group_add.assert_not_called()
 
 
 @pytest.mark.django_db

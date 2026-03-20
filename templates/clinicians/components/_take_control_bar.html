@@ -1,0 +1,71 @@
+<!-- Take control status bar + message input -->
+{% if is_controlled_by_other %}
+<!-- Locked by another clinician -->
+<div class="p-3 border-t flex-shrink-0 bg-amber-50 dark:bg-amber-900/20 border-amber-500"
+     style="border-top-width: 2px;"
+     aria-live="assertive">
+    <div class="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
+        <i data-lucide="lock" class="w-4 h-4"></i>
+        <span>{{ paused_by.get_full_name }} is responding to this patient.</span>
+    </div>
+    <p class="text-xs mt-1 text-amber-600 dark:text-amber-400">You can still read the conversation.</p>
+</div>
+{% elif is_controlled_by_me %}
+<!-- Your control (teal) -->
+<div class="border-t flex-shrink-0 border-teal-500" style="border-top-width: 2px;">
+    <div class="px-3 py-1.5 bg-teal-50 dark:bg-teal-900/20 flex items-center justify-between"
+         aria-live="assertive">
+        <span class="text-xs text-teal-700 dark:text-teal-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-teal-500"></span>
+            You're responding to this patient
+        </span>
+        <form method="post" action="{% url 'clinicians:release_take_control' patient.id %}" class="inline">
+            {% csrf_token %}
+            <button type="submit"
+                    hx-post="{% url 'clinicians:release_take_control' patient.id %}"
+                    hx-target="#chat-panel"
+                    class="text-[11px] text-teal-600 hover:text-teal-700 font-medium">
+                Release Control
+            </button>
+        </form>
+    </div>
+    <!-- Message input -->
+    <form hx-post="{% url 'clinicians:inject_message' patient.id %}"
+          hx-target="#chat-messages"
+          hx-swap="beforeend"
+          hx-on::after-request="this.reset(); scrollChat()"
+          class="p-3 flex gap-2">
+        {% csrf_token %}
+        <input type="text" name="message" placeholder="Type a message to the patient..."
+               required autocomplete="off" autofocus
+               class="flex-1 h-9 px-3 text-sm rounded-md border"
+               style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+        <button type="submit" class="h-9 px-3 text-sm font-medium rounded-md bg-teal-600 text-white hover:bg-teal-700">
+            <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+    </form>
+</div>
+{% else %}
+<!-- No control — default state -->
+<div class="border-t flex-shrink-0" style="border-color: var(--color-border);">
+    <form hx-post="{% url 'clinicians:inject_message' patient.id %}"
+          hx-target="#chat-messages"
+          hx-swap="beforeend"
+          hx-on::after-request="this.reset(); scrollChat()"
+          class="p-3">
+        {% csrf_token %}
+        <div class="flex gap-2">
+            <input type="text" name="message" placeholder="Send a message to the patient..."
+                   required autocomplete="off"
+                   class="flex-1 h-9 px-3 text-sm rounded-md border"
+                   style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+            <button type="submit" class="h-9 px-3 text-sm font-medium rounded-md bg-teal-600 text-white hover:bg-teal-700">
+                <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <p class="text-[10px] mt-1.5" style="color: var(--color-text-secondary);">
+            Sending a message will pause the AI and put you in control.
+        </p>
+    </form>
+</div>
+{% endif %}

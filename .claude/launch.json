@@ -3,10 +3,13 @@
   "configurations": [
     {
       "name": "django",
-      "runtimeExecutable": "python",
+      "runtimeExecutable": "/Users/jackson/projects/clintela/proto/.venv/bin/python",
       "runtimeArgs": ["manage.py", "runserver", "8000"],
       "port": 8000,
-      "autoPort": false
+      "autoPort": false,
+      "env": {
+        "POSTGRES_PORT": "5434"
+      }
     }
   ]
 }

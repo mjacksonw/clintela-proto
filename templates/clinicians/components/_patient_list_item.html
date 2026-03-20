@@ -1,0 +1,45 @@
+<!-- Single patient list item -->
+{% with p=item.patient %}
+<button class="w-full text-left px-3 py-2.5 border-b hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
+        style="border-color: var(--color-border);"
+        role="option"
+        aria-label="{{ p.user.get_full_name }}, {{ p.get_status_display }} triage, {{ item.patient.pending_escalation_count|default:0 }} pending escalation{{ item.patient.pending_escalation_count|pluralize }}"
+        :class="selectedPatientId === '{{ p.id }}' ? 'bg-gray-100 dark:bg-gray-800 border-l-2 border-l-teal-500' : ''"
+        @click="selectPatient('{{ p.id }}')">
+    <div class="flex items-start gap-2">
+        <!-- Triage dot + name -->
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+            <span class="triage-dot triage-{{ p.status }}" aria-hidden="true"></span>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-semibold truncate" style="color: var(--color-text);">
+                        {{ p.user.get_full_name }}
+                    </span>
+                    {% if item.days_post_op is not None %}
+                    <span class="text-[11px] font-mono flex-shrink-0 ml-2" style="color: var(--color-text-secondary);">
+                        {{ item.days_post_op }}d
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-xs truncate" style="color: var(--color-text-secondary);">
+                        {{ p.surgery_type|default:"—" }}
+                    </span>
+                </div>
+                <p class="text-xs truncate mt-0.5" style="color: var(--color-text-secondary);">
+                    {{ item.status_line }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Badges -->
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+            {% if item.patient.pending_escalation_count > 0 %}
+            <span class="bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 badge-pulse">
+                {{ item.patient.pending_escalation_count }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+</button>
+{% endwith %}

@@ -1,0 +1,57 @@
+<!-- Research tab content — clinician LLM chat -->
+<div class="flex flex-col h-full" x-data="researchChat()">
+    <div class="p-3 border-b flex-shrink-0" style="border-color: var(--color-border);">
+        <h2 class="text-sm font-semibold" style="color: var(--color-text);">Research</h2>
+        <p class="text-[11px]" style="color: var(--color-text-secondary);">
+            Ask questions about {{ patient.user.get_full_name }}. Their records are pre-loaded as context.
+        </p>
+    </div>
+
+    <!-- Messages -->
+    <div id="research-messages" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
+        {% for msg in messages %}
+        {% include "clinicians/components/_research_message.html" with message=msg %}
+        {% empty %}
+        <div class="text-center py-8">
+            <i data-lucide="search" class="w-8 h-8 mx-auto mb-2 opacity-30" style="color: var(--color-text-secondary);"></i>
+            <p class="text-xs" style="color: var(--color-text-secondary);">
+                Ask a question about this patient. Their records are pre-loaded as context.
+            </p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Input -->
+    <div class="p-3 border-t flex-shrink-0" style="border-color: var(--color-border);">
+        <!-- Specialist override -->
+        <div class="flex items-center gap-2 mb-2">
+            <label class="text-[11px]" style="color: var(--color-text-secondary);">Route to:</label>
+            <select id="specialist-override" class="h-6 px-2 text-[11px] rounded border"
+                    style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+                <option value="">Auto (Supervisor)</option>
+                <option value="specialist_cardiology">Cardiology</option>
+                <option value="specialist_pharmacy">Pharmacy</option>
+                <option value="specialist_nutrition">Nutrition</option>
+                <option value="specialist_pt_rehab">PT/Rehab</option>
+                <option value="specialist_palliative">Palliative</option>
+                <option value="specialist_social_work">Social Work</option>
+            </select>
+        </div>
+        <form hx-post="{% url 'clinicians:research_chat_send' patient.id %}"
+              hx-target="#research-messages"
+              hx-swap="beforeend"
+              hx-on::before-request="this.querySelector('button').disabled = true"
+              hx-on::after-request="this.querySelector('button').disabled = false; this.reset(); scrollResearch()"
+              hx-include="#specialist-override"
+              class="flex gap-2">
+            {% csrf_token %}
+            <input type="text" name="message" placeholder="Ask about this patient..."
+                   required autocomplete="off"
+                   class="flex-1 h-9 px-3 text-sm rounded-md border"
+                   style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+            <button type="submit" class="h-9 px-3 text-sm font-medium rounded-md bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50">
+                <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+        </form>
+    </div>
+</div>

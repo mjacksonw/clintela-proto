@@ -1,8 +1,8 @@
 # Implementation Session Handoff
 
 **Date:** 2026-03-20
-**Branch:** feature/phase4-clinical-knowledge-rag
-**Status:** Phase 4 COMPLETE - Clinical Knowledge RAG, specialist agents, patient lifecycle, caregiver flow, consent management
+**Branch:** claude/brave-goldwasser (Phase 5), feature/phase4-clinical-knowledge-rag (Phase 4)
+**Status:** Phase 5 COMPLETE - Clinician Dashboard UI with three-panel layout, detail tabs, take-control, scheduling, shift handoff
 
 ---
 
@@ -194,11 +194,53 @@ python manage.py shell
 - [x] Management commands: `ingest_document`, `ingest_acc_guidelines`
 - [x] Test coverage ≥ 90%
 
-### Phase 5: Dashboard & UI (Clinician)
-- [ ] Clinician dashboard with triage view
-- [ ] Real-time status updates
-- [ ] Patient detail views
-- [ ] Admin metrics dashboard
+### Phase 5: Clinician Dashboard UI ✅ COMPLETE (2026-03-20)
+
+✅ **Three-Panel Dashboard**
+- Patient list (280px left) with severity sort, search, triage color dots, unread badges
+- Patient detail (center flex-1) with 4 tabs: Details, Care Plan, Research, Tools
+- Patient chat (360px right) with message history and clinician message injection
+- Responsive: desktop three-panel, tablet two-panel + chat drawer, mobile single-panel + bottom nav
+- Dark mode across all views
+
+✅ **Detail Tabs**
+- Details: patient timeline (collapsed by day), escalation list with acknowledge/resolve/bulk, clinician notes, export handoff
+- Care Plan: pathway milestones with check-in status
+- Research: private clinician LLM chat with specialist routing dropdown
+- Tools: lifecycle transitions, send auth text, consent status, caregiver management, patient info
+
+✅ **Take-Control Mode**
+- Clinician takes over patient chat thread — AI pauses, patient sees "Dr. Smith"
+- Race-safe locking with `select_for_update()` / atomic UPDATE WHERE
+- Three release mechanisms: explicit button, WebSocket disconnect, 30-min inactivity timeout (JS + Celery)
+- Other clinicians see lock indicator with clinician name
+
+✅ **Scheduling UI**
+- Weekly calendar grid with Mon-Fri headers, 7am-7pm clinical shift hours
+- Availability management (recurring weekly hours)
+- Appointment CRUD with conflict validation
+- Next appointment toast on dashboard
+
+✅ **Shift Handoff Summary**
+- Changes since last login: new/resolved escalations, status changes, missed check-ins
+- First login: "Welcome" card
+- Dismissible card above patient list
+
+✅ **Keyboard Shortcuts & Notifications**
+- j/k navigate patient list, 1-4 switch tabs, e acknowledge escalation, / search, ? help modal
+- Desktop notifications + audio for critical escalations (Web Notification API + Web Audio)
+- Shortcuts suppressed when typing in input fields
+
+✅ **Security Hardening**
+- `@clinician_required` decorator with IDOR prevention (patient must belong to clinician's hospitals)
+- WebSocket consumer auth: verify authenticated clinician with hospital access
+- Session-based API auth replacing hacky clinician_id-from-body pattern
+- Structured audit logging for HIPAA compliance
+
+✅ **Testing**
+- 6 test files covering models, auth, views, services, management command, coverage gaps
+- 90%+ test coverage (pre-push hook enforced)
+- QA: 3 issues found and fixed, health score 64 → 100
 
 ### Phase 6: Polish & Testing
 - [ ] Multilingual support (i18n)
@@ -229,7 +271,7 @@ clintela/
 │   ├── accounts/              # Custom User model (phone_number indexed)
 │   ├── patients/              # Patient, Hospital, voice views
 │   ├── caregivers/            # Caregiver relationships
-│   ├── clinicians/            # Provider profiles
+│   ├── clinicians/            # Provider profiles + dashboard views/services/auth
 │   ├── agents/                # AI multi-agent system
 │   │   ├── agents.py         # Agent implementations
 │   │   ├── workflow.py       # LangGraph workflow
@@ -268,6 +310,12 @@ clintela/
 │   └── analytics/             # Metrics
 ├── templates/
 │   ├── base_patient.html      # Patient layout with notification bell
+│   ├── base_clinician.html    # Clinician three-panel layout shell
+│   ├── clinicians/            # Clinician dashboard templates
+│   │   ├── login.html         # Clinician login page
+│   │   ├── dashboard.html     # Dashboard (extends base_clinician)
+│   │   ├── schedule.html      # Weekly calendar + availability
+│   │   └── components/        # ~20 HTMX fragment components
 │   └── components/
 │       ├── _chat_input.html   # Chat + voice recorder
 │       ├── _message_bubble.html # Channel icons + delivery status
@@ -275,6 +323,8 @@ clintela/
 │       └── _dev_toolbar.html  # SMS simulator, patient switcher
 ├── static/
 │   └── js/
+│       ├── clinician-dashboard.js  # Alpine clinicianDashboard() component
+│       ├── clinician-research-chat.js # Research tab LLM chat
 │       ├── notifications.js   # WebSocket notification client
 │       └── voice-recorder.js  # MediaRecorder voice input
 ├── docs/
@@ -364,6 +414,22 @@ RAG_TEXT_WEIGHT=0.3                           # Weight for full-text search scor
 - `templates/patients/caregivers.html` - Caregiver invitation management page
 - `templates/patients/consent.html` - Consent management page
 
+### Phase 5: Clinician Dashboard UI
+- `apps/clinicians/auth.py` - `@clinician_required` decorator with IDOR prevention
+- `apps/clinicians/urls.py` - All clinician URL routes (dashboard, schedule, HTMX fragments)
+- `apps/clinicians/views.py` - 25+ views (dashboard, detail tabs, chat, scheduling, take-control)
+- `apps/clinicians/services.py` - SchedulingService, ClinicianResearchService, TakeControlService
+- `apps/clinicians/admin.py` - ClinicianNote, Appointment, ClinicianAvailability admin
+- `apps/clinicians/models.py` - ClinicianNote, ClinicianAvailability, Appointment models
+- `apps/clinicians/management/commands/create_test_clinician.py` - Test data with 5 patients
+- `apps/agents/models.py` - Added clinician FK, paused_by/paused_at, clinician_research agent type
+- `apps/agents/consumers.py` - Auth hardening on ClinicianDashboardConsumer
+- `apps/agents/api.py` - Session-based auth replacing hacky clinician_id-from-body
+- `templates/base_clinician.html` - Three-panel layout shell with Alpine.js
+- `templates/clinicians/` - Dashboard, login, schedule pages + ~20 component templates
+- `static/js/clinician-dashboard.js` - Alpine clinicianDashboard() with keyboard shortcuts
+- `static/js/clinician-research-chat.js` - Research tab LLM chat interface
+
 ### Phase 3: Communication & Multi-modality
 - `config/celery.py` - Celery app configuration with Redis broker
 - `apps/messages_app/backends.py` - SMS backend abstraction (Twilio/Console/LocMem)
@@ -386,12 +452,13 @@ RAG_TEXT_WEIGHT=0.3                           # Weight for full-text search scor
 ### Full Test Suite
 ```bash
 POSTGRES_PORT=5434 pytest
-# 900+ tests, ≥90% coverage
+# 1000+ tests, ≥90% coverage
 ```
 
 ### Test Coverage by App
+- `apps/clinicians/` - Models, auth decorator, views (25+ endpoints), services, management command, coverage tests
 - `apps/knowledge/` - Embeddings, parsers, ingestion, retrieval, sanitizer, admin, management commands
-- `apps/agents/` - Agent routing, LLM client, services, tasks, workflow, RAG integration, specialists
+- `apps/agents/` - Agent routing, LLM client, services, tasks, workflow, RAG integration, specialists, WebSocket consumers
 - `apps/caregivers/` - Invitation flow, atomic acceptance, token verification
 - `apps/patients/` - Lifecycle transitions, consent management, views
 - `apps/messages_app/` - SMS backends, services, transcription, webhooks, cleanup
@@ -416,12 +483,19 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 
 ## Open Questions for Next Session
 
-1. **Clinician Dashboard (Phase 5):**
-   - Triage view with severity color-coding using the new lifecycle state machine
-   - Real-time status updates via WebSocket
-   - Patient detail views with conversation history and citation display
+1. **Phase 6 Polish:**
+   - Multilingual support (i18n) for patient-facing content
+   - Visual recovery timeline component
+   - Smart scheduling (pathway-suggested appointments)
+   - Recovery milestone celebrations
 
-2. **RAG Improvements (deferred to TODOs):**
+2. **Infrastructure:**
+   - Server-side pagination for patient list (see TODO-015)
+   - Migrate async wrappers to Django 5.1 native async ORM (see TODO-016)
+   - Load testing and performance benchmarks (see TODO-010)
+   - Production LLM migration (see TODO-008)
+
+3. **Deferred improvements:**
    - Embedding cache (Redis, TTL-based) — see TODO-012
    - OCR for scanned PDFs — see TODO-011
    - Caregiver read-only dashboard — see TODO-013
@@ -430,13 +504,14 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 
 ## What to Do in Next Session
 
-1. **Start with:** `python manage.py create_test_patient` to get an auth URL
-2. **Test the UI:** Visit the auth URL, enter DOB `06/15/1985`, explore dashboard + chat + citations + caregiver page + consent page
-3. **Test RAG:** Set `ENABLE_RAG=True`, ingest a document with `python manage.py ingest_document <path>`, then chat and verify citation display
-4. **Test SMS:** Expand dev toolbar, use SMS simulator to send inbound messages
-5. **Focus on:** Phase 5 — Clinician dashboard (triage view, patient detail, real-time status)
-6. **Run tests:** `POSTGRES_PORT=5434 pytest` for full suite, `pytest tests/e2e/ -p no:xdist` for E2E
-7. **Verify:** Pre-commit hooks passing, coverage ≥90%
+1. **Test clinician dashboard:** `python manage.py create_test_clinician` → log in as dr_smith / testpass123
+2. **Explore dashboard:** Three-panel layout, click patients, cycle through 4 tabs, try keyboard shortcuts (j/k, 1-4, /, ?)
+3. **Test take-control:** Select a patient, send a message in the chat panel to take control, release it
+4. **Test scheduling:** Navigate to Schedule page, set availability, create an appointment
+5. **Test patient UI:** `python manage.py create_test_patient` → auth URL → DOB `06/15/1985` → explore chat + citations
+6. **Focus on:** Phase 6 — Polish, i18n, visual recovery timeline, load testing, security audit
+7. **Run tests:** `POSTGRES_PORT=5434 pytest` for full suite, `pytest tests/e2e/ -p no:xdist` for E2E
+8. **Verify:** Pre-commit hooks passing, coverage ≥90%
 
 ---
 
@@ -461,7 +536,8 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 - **Patient UI** (2026-03-19) - HTMX chat, dashboard, dark mode, E2E tests
 - **Phase 3 communication** (2026-03-19) - SMS, voice, notifications, Celery, dev toolbar
 - **Phase 4 RAG** (2026-03-20) - pgvector, knowledge models, ingestion pipeline, specialists, lifecycle, caregiver flow, consent, admin dashboard
+- **Phase 5 clinician dashboard** (2026-03-20) - Models, auth, views, services, templates, JS, scheduling, take-control, tests, QA fixes
 
 ---
 
-*Phase 4 Complete (v0.2.7.0) — Clinical Knowledge RAG: pgvector hybrid search, ingestion pipeline, 6 RAG-backed specialists, patient lifecycle state machine, caregiver invitation flow, consent management, citation display, knowledge health admin dashboard, and ≥90% test coverage. Ready for Phase 5: Clinician Dashboard.*
+*Phase 5 Complete (v0.2.8.0) — Clinician Dashboard UI: three-panel layout, 4 detail tabs, take-control mode, scheduling UI, shift handoff summary, keyboard shortcuts, desktop notifications, auth hardening with IDOR prevention, and ≥90% test coverage. Ready for Phase 6: Polish & Testing.*

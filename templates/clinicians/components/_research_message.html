@@ -1,0 +1,20 @@
+<!-- Single research chat message -->
+{% if message.role == "user" or query %}
+<div class="flex justify-end">
+    <div class="max-w-[85%] px-3 py-2 rounded-lg text-sm bg-teal-600 text-white">
+        {{ query|default:message.content }}
+    </div>
+</div>
+{% endif %}
+{% if message.role == "assistant" or response %}
+<div class="flex justify-start">
+    <div class="max-w-[85%] px-3 py-2 rounded-lg text-sm" style="background-color: var(--color-bg); color: var(--color-text);">
+        {% if agent_type and agent_type != "clinician_research" %}
+        <div class="text-[10px] font-medium mb-1 text-purple-600 dark:text-purple-400">
+            {{ agent_type|title }}
+        </div>
+        {% endif %}
+        <div class="agent-message-content">{{ response|default:message.content }}</div>
+    </div>
+</div>
+{% endif %}

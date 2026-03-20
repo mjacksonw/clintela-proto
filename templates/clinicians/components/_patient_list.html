@@ -1,0 +1,71 @@
+<!-- Patient list fragment (loaded via HTMX) -->
+<div class="flex flex-col h-full overflow-hidden">
+    <!-- Search bar -->
+    <div class="p-3 border-b flex-shrink-0" style="border-color: var(--color-border);">
+        <div class="relative">
+            <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4" style="color: var(--color-text-secondary);"></i>
+            <input type="text"
+                   id="patient-search"
+                   name="search"
+                   value="{{ search }}"
+                   placeholder="Search patients..."
+                   hx-get="{% url 'clinicians:patient_list' %}"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#patient-list-panel"
+                   hx-include="[name='sort']"
+                   class="w-full h-9 pl-8 pr-3 rounded-md text-sm border"
+                   style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+        </div>
+        <!-- Sort buttons -->
+        <div class="flex gap-1 mt-2">
+            {% for value, label in sort_options %}
+            <button class="px-2 py-1 text-[11px] rounded-md border transition-colors
+                           {% if sort == value %}bg-teal-50 border-teal-200 text-teal-700 dark:bg-teal-900/20 dark:border-teal-800 dark:text-teal-300{% else %}hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}"
+                    style="{% if sort != value %}border-color: var(--color-border); color: var(--color-text-secondary);{% endif %}"
+                    hx-get="{% url 'clinicians:patient_list' %}?sort={{ value }}&search={{ search }}"
+                    hx-target="#patient-list-panel">
+                {{ label }}
+            </button>
+            {% empty %}
+            <!-- Default sort options -->
+            <button class="px-2 py-1 text-[11px] rounded-md border transition-colors
+                           {% if sort == 'severity' %}bg-teal-50 border-teal-200 text-teal-700 dark:bg-teal-900/20 dark:border-teal-800 dark:text-teal-300{% else %}hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}"
+                    style="{% if sort != 'severity' %}border-color: var(--color-border); color: var(--color-text-secondary);{% endif %}"
+                    hx-get="{% url 'clinicians:patient_list' %}?sort=severity&search={{ search }}"
+                    hx-target="#patient-list-panel">
+                Severity
+            </button>
+            <button class="px-2 py-1 text-[11px] rounded-md border transition-colors
+                           {% if sort == 'alpha' %}bg-teal-50 border-teal-200 text-teal-700 dark:bg-teal-900/20 dark:border-teal-800 dark:text-teal-300{% else %}hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}"
+                    style="{% if sort != 'alpha' %}border-color: var(--color-border); color: var(--color-text-secondary);{% endif %}"
+                    hx-get="{% url 'clinicians:patient_list' %}?sort=alpha&search={{ search }}"
+                    hx-target="#patient-list-panel">
+                A-Z
+            </button>
+            <button class="px-2 py-1 text-[11px] rounded-md border transition-colors
+                           {% if sort == 'last_contact' %}bg-teal-50 border-teal-200 text-teal-700 dark:bg-teal-900/20 dark:border-teal-800 dark:text-teal-300{% else %}hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}"
+                    style="{% if sort != 'last_contact' %}border-color: var(--color-border); color: var(--color-text-secondary);{% endif %}"
+                    hx-get="{% url 'clinicians:patient_list' %}?sort=last_contact&search={{ search }}"
+                    hx-target="#patient-list-panel">
+                Last Contact
+            </button>
+            {% endfor %}
+        </div>
+        <input type="hidden" name="sort" value="{{ sort }}">
+    </div>
+
+    <!-- Scrollable patient list -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar" role="listbox" aria-label="Patients">
+        {% for item in patient_data %}
+        {% include "clinicians/components/_patient_list_item.html" with item=item %}
+        {% empty %}
+        <div class="p-6 text-center text-sm" style="color: var(--color-text-secondary);">
+            {% if search %}
+            No patients match "{{ search }}".
+            {% else %}
+            No patients assigned to your hospitals yet. Contact admin.
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
