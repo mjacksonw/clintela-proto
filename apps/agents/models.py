@@ -19,6 +19,8 @@ class AgentConversation(models.Model):
         ("specialist_pt_rehab", "PT/Rehab Specialist"),
         ("specialist_palliative", "Palliative Care Specialist"),
         ("specialist_pharmacy", "Pharmacy Specialist"),
+        ("clinician_research", "Clinician Research"),
+        ("clinician", "Clinician"),
     ]
 
     STATUS_CHOICES = [
@@ -34,6 +36,14 @@ class AgentConversation(models.Model):
         on_delete=models.CASCADE,
         related_name="agent_conversations",
     )
+    clinician = models.ForeignKey(
+        "clinicians.Clinician",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="research_conversations",
+        help_text="Set for clinician research conversations",
+    )
     agent_type = models.CharField(max_length=30, choices=AGENT_TYPES, default="supervisor")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
 
@@ -44,6 +54,17 @@ class AgentConversation(models.Model):
 
     # LLM metadata
     llm_metadata = models.JSONField(default=dict, blank=True)
+
+    # Take-control: clinician pauses AI to respond directly
+    paused_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="paused_conversations",
+        help_text="Clinician who has taken control of this conversation",
+    )
+    paused_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
