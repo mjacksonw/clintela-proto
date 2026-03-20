@@ -1,8 +1,14 @@
-"""Services for agent conversation management."""
+"""Services for agent conversation management.
+
+Includes the shared process_patient_message() helper used by
+web chat, SMS inbound, and voice input views.
+"""
 
 import logging
+import time
 from typing import Any
 
+from asgiref.sync import async_to_sync
 from django.db import transaction
 from django.utils import timezone
 
@@ -10,6 +16,145 @@ from apps.agents.models import AgentConversation, AgentMessage, ConversationStat
 from apps.patients.models import Patient
 
 logger = logging.getLogger(__name__)
+
+
+def process_patient_message(patient, content, channel="chat", audio_url=None):
+    """Shared helper for processing a patient message through the AI workflow.
+
+    Used by web chat, SMS inbound, and voice input views to eliminate
+    triplication of: get conversation → add message → call workflow →
+    add response → handle escalation → create notification.
+
+    Args:
+        patient: Patient instance
+        content: Message text content
+        channel: One of 'chat', 'sms', 'voice'
+        audio_url: Optional URL for voice audio file
+
+    Returns:
+        Dict with keys:
+            agent_message: AgentMessage instance (the AI response)
+            response_text: str
+            agent_type: str
+            escalate: bool
+            escalation_reason: str
+            elapsed_ms: int
+    """
+    start_time = time.time()
+
+    # Get or create conversation
+    conversation = ConversationService.get_or_create_conversation(patient)
+
+    # Save user message
+    metadata = {}
+    if channel != "chat":
+        metadata["channel"] = channel
+    if audio_url:
+        metadata["audio_url"] = audio_url
+
+    ConversationService.add_message(
+        conversation=conversation,
+        role="user",
+        content=content,
+        metadata=metadata,
+    )
+
+    # Also record in messages_app for cross-channel threading
+    try:
+        from apps.messages_app.models import Message
+
+        Message.objects.create(
+            patient=patient,
+            channel=channel,
+            direction="inbound",
+            content=content,
+        )
+    except Exception:
+        logger.debug("messages_app.Message not available, skipping cross-channel record")
+
+    # Build context and call workflow
+    from apps.agents.workflow import get_workflow
+
+    context = {
+        "patient": {
+            "name": patient.user.get_full_name(),
+            "surgery_type": patient.surgery_type or "General Surgery",
+            "days_post_op": patient.days_post_op() or 0,
+            "hospital": patient.hospital.name if patient.hospital else "Unknown",
+        },
+    }
+
+    workflow = get_workflow()
+    result = async_to_sync(workflow.process_message)(content, context)
+
+    response_text = result.get("response", "").strip()
+    if not response_text:
+        response_text = "I'm sorry, I wasn't able to process that. Could you try rephrasing?"
+
+    agent_type = result.get("agent_type", "care_coordinator")
+    escalate = result.get("escalate", False)
+    confidence = result.get("metadata", {}).get("confidence_score")
+
+    # Save agent message
+    agent_message = ConversationService.add_message(
+        conversation=conversation,
+        role="assistant",
+        content=response_text,
+        agent_type=agent_type,
+        confidence_score=confidence,
+        escalation_triggered=escalate,
+        escalation_reason=result.get("escalation_reason", ""),
+        metadata={"channel": channel} if channel != "chat" else {},
+    )
+
+    # Record outbound in messages_app
+    try:
+        from apps.messages_app.models import Message
+
+        Message.objects.create(
+            patient=patient,
+            channel=channel,
+            direction="outbound",
+            content=response_text,
+        )
+    except Exception:
+        logger.debug("messages_app.Message not available, skipping cross-channel record")
+
+    # Handle escalation
+    if escalate:
+        escalation = EscalationService.create_escalation(
+            patient=patient,
+            conversation=conversation,
+            severity="high",
+            reason=result.get("escalation_reason", "Agent-triggered escalation"),
+        )
+
+        # Bridge to notification system
+        try:
+            from apps.notifications.services import NotificationService
+
+            NotificationService.create_escalation_notification(escalation)
+        except Exception:
+            logger.exception("Failed to create escalation notification")
+
+    elapsed_ms = int((time.time() - start_time) * 1000)
+    logger.info(
+        "Message processed: patient=%s channel=%s agent=%s elapsed=%dms escalation=%s",
+        patient.id,
+        channel,
+        agent_type,
+        elapsed_ms,
+        escalate,
+    )
+
+    return {
+        "agent_message": agent_message,
+        "response_text": response_text,
+        "agent_type": agent_type,
+        "escalate": escalate,
+        "escalation_reason": result.get("escalation_reason", ""),
+        "elapsed_ms": elapsed_ms,
+    }
 
 
 class ConversationService:

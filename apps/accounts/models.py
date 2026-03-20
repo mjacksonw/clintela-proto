@@ -19,7 +19,7 @@ class User(AbstractUser):
         choices=ROLE_CHOICES,
         default="patient",
     )
-    phone_number = models.CharField(max_length=20, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True, db_index=True)
     email_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

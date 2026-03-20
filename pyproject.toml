@@ -55,8 +55,8 @@ dependencies = [
     # Async
     "asgiref>=3.8",
 
-    # Background Tasks (using Channels for now)
-    # "celery>=5.4",  # TODO: Add Celery in Phase 3
+    # Background Tasks
+    "celery[redis]>=5.4",
 ]
 
 [project.optional-dependencies]

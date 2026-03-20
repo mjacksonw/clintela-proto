@@ -21,13 +21,25 @@
             <span>Hospital: {{ patient.hospital.name|default:"N/A" }}</span>
         </div>
 
-        <div class="flex gap-2 pt-1">
+        <div class="flex gap-2 pt-1 flex-wrap">
             <form method="post" action="{% url 'patients:dev_actions' %}" class="inline">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="clear_conversation">
                 <button type="submit"
                         class="px-2 py-1 bg-red-900 text-red-200 rounded hover:bg-red-800 text-xs">
                     Clear Conversation
+                </button>
+            </form>
+
+            <form method="post" action="{% url 'patients:dev_actions' %}" class="inline flex gap-1 items-center">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="simulate_sms">
+                <input type="text" name="sms_text" placeholder="Simulate inbound SMS..."
+                       class="px-2 py-1 bg-gray-800 text-gray-200 rounded text-xs border border-gray-600 w-48"
+                       required>
+                <button type="submit"
+                        class="px-2 py-1 bg-blue-900 text-blue-200 rounded hover:bg-blue-800 text-xs whitespace-nowrap">
+                    Send SMS
                 </button>
             </form>
         </div>

@@ -6,11 +6,56 @@
 <!-- Patient message — right-aligned, primary blue -->
 <div class="flex justify-end">
     <div class="max-w-[85%]">
+        {% if message.metadata.channel and message.metadata.channel != "chat" %}
+        <div class="flex items-center justify-end gap-1.5 mb-1">
+            {% if message.metadata.channel == "voice" %}
+            <i data-lucide="mic" class="w-3.5 h-3.5" style="color: var(--color-text-secondary);"></i>
+            <span class="text-xs" style="color: var(--color-text-secondary);">voice</span>
+            {% elif message.metadata.channel == "sms" %}
+            <i data-lucide="message-square" class="w-3.5 h-3.5" style="color: var(--color-text-secondary);"></i>
+            <span class="text-xs" style="color: var(--color-text-secondary);">sms</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <div class="px-4 py-2.5 text-white text-lg leading-relaxed"
              style="background-color: var(--color-primary);
                     border-radius: 16px 16px 4px 16px;">
             {{ message.content }}
         </div>
+
+        {% if message.metadata.audio_url %}
+        <!-- Voice playback widget -->
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg mt-1 bg-primary/10"
+             x-data="{ playing: false, expired: false }"
+             x-init="
+                const audio = new Audio('{{ message.metadata.audio_url }}');
+                audio.addEventListener('error', () => { expired = true; });
+                audio.addEventListener('ended', () => { playing = false; });
+                $el._audio = audio;
+             ">
+            <template x-if="!expired">
+                <button type="button"
+                        @click="playing ? $el.closest('[x-data]')._audio.pause() : $el.closest('[x-data]')._audio.play(); playing = !playing"
+                        class="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0"
+                        :aria-label="playing ? 'Pause voice message' : 'Play voice message'">
+                    <template x-if="!playing">
+                        <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                    </template>
+                    <template x-if="playing">
+                        <i data-lucide="pause" class="w-3.5 h-3.5"></i>
+                    </template>
+                </button>
+            </template>
+            <template x-if="expired">
+                <div class="flex items-center gap-1.5">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-warm-400"></i>
+                    <span class="text-xs text-warm-400 italic" aria-label="Voice recording has expired">Recording expired</span>
+                </div>
+            </template>
+        </div>
+        {% endif %}
+
         <div class="text-xs mt-1 text-right" style="color: var(--color-text-secondary);">
             {{ message.created_at|naturaltime }}
         </div>
@@ -20,9 +65,16 @@
 <!-- Agent message — left-aligned, surface bg -->
 <div class="flex justify-start" {% if message.escalation_triggered %}data-escalation="true"{% endif %}>
     <div class="max-w-[85%]">
-        <!-- Agent label -->
+        <!-- Agent label with optional channel indicator -->
         {% if message.agent_type %}
         <div class="flex items-center gap-1.5 mb-1">
+            {% if message.metadata.channel == "voice" %}
+            <i data-lucide="mic" class="w-3.5 h-3.5" style="color: var(--color-text-secondary);"></i>
+            <span class="text-xs" style="color: var(--color-text-secondary);">&middot;</span>
+            {% elif message.metadata.channel == "sms" %}
+            <i data-lucide="message-square" class="w-3.5 h-3.5" style="color: var(--color-text-secondary);"></i>
+            <span class="text-xs" style="color: var(--color-text-secondary);">&middot;</span>
+            {% endif %}
             <i data-lucide="{{ message.agent_type|agent_icon }}" class="w-3.5 h-3.5" style="color: var(--color-text-secondary);"></i>
             <span class="text-xs font-medium" style="color: var(--color-text-secondary);">
                 {{ message.agent_type|agent_display_name }}
@@ -48,8 +100,15 @@
         </div>
         {% endif %}
 
-        <div class="text-xs mt-1" style="color: var(--color-text-secondary);">
+        <div class="text-xs mt-1 flex items-center gap-1.5" style="color: var(--color-text-secondary);">
             {{ message.created_at|naturaltime }}
+            {% if message.metadata.delivery_status == "sent" %}
+            <span class="text-warm-400" aria-label="Sent">&check;</span>
+            {% elif message.metadata.delivery_status == "delivered" %}
+            <span style="color: var(--color-primary);" aria-label="Delivered">&check;&check;</span>
+            {% elif message.metadata.delivery_status == "failed" %}
+            <span class="text-danger" aria-label="Failed to send">&cross;</span>
+            {% endif %}
         </div>
     </div>
 </div>
