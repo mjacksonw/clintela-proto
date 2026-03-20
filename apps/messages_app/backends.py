@@ -101,13 +101,7 @@ class ConsoleSMSBackend(BaseSMSBackend):
         ConsoleSMSBackend._message_counter += 1
         sid = f"CONSOLE_{ConsoleSMSBackend._message_counter:06d}"
 
-        output = (
-            f"\n{'═' * 40} SMS {'═' * 5}\n"
-            f"  To:   {to}\n"
-            f"  From: {from_number}\n"
-            f"  Body: {body}\n"
-            f"{'═' * 50}\n"
-        )
+        output = f"\n{'═' * 40} SMS {'═' * 5}\n  To:   {to}\n  From: {from_number}\n  Body: {body}\n{'═' * 50}\n"
         sys.stdout.write(output)
         sys.stdout.flush()
 
