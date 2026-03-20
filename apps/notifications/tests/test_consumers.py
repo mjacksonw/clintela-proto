@@ -9,17 +9,27 @@ from apps.notifications.consumers import NotificationConsumer
 from apps.notifications.tests.factories import NotificationFactory
 
 
+def _make_communicator(patient):
+    """Create a WebsocketCommunicator with authenticated session for patient."""
+    communicator = WebsocketCommunicator(
+        NotificationConsumer.as_asgi(),
+        f"/ws/notifications/patient/{patient.id}/",
+    )
+    communicator.scope["url_route"] = {"kwargs": {"patient_id": str(patient.id)}}
+    communicator.scope["session"] = {
+        "authenticated": True,
+        "patient_id": str(patient.id),
+    }
+    return communicator
+
+
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 class TestNotificationConsumer:
     async def test_connect_and_receive_unread_count(self):
         patient = await database_sync_to_async(PatientFactory)()
 
-        communicator = WebsocketCommunicator(
-            NotificationConsumer.as_asgi(),
-            f"/ws/notifications/patient/{patient.id}/",
-        )
-        communicator.scope["url_route"] = {"kwargs": {"patient_id": str(patient.id)}}
+        communicator = _make_communicator(patient)
 
         connected, _ = await communicator.connect()
         assert connected
@@ -35,11 +45,7 @@ class TestNotificationConsumer:
         await database_sync_to_async(NotificationFactory)(patient=patient, is_read=False)
         await database_sync_to_async(NotificationFactory)(patient=patient, is_read=False)
 
-        communicator = WebsocketCommunicator(
-            NotificationConsumer.as_asgi(),
-            f"/ws/notifications/patient/{patient.id}/",
-        )
-        communicator.scope["url_route"] = {"kwargs": {"patient_id": str(patient.id)}}
+        communicator = _make_communicator(patient)
 
         connected, _ = await communicator.connect()
         assert connected
@@ -54,11 +60,7 @@ class TestNotificationConsumer:
         patient = await database_sync_to_async(PatientFactory)()
         notification = await database_sync_to_async(NotificationFactory)(patient=patient, is_read=False)
 
-        communicator = WebsocketCommunicator(
-            NotificationConsumer.as_asgi(),
-            f"/ws/notifications/patient/{patient.id}/",
-        )
-        communicator.scope["url_route"] = {"kwargs": {"patient_id": str(patient.id)}}
+        communicator = _make_communicator(patient)
 
         connected, _ = await communicator.connect()
         assert connected
@@ -84,11 +86,7 @@ class TestNotificationConsumer:
     async def test_invalid_json_ignored(self):
         patient = await database_sync_to_async(PatientFactory)()
 
-        communicator = WebsocketCommunicator(
-            NotificationConsumer.as_asgi(),
-            f"/ws/notifications/patient/{patient.id}/",
-        )
-        communicator.scope["url_route"] = {"kwargs": {"patient_id": str(patient.id)}}
+        communicator = _make_communicator(patient)
 
         connected, _ = await communicator.connect()
         assert connected
@@ -102,3 +100,17 @@ class TestNotificationConsumer:
         # No response sent back for invalid JSON
         assert await communicator.receive_nothing(timeout=0.5)
         await communicator.disconnect()
+
+    async def test_unauthenticated_connection_rejected(self):
+        """Connections without valid session auth should be rejected."""
+        patient = await database_sync_to_async(PatientFactory)()
+
+        communicator = WebsocketCommunicator(
+            NotificationConsumer.as_asgi(),
+            f"/ws/notifications/patient/{patient.id}/",
+        )
+        communicator.scope["url_route"] = {"kwargs": {"patient_id": str(patient.id)}}
+        # No session — should be rejected
+
+        connected, _ = await communicator.connect()
+        assert not connected

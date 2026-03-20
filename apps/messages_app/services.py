@@ -18,6 +18,7 @@ SMS flow (outbound):
 import logging
 
 from django.conf import settings
+from django.db import IntegrityError
 from django.utils import timezone
 
 from apps.messages_app.backends import get_sms_backend
@@ -106,7 +107,7 @@ class SMSService:
         from apps.accounts.models import User
         from apps.messages_app.models import Message
 
-        # Idempotency check
+        # Idempotency check (unique constraint on external_id backs this up)
         if twilio_sid and Message.objects.filter(external_id=twilio_sid).exists():
             logger.info("Duplicate SMS ignored (SID already processed)", extra={"sid": twilio_sid})
             return None
@@ -131,28 +132,31 @@ class SMSService:
         body_lower = body_stripped.lower()
 
         # Handle STOP/START keywords
-        if body_lower in STOP_KEYWORDS:
-            self._handle_opt_out(patient)
-            # Record the STOP message
-            Message.objects.create(
-                patient=patient,
-                channel="sms",
-                direction="inbound",
-                content=body_stripped,
-                external_id=twilio_sid,
-            )
-            return {"response": "You have been unsubscribed. Reply START to re-subscribe."}
+        try:
+            if body_lower in STOP_KEYWORDS:
+                self._handle_opt_out(patient)
+                Message.objects.create(
+                    patient=patient,
+                    channel="sms",
+                    direction="inbound",
+                    content=body_stripped,
+                    external_id=twilio_sid,
+                )
+                return {"response": "You have been unsubscribed. Reply START to re-subscribe."}
 
-        if body_lower in START_KEYWORDS:
-            self._handle_opt_in(patient)
-            Message.objects.create(
-                patient=patient,
-                channel="sms",
-                direction="inbound",
-                content=body_stripped,
-                external_id=twilio_sid,
-            )
-            return {"response": "You have been re-subscribed to messages."}
+            if body_lower in START_KEYWORDS:
+                self._handle_opt_in(patient)
+                Message.objects.create(
+                    patient=patient,
+                    channel="sms",
+                    direction="inbound",
+                    content=body_stripped,
+                    external_id=twilio_sid,
+                )
+                return {"response": "You have been re-subscribed to messages."}
+        except IntegrityError:
+            logger.info("Duplicate SMS caught by constraint", extra={"sid": twilio_sid})
+            return None
 
         # Process through AI workflow
         from apps.agents.services import process_patient_message

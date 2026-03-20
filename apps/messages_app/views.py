@@ -108,8 +108,8 @@ def _validate_twilio_signature(request):
 
         return validator.validate(url, params, signature)
     except ImportError:
-        logger.warning("twilio package not installed, skipping signature validation")
-        return True
+        logger.warning("twilio package not installed — rejecting webhook (fail-closed)")
+        return False
 
 
 def _empty_twiml():

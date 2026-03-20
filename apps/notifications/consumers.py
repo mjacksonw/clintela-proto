@@ -26,6 +26,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         self.patient_id = self.scope["url_route"]["kwargs"].get("patient_id")
         self.group_name = f"patient_{self.patient_id}_notifications"
 
+        # Auth check: verify session patient matches requested patient_id
+        session = self.scope.get("session", {})
+        session_patient_id = session.get("patient_id")
+        if not session.get("authenticated") or str(session_patient_id) != str(self.patient_id):
+            await self.close()
+            return
+
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
@@ -109,9 +116,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def _mark_read(self, notification_id):
-        from apps.notifications.services import NotificationService
+        """Mark notification as read, scoped to this patient to prevent IDOR."""
+        from apps.notifications.models import Notification
 
-        NotificationService.mark_read(notification_id)
+        Notification.objects.filter(
+            id=notification_id,
+            patient_id=self.patient_id,
+        ).update(is_read=True)
 
 
 class ClinicianNotificationConsumer(AsyncWebsocketConsumer):
@@ -120,6 +131,12 @@ class ClinicianNotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.clinician_id = self.scope["url_route"]["kwargs"].get("clinician_id")
         self.group_name = f"clinician_{self.clinician_id}_notifications"
+
+        # Auth check: verify the connecting user is the clinician
+        user = self.scope.get("user")
+        if not user or not user.is_authenticated or str(user.id) != str(self.clinician_id):
+            await self.close()
+            return
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
