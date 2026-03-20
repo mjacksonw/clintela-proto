@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.6.2] - 2026-03-19
+
+### Fixed
+- Chat message font size reduced from 18px to 16px to match input textarea and DESIGN.md minimum
+- Chat pane and main content pane now scroll independently (overscroll-behavior: contain prevents scroll chaining)
+- Dev toolbar no longer overlaps chat input (CSS custom property for dynamic bottom padding in debug mode)
+
 ## [0.2.6.1] - 2026-03-19
 
 ### Changed

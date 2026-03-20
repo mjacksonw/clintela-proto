@@ -7,8 +7,8 @@
       hx-on::before-request="clintelaChat.onBeforeRequest(event)"
       hx-on::after-swap="clintelaChat.onAfterSwap(event)"
       hx-on::response-error="clintelaChat.onError(event)"
-      class="px-4 py-3 border-t flex-shrink-0"
-      style="border-color: var(--color-border); background-color: var(--color-bg);"
+      class="px-4 pt-3 border-t flex-shrink-0"
+      style="border-color: var(--color-border); background-color: var(--color-bg); padding-bottom: calc(0.75rem + var(--dev-toolbar-h, 0px));"
       x-data="{ message: '', inflight: false }">
 
     <label for="chat-textarea" class="sr-only">Type a message to your care team</label>
