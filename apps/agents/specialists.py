@@ -8,7 +8,7 @@ insufficient or the question requires human clinical judgment.
 import logging
 from typing import Any
 
-from apps.agents.agents import AgentResult, BaseAgent, calculate_confidence_score
+from apps.agents.agents import CONFIDENCE_ESCALATION_THRESHOLD, AgentResult, BaseAgent, calculate_confidence_score
 from apps.agents.llm_client import LLMClient, LLMError
 from apps.agents.prompts import build_specialist_prompt
 
@@ -75,7 +75,7 @@ class RAGSpecialistAgent(BaseAgent):
             )
 
             # Escalate if confidence is low or no RAG evidence
-            should_escalate = confidence < 0.70
+            should_escalate = confidence < CONFIDENCE_ESCALATION_THRESHOLD
 
             return AgentResult(
                 response=content,

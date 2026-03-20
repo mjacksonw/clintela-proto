@@ -270,7 +270,7 @@ class AgentWorkflow:
                     "escalate": True,
                 },
                 "should_escalate": True,
-                "escalation_reason": f"Agent error: {e}",
+                "escalation_reason": "Agent encountered an internal error",
             }
 
     async def _nurse_triage_node(self, state: dict[str, Any]) -> dict[str, Any]:
@@ -312,7 +312,7 @@ class AgentWorkflow:
                     "escalate": True,
                 },
                 "should_escalate": True,
-                "escalation_reason": f"Agent error: {e}",
+                "escalation_reason": "Agent encountered an internal error",
             }
 
     async def _specialist_node(self, state: dict[str, Any]) -> dict[str, Any]:
@@ -445,7 +445,7 @@ class AgentWorkflow:
                 "response": "I'm having trouble right now. Let me connect you with a nurse.",
                 "agent_type": "error",
                 "escalate": True,
-                "escalation_reason": f"Workflow error: {e}",
+                "escalation_reason": "Workflow encountered an internal error",
                 "metadata": {},
             }
 

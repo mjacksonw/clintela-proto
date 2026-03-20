@@ -4,7 +4,7 @@ import secrets
 import uuid
 from datetime import timedelta
 
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 
@@ -158,6 +158,7 @@ class CaregiverInvitation(models.Model):
             InvalidInvitationError: If the invitation cannot be accepted.
             LeafletCodeMismatchError: If the leaflet code doesn't match.
         """
+        # Pre-check outside transaction (non-authoritative, just fail-fast)
         if not self.is_acceptable:
             if self.is_expired:
                 self.status = "expired"
@@ -167,36 +168,49 @@ class CaregiverInvitation(models.Model):
         if leaflet_code != self.patient.leaflet_code:
             raise LeafletCodeMismatchError("Invalid verification code.")
 
-        now = timezone.now()
+        with transaction.atomic():
+            # Atomically claim the invitation: only succeeds if still pending
+            rows = CaregiverInvitation.objects.filter(pk=self.pk, status="pending").update(status="accepted")
 
-        # Create or get caregiver profile
-        caregiver, _ = Caregiver.objects.get_or_create(
-            user=user,
-            defaults={"is_verified": True, "is_active": True},
-        )
+            if rows == 0:
+                self.refresh_from_db()
+                raise InvalidInvitationError(f"Invitation is {self.status}, cannot accept.")
 
-        # Create relationship
-        rel, created = CaregiverRelationship.objects.get_or_create(
-            caregiver=caregiver,
-            patient=self.patient,
-            defaults={
-                "relationship": self.relationship,
-                "accepted_at": now,
-            },
-        )
-        if not created:
-            rel.relationship = self.relationship
-            rel.accepted_at = now
-            rel.is_active = True
-            rel.save(update_fields=["relationship", "accepted_at", "is_active"])
+            now = timezone.now()
 
-        # Mark invitation accepted
-        self.status = "accepted"
-        self.accepted_by = user
-        self.accepted_at = now
-        self.save(update_fields=["status", "accepted_by", "accepted_at"])
+            # Create or get caregiver profile
+            caregiver, _ = Caregiver.objects.get_or_create(
+                user=user,
+                defaults={"is_verified": True, "is_active": True},
+            )
 
-        return rel
+            # Create relationship
+            rel, created = CaregiverRelationship.objects.get_or_create(
+                caregiver=caregiver,
+                patient=self.patient,
+                defaults={
+                    "relationship": self.relationship,
+                    "accepted_at": now,
+                },
+            )
+            if not created:
+                rel.relationship = self.relationship
+                rel.accepted_at = now
+                rel.is_active = True
+                rel.save(update_fields=["relationship", "accepted_at", "is_active"])
+
+            # Finalize invitation fields
+            CaregiverInvitation.objects.filter(pk=self.pk).update(
+                accepted_by=user,
+                accepted_at=now,
+            )
+
+            # Sync self
+            self.status = "accepted"
+            self.accepted_by = user
+            self.accepted_at = now
+
+            return rel
 
     def revoke(self):
         """Revoke this invitation."""

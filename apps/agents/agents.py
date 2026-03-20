@@ -17,6 +17,9 @@ from apps.agents.prompts import (
 
 logger = logging.getLogger(__name__)
 
+# Confidence scoring constants
+CONFIDENCE_ESCALATION_THRESHOLD = 0.70
+
 
 class AgentResult:
     """Result from an agent invocation."""
@@ -341,7 +344,7 @@ Status: {patient.get("status", "unknown")}
             )
 
             # Check if confidence is below threshold
-            should_escalate = confidence < 0.70
+            should_escalate = confidence < CONFIDENCE_ESCALATION_THRESHOLD
 
             return AgentResult(
                 response=content,
@@ -483,7 +486,10 @@ class NurseTriageAgent(BaseAgent):
             else:
                 result = response
 
-            severity = result.get("severity", "green")
+            severity = result.get("severity", "green").lower().strip()
+            if severity not in {"green", "yellow", "orange", "red"}:
+                logger.warning("Unknown triage severity from LLM: %r, defaulting to orange", severity)
+                severity = "orange"
             response_text = result.get("response", result.get("recommendation", ""))
 
             # Calculate confidence score with RAG adjustment
@@ -497,7 +503,11 @@ class NurseTriageAgent(BaseAgent):
             )
 
             # Escalate if severity is high or confidence is low
-            escalate = result.get("escalate", False) or severity in ["orange", "red"] or confidence < 0.70
+            escalate = (
+                result.get("escalate", False)
+                or severity in ["orange", "red"]
+                or confidence < CONFIDENCE_ESCALATION_THRESHOLD
+            )
 
             return AgentResult(
                 response=response_text,
@@ -511,7 +521,7 @@ class NurseTriageAgent(BaseAgent):
                 },
                 escalate=escalate,
                 escalation_reason=result.get("escalation_reason", "")
-                or ("Low confidence score" if confidence < 0.70 else ""),
+                or ("Low confidence score" if confidence < CONFIDENCE_ESCALATION_THRESHOLD else ""),
             )
         except (json.JSONDecodeError, LLMError) as e:
             logger.error(f"Nurse Triage failed: {e}")

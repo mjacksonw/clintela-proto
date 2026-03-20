@@ -485,7 +485,7 @@ class TestCareCoordinatorNode:
             result = await workflow._care_coordinator_node(state)
 
             assert result["should_escalate"] is True
-            assert "Agent error" in result["escalation_reason"]
+            assert "internal error" in result["escalation_reason"]
             assert result["result"]["agent_type"] == "care_coordinator"
             assert "escalate" in result["result"]
             assert result["result"]["escalate"] is True
@@ -556,7 +556,7 @@ class TestNurseTriageNode:
             result = await workflow._nurse_triage_node(state)
 
             assert result["should_escalate"] is True
-            assert "Agent error" in result["escalation_reason"]
+            assert "internal error" in result["escalation_reason"]
             assert result["result"]["agent_type"] == "nurse_triage"
 
 
@@ -893,7 +893,7 @@ class TestProcessMessage:
             )
 
             assert result["escalate"] is True
-            assert "Workflow error" in result["escalation_reason"]
+            assert "internal error" in result["escalation_reason"]
             assert result["agent_type"] == "error"
 
     @pytest.mark.asyncio

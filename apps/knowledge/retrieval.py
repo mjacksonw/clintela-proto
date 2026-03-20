@@ -126,8 +126,8 @@ class KnowledgeRetrievalService:
         Returns:
             List of RetrievalResult sorted by combined score (descending).
         """
-        top_k = top_k or self.top_k
-        threshold = similarity_threshold or self.similarity_threshold
+        top_k = top_k if top_k is not None else self.top_k
+        threshold = similarity_threshold if similarity_threshold is not None else self.similarity_threshold
 
         try:
             embedding_client = get_embedding_client()

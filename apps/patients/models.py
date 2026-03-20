@@ -2,7 +2,7 @@
 
 import uuid
 
-from django.db import models
+from django.db import models, transaction
 
 
 class Hospital(models.Model):
@@ -138,16 +138,25 @@ class Patient(models.Model):
             )
 
         old_status = self.lifecycle_status
-        self.lifecycle_status = new_status
-        self.save(update_fields=["lifecycle_status", "updated_at"])
 
-        return PatientStatusTransition.objects.create(
-            patient=self,
-            from_status=old_status,
-            to_status=new_status,
-            triggered_by=triggered_by,
-            reason=reason,
-        )
+        with transaction.atomic():
+            # Atomic update: only succeeds if status hasn't changed since we read it
+            rows = (
+                type(self).objects.filter(pk=self.pk, lifecycle_status=old_status).update(lifecycle_status=new_status)
+            )
+
+            if rows == 0:
+                raise InvalidLifecycleTransitionError(f"Concurrent modification: status is no longer '{old_status}'.")
+
+            self.lifecycle_status = new_status
+
+            return PatientStatusTransition.objects.create(
+                patient=self,
+                from_status=old_status,
+                to_status=new_status,
+                triggered_by=triggered_by,
+                reason=reason,
+            )
 
 
 class InvalidLifecycleTransitionError(Exception):

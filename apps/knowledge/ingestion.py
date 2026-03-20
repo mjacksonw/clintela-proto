@@ -305,7 +305,16 @@ class IngestionPipeline:
                 continue
 
             docs = []
-            for chunk, embedding in zip(batch, embeddings, strict=False):
+            if len(embeddings) != len(batch):
+                logger.error(
+                    "Embedding count mismatch: got %d embeddings for %d chunks",
+                    len(embeddings),
+                    len(batch),
+                )
+                self.stats["errors"] += 1
+                continue
+
+            for chunk, embedding in zip(batch, embeddings, strict=True):
                 docs.append(
                     KnowledgeDocument(
                         source=self.source,
