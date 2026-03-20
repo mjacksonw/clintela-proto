@@ -143,16 +143,19 @@ class TestHandleInboundSms:
 
     def test_non_patient_user_returns_none(self):
         """SMS from a user without a patient_profile is ignored."""
+        import uuid
+
         from apps.accounts.models import User
 
-        # Create a user without a patient profile
+        # Use a unique phone number to avoid xdist collisions
+        unique_phone = f"+1555{uuid.uuid4().int % 10000000:07d}"
         User.objects.create_user(
-            username="staffonly",
-            phone_number="+15550000001",
+            username=f"staffonly_{uuid.uuid4().hex[:8]}",
+            phone_number=unique_phone,
         )
 
         result = SMSService().handle_inbound_sms(
-            from_number="+15550000001",
+            from_number=unique_phone,
             body="Hello",
         )
 
