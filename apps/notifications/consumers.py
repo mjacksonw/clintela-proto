@@ -134,7 +134,19 @@ class ClinicianNotificationConsumer(AsyncWebsocketConsumer):
 
         # Auth check: verify the connecting user is the clinician
         user = self.scope.get("user")
-        if not user or not user.is_authenticated or str(user.id) != str(self.clinician_id):
+        if not user or not user.is_authenticated:
+            await self.close()
+            return
+
+        # Clinician has its own PK — look up via user FK
+        from apps.clinicians.models import Clinician
+
+        try:
+            clinician = await Clinician.objects.aget(user=user)
+            if str(clinician.id) != str(self.clinician_id):
+                await self.close()
+                return
+        except Clinician.DoesNotExist:
             await self.close()
             return
 

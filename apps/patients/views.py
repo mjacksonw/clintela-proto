@@ -161,7 +161,10 @@ def patient_voice_send_view(request):
         voice_dir = Path(settings.MEDIA_ROOT) / "voice_memos" / str(patient.id)
         voice_dir.mkdir(parents=True, exist_ok=True)
 
-        ext = audio_file.name.rsplit(".", 1)[-1] if "." in audio_file.name else "webm"
+        allowed_audio_extensions = {"webm", "wav", "mp3", "ogg", "m4a", "mp4", "aac", "flac"}
+        ext = audio_file.name.rsplit(".", 1)[-1].lower() if "." in audio_file.name else "webm"
+        if ext not in allowed_audio_extensions:
+            ext = "webm"
         file_path = voice_dir / f"{file_id}.{ext}"
 
         with open(file_path, "wb") as f:
