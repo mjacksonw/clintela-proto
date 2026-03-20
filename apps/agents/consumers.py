@@ -257,13 +257,11 @@ class ClinicianDashboardConsumer(AsyncWebsocketConsumer):
         user = self.scope.get("user")
         if not user or not user.is_authenticated or user.role != "clinician":
             logger.warning("WebSocket auth rejected: user not an authenticated clinician")
-            await self.close()
             return
 
         try:
             clinician = await sync_to_async(lambda: user.clinician_profile)()
             if not clinician.is_active:
-                await self.close()
                 return
 
             # Verify hospital access — Hospital uses int PK
@@ -275,11 +273,9 @@ class ClinicianDashboardConsumer(AsyncWebsocketConsumer):
                     clinician.id,
                     self.hospital_id,
                 )
-                await self.close()
                 return
         except Exception:
             logger.warning("WebSocket auth failed: no clinician profile")
-            await self.close()
             return
 
         await self.channel_layer.group_add(
