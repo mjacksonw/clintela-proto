@@ -1,5 +1,5 @@
 <!-- Tools tab content -->
-<div class="p-4 animate-in space-y-4">
+<div id="tools-tab-container" class="p-4 animate-in space-y-4">
     <h2 class="text-base font-semibold" style="color: var(--color-text);">Tools</h2>
 
     <!-- Patient Info -->
@@ -23,6 +23,58 @@
                 <p style="color: var(--color-text);">{{ patient.hospital.name|default:"—" }}</p>
             </div>
         </div>
+    </div>
+
+    <!-- Care Pathway Assignment -->
+    <div class="p-3 rounded-md border" style="border-color: var(--color-border);">
+        <h3 class="text-xs font-semibold mb-2" style="color: var(--color-text);">Care Pathway</h3>
+        {% if active_pathway %}
+        <div class="flex items-center justify-between mb-2">
+            <div>
+                <p class="text-xs font-medium" style="color: var(--color-text);">{{ active_pathway.pathway.name }}</p>
+                <p class="text-[11px]" style="color: var(--color-text-secondary);">
+                    {{ active_pathway.pathway.duration_days }}-day protocol · Started {{ active_pathway.started_at|date:"M j" }}
+                </p>
+            </div>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">Active</span>
+        </div>
+        <form hx-post="{% url 'clinicians:unassign_pathway' patient.id %}"
+              hx-target="#tools-tab-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <button type="submit" class="h-7 px-2.5 text-[11px] font-medium rounded-md border hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600"
+                    style="border-color: var(--color-border);">
+                <i data-lucide="x" class="w-3 h-3 inline mr-0.5"></i>
+                Discontinue
+            </button>
+        </form>
+        {% else %}
+        {% if available_pathways %}
+        <form hx-post="{% url 'clinicians:assign_pathway' patient.id %}"
+              hx-target="#tools-tab-container"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <p class="text-[11px] mb-2" style="color: var(--color-text-secondary);">
+                No pathway assigned. Select one to start tracking milestones.
+            </p>
+            <div class="flex gap-2">
+                <select name="pathway_id" class="flex-1 h-8 px-2 text-xs rounded-md border"
+                        style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+                    {% for pw in available_pathways %}
+                    <option value="{{ pw.id }}">{{ pw.name }} ({{ pw.duration_days }}d)</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="h-8 px-3 text-xs font-medium rounded-md bg-teal-600 text-white hover:bg-teal-700">
+                    Assign
+                </button>
+            </div>
+        </form>
+        {% else %}
+        <p class="text-[11px]" style="color: var(--color-text-secondary);">
+            No pathways available. Create pathways via <code class="text-[10px]">manage.py seed_pathways</code>.
+        </p>
+        {% endif %}
+        {% endif %}
     </div>
 
     <!-- Lifecycle Transition -->
