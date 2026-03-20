@@ -36,12 +36,16 @@ Multi-modal access to care coordination:
 
 ### 2. Clinician Interface
 
-Dashboard for nurses and physicians:
-- **Triage view**: Patients color-coded by severity (red/orange/yellow/green)
-- Patient summaries with recent developments
-- Detailed interaction history and status tracking
-- Configurable notifications (event-driven, escalations, scheduled summaries)
-- Support for email, SMS, and phone alerts with escalation chains
+Three-panel dashboard for nurses and physicians:
+- **Patient list**: Severity-sorted with triage color dots, unread badges, and search/sort
+- **Patient detail**: Four tabs — Details (timeline, escalations, notes), Care Plan (pathway milestones), Research (LLM chat with specialist routing), Tools (lifecycle transitions, consent, caregivers)
+- **Patient chat**: Read conversation history, inject clinician messages, take control of the AI thread
+- **Take-control mode**: Clinician takes over patient chat — AI pauses, patient sees messages from named clinician, race-safe locking with automatic timeout release
+- **Scheduling**: Weekly calendar with availability management and appointment CRUD
+- **Shift handoff**: Summary of changes since last login — new escalations, status changes, missed check-ins
+- **Keyboard shortcuts**: j/k navigate, 1-4 switch tabs, e acknowledge escalation, / search, ? help
+- **Real-time**: WebSocket escalation alerts, desktop notifications for critical events
+- **Dark mode**: Full support across all clinician views
 
 ### 3. Administrator Interface
 
@@ -112,7 +116,7 @@ Non-LLM workflows handle: permissions, thresholds, escalation rules, retries, ti
 
 This repository contains the prototype implementation of Clintela's user interfaces and core systems.
 
-**Current Phase**: Phase 4 complete — clinical knowledge RAG, pgvector hybrid search, 6 RAG-backed specialist agents, patient lifecycle state machine, caregiver invitation flow, consent management, and knowledge health admin dashboard
+**Current Phase**: Phase 5 complete — clinician dashboard with three-panel layout, 4 detail tabs, take-control mode, scheduling UI, shift handoff, keyboard shortcuts, and 90%+ test coverage
 
 ---
 
@@ -130,6 +134,7 @@ This repository contains the prototype implementation of Clintela's user interfa
 - [Testing Guide](./docs/testing.md)
 - [Phase 3 Acceptance Testing](./docs/ACCEPTANCE-TESTING-PHASE3.md) — Manual QA guide for SMS, voice, notifications, and WebSocket features
 - [Phase 4 Plan](./docs/plans/2026-03-20-phase4-clinical-knowledge-rag.md) — Clinical knowledge RAG design and implementation notes
+- [Phase 5 Plan](./docs/plans/2026-03-20-phase5-clinician-dashboard.md) — Clinician dashboard design and implementation notes
 - [TODOs](./TODOS.md) — Deferred work and future phases
 
 ---

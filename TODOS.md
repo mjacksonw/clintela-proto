@@ -326,6 +326,52 @@ After a caregiver accepts an invitation and verifies with the patient's leaflet 
 
 ---
 
+### TODO-015: Server-Side Pagination for Patient List
+**What:** Add server-side pagination to the clinician patient list instead of loading all patients at once.
+
+**Why:** The current implementation loads all patients from the clinician's hospitals in a single queryset. This works for the prototype (~50 patients) but won't scale beyond ~300 patients.
+
+**Pros:**
+- Supports clinicians with large patient loads
+- Reduces initial page load time
+- Enables infinite scroll or paged navigation
+
+**Cons:**
+- More complex frontend interaction (HTMX pagination)
+- Sort/search needs to work with pagination
+
+**Context:**
+The patient list in `apps/clinicians/views.py:patient_list_fragment` uses Django ORM annotations (Subquery/Count/Max) for a single queryset. Adding `.paginate_by` and HTMX `hx-trigger="revealed"` for infinite scroll is the recommended approach.
+
+**Effort:** Small (human: ~3 days / CC: ~15 min)
+**Priority:** P2
+**Blocked by:** None — clinician dashboard shipped in Phase 5
+
+---
+
+### TODO-016: Migrate Async Wrappers to Django 5.1 Native Async ORM
+**What:** Replace 8+ `sync_to_async` / `database_sync_to_async` boilerplate functions in `apps/agents/api.py` with Django 5.1 native async ORM methods (`aget`, `acreate`, `aiterator`).
+
+**Why:** Django 5.1 supports native async ORM. The current wrappers are verbose and add unnecessary indirection.
+
+**Pros:**
+- Cleaner code, less boilerplate
+- Better performance (no thread pool overhead)
+- Uses framework-standard patterns
+
+**Cons:**
+- Minor migration effort
+- Need to verify all async ORM methods are available for the queries used
+
+**Context:**
+`apps/agents/api.py` has ~8 `sync_to_async` wrapper functions that can be replaced with `await Model.objects.aget()`, `await Model.objects.acreate()`, etc. Low risk, high code quality improvement.
+
+**Effort:** Small (human: ~2 days / CC: ~15 min)
+**Priority:** P3
+**Blocked by:** None
+
+---
+
 ### TODO-014: Chat Sidebar Suggestion Chips Touch Target
 **What:** Increase suggestion chip height from 38px to 44px minimum WCAG touch target in `_chat_sidebar.html`.
 
@@ -372,4 +418,4 @@ When deferring new work:
 ---
 
 *Last updated: 2026-03-20*
-*Source: CEO Review Scope Expansion + Phase 3 completion (v0.2.6.0) + Phase 4 completion (v0.2.7.0) + Design review deferrals*
+*Source: CEO Review Scope Expansion + Phase 3 completion (v0.2.6.0) + Phase 4 completion (v0.2.7.0) + Phase 5 completion (v0.2.8.0) + Design review deferrals*

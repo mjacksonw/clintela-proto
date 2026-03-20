@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.8.0] - 2026-03-20
+
+### Added
+- Three-panel clinician dashboard — patient list (severity sort, search, triage dots), patient detail (4 tabs), and patient chat panel
+- Details tab with patient timeline (collapsed by day, expandable), escalation management (acknowledge/resolve/bulk), clinician notes, and export handoff
+- Care Plan tab showing pathway milestones with check-in status
+- Research tab — private clinician LLM chat with specialist routing dropdown, patient context pre-loaded
+- Tools tab — lifecycle transitions, send auth text, consent status, caregiver management, patient info
+- Take-control mode: clinician takes over patient chat thread with race-safe locking (atomic DB update), AI pauses, patient sees named clinician, three release mechanisms (explicit, disconnect, 30-min timeout)
+- Scheduling UI with weekly calendar grid (7am–7pm clinical hours), availability management, and appointment CRUD with conflict validation
+- Shift handoff summary showing changes since last login (escalations, status changes, missed check-ins)
+- Keyboard shortcuts: j/k navigate patients, 1-4 switch tabs, e acknowledge escalation, / search, ? help modal — suppressed in input fields
+- Desktop notification permission + critical escalation alerts (Web Notification API + Web Audio)
+- Clinician auth with `@clinician_required` decorator enforcing role + hospital-scoped IDOR prevention
+- Clinician login/logout views with Django session auth
+- New models: ClinicianNote, ClinicianAvailability, Appointment
+- Agent model extensions: clinician FK, paused_by/paused_at on AgentConversation, clinician_research agent type
+- `create_test_clinician` management command (hospital, clinician, 5 patients at varying triage levels)
+- Responsive layouts: desktop three-panel, tablet two-panel + chat drawer, mobile single-panel + bottom nav
+- Next appointment toast on dashboard footer
+- 90%+ test coverage with 6 test files covering all clinician features
+
+### Fixed
+- WebSocket consumer auth: `ClinicianDashboardConsumer` now verifies authenticated clinician with hospital access instead of accepting all connections
+- WebSocket consumer correctly returns without accepting when auth fails (was calling `self.close()` before `self.accept()`)
+- Agent API escalation acknowledge uses session auth instead of clinician_id from request body
+- Schedule week range display now shows correct start and end dates
+- DOB field in Tools tab references `patient.date_of_birth` instead of `patient.user.date_of_birth`
+- Three-panel layout fixed — aside tags had missing closing `>` after Alpine `:class` attribute
+
 ## [0.2.7.0] - 2026-03-20
 
 ### Added
