@@ -1,0 +1,397 @@
+"""Tests for clinician views."""
+
+import uuid as _uuid
+
+from django.test import TestCase
+
+from apps.accounts.models import User
+from apps.agents.models import AgentConversation, AgentMessage, Escalation
+from apps.clinicians.models import Clinician, ClinicianNote
+from apps.patients.models import Hospital, Patient
+
+_DOB = "1960-01-15"
+
+
+def _code():
+    return f"TST-{_uuid.uuid4().hex[:8]}"
+
+
+def _lc():
+    return f"LC-{_uuid.uuid4().hex[:8]}"
+
+
+class ViewTestBase(TestCase):
+    """Base test class with common setup."""
+
+    def setUp(self):
+        self.hospital = Hospital.objects.create(name="Test Hospital", code=_code())
+        self.clin_user = User.objects.create_user(
+            username="dr_views",
+            password="testpass",  # pragma: allowlist secret
+            role="clinician",
+            first_name="View",
+            last_name="Doctor",
+        )
+        self.clinician = Clinician.objects.create(
+            user=self.clin_user,
+            role="physician",
+            is_active=True,
+        )
+        self.clinician.hospitals.add(self.hospital)
+
+        self.pat_user = User.objects.create_user(
+            username="pat_views",
+            password="testpass",  # pragma: allowlist secret
+            role="patient",
+            first_name="View",
+            last_name="Patient",
+        )
+        self.patient = Patient.objects.create(
+            user=self.pat_user,
+            hospital=self.hospital,
+            status="yellow",
+            lifecycle_status="post_op",
+            surgery_type="Knee Replacement",
+            date_of_birth=_DOB,
+            leaflet_code=_lc(),
+        )
+        self.client.login(username="dr_views", password="testpass")  # pragma: allowlist secret
+
+
+class DashboardViewTest(ViewTestBase):
+    def test_dashboard_renders(self):
+        response = self.client.get("/clinician/dashboard/")
+        assert response.status_code == 200
+        assert b"Clintela" in response.content
+
+    def test_dashboard_first_login(self):
+        self.clin_user.last_login = None
+        self.clin_user.save()
+        response = self.client.get("/clinician/dashboard/")
+        assert response.status_code == 200
+        assert b"Welcome" in response.content
+
+    def test_dashboard_requires_auth(self):
+        self.client.logout()
+        response = self.client.get("/clinician/dashboard/")
+        assert response.status_code == 302
+
+
+class PatientListFragmentTest(ViewTestBase):
+    def test_patient_list_loads(self):
+        response = self.client.get("/clinician/patients/")
+        assert response.status_code == 200
+        assert b"View Patient" in response.content
+
+    def test_patient_list_search(self):
+        response = self.client.get("/clinician/patients/?search=View")
+        assert response.status_code == 200
+        assert b"View Patient" in response.content
+
+    def test_patient_list_search_no_results(self):
+        response = self.client.get("/clinician/patients/?search=ZZZZZ")
+        assert response.status_code == 200
+        assert b"No patients match" in response.content
+
+    def test_patient_list_sort_alpha(self):
+        response = self.client.get("/clinician/patients/?sort=alpha")
+        assert response.status_code == 200
+
+    def test_patient_list_sort_last_contact(self):
+        response = self.client.get("/clinician/patients/?sort=last_contact")
+        assert response.status_code == 200
+
+
+class PatientDetailTabsTest(ViewTestBase):
+    def test_details_tab(self):
+        response = self.client.get(
+            f"/clinician/patients/{self.patient.id}/detail/",
+        )
+        assert response.status_code == 200
+        assert b"View Patient" in response.content
+
+    def test_care_plan_tab(self):
+        response = self.client.get(
+            f"/clinician/patients/{self.patient.id}/care-plan/",
+        )
+        assert response.status_code == 200
+
+    def test_research_tab(self):
+        response = self.client.get(
+            f"/clinician/patients/{self.patient.id}/research/",
+        )
+        assert response.status_code == 200
+        assert b"Research" in response.content
+
+    def test_tools_tab(self):
+        response = self.client.get(
+            f"/clinician/patients/{self.patient.id}/tools/",
+        )
+        assert response.status_code == 200
+
+    def test_idor_rejected(self):
+        """Patient from different hospital should be rejected."""
+        other_hospital = Hospital.objects.create(name="Other", code=_code())
+        other_user = User.objects.create_user(
+            username="idor_pat",
+            password="pass",  # pragma: allowlist secret
+            role="patient",
+        )
+        other_patient = Patient.objects.create(
+            user=other_user,
+            hospital=other_hospital,
+            status="green",
+            date_of_birth=_DOB,
+            leaflet_code=_lc(),
+        )
+        response = self.client.get(
+            f"/clinician/patients/{other_patient.id}/detail/",
+        )
+        assert response.status_code == 403
+
+
+class PatientChatFragmentTest(ViewTestBase):
+    def test_chat_no_conversation(self):
+        response = self.client.get(
+            f"/clinician/patients/{self.patient.id}/chat/",
+        )
+        assert response.status_code == 200
+        assert b"No conversation" in response.content
+
+    def test_chat_with_conversation(self):
+        conv = AgentConversation.objects.create(
+            patient=self.patient,
+            agent_type="supervisor",
+            status="active",
+        )
+        AgentMessage.objects.create(
+            conversation=conv,
+            role="user",
+            content="Hello",
+        )
+        AgentMessage.objects.create(
+            conversation=conv,
+            role="assistant",
+            agent_type="care_coordinator",
+            content="Hi there!",
+        )
+        response = self.client.get(
+            f"/clinician/patients/{self.patient.id}/chat/",
+        )
+        assert response.status_code == 200
+        assert b"Hello" in response.content
+
+
+class InjectMessageTest(ViewTestBase):
+    def test_inject_creates_message(self):
+        response = self.client.post(
+            f"/clinician/patients/{self.patient.id}/inject-message/",
+            {"message": "Test clinician message"},
+        )
+        assert response.status_code == 200
+        msg = AgentMessage.objects.filter(agent_type="clinician").first()
+        assert msg is not None
+        assert msg.content == "Test clinician message"
+
+    def test_inject_takes_control(self):
+        response = self.client.post(
+            f"/clinician/patients/{self.patient.id}/inject-message/",
+            {"message": "Taking over"},
+        )
+        assert response.status_code == 200
+        conv = AgentConversation.objects.filter(patient=self.patient).first()
+        assert conv.paused_by == self.clin_user
+
+    def test_inject_empty_message_rejected(self):
+        response = self.client.post(
+            f"/clinician/patients/{self.patient.id}/inject-message/",
+            {"message": ""},
+        )
+        assert response.status_code == 400
+
+    def test_inject_race_condition(self):
+        """Second clinician cannot inject when first has control."""
+        # First clinician takes control
+        self.client.post(
+            f"/clinician/patients/{self.patient.id}/inject-message/",
+            {"message": "First"},
+        )
+
+        # Second clinician tries
+        other_user = User.objects.create_user(
+            username="dr_other",
+            password="testpass",  # pragma: allowlist secret
+            role="clinician",
+        )
+        other_clin = Clinician.objects.create(
+            user=other_user,
+            role="physician",
+            is_active=True,
+        )
+        other_clin.hospitals.add(self.hospital)
+
+        self.client.login(username="dr_other", password="testpass")  # pragma: allowlist secret
+        response = self.client.post(
+            f"/clinician/patients/{self.patient.id}/inject-message/",
+            {"message": "Second"},
+        )
+        assert response.status_code == 200
+        assert b"currently responding" in response.content
+
+
+class ReleaseControlTest(ViewTestBase):
+    def test_release_control(self):
+        # Take control first
+        self.client.post(
+            f"/clinician/patients/{self.patient.id}/inject-message/",
+            {"message": "Hi"},
+        )
+        conv = AgentConversation.objects.filter(patient=self.patient).first()
+        assert conv.paused_by is not None
+
+        # Release
+        response = self.client.post(
+            f"/clinician/patients/{self.patient.id}/take-control/release/",
+        )
+        assert response.status_code == 200
+        conv.refresh_from_db()
+        assert conv.paused_by is None
+
+
+class NotesViewTest(ViewTestBase):
+    def test_add_note(self):
+        response = self.client.post(
+            f"/clinician/patients/{self.patient.id}/notes/add/",
+            {"content": "Test note", "note_type": "quick_note"},
+        )
+        assert response.status_code == 200
+        assert ClinicianNote.objects.filter(patient=self.patient).count() == 1
+
+    def test_add_empty_note_rejected(self):
+        response = self.client.post(
+            f"/clinician/patients/{self.patient.id}/notes/add/",
+            {"content": "", "note_type": "quick_note"},
+        )
+        assert response.status_code == 400
+
+
+class EscalationViewTest(ViewTestBase):
+    def setUp(self):
+        super().setUp()
+        self.escalation = Escalation.objects.create(
+            patient=self.patient,
+            reason="Test escalation",
+            severity="urgent",
+            status="pending",
+        )
+
+    def test_acknowledge(self):
+        response = self.client.post(
+            f"/clinician/escalations/{self.escalation.id}/acknowledge/",
+        )
+        assert response.status_code == 200
+        self.escalation.refresh_from_db()
+        assert self.escalation.status == "acknowledged"
+
+    def test_resolve(self):
+        response = self.client.post(
+            f"/clinician/escalations/{self.escalation.id}/resolve/",
+        )
+        assert response.status_code == 200
+        self.escalation.refresh_from_db()
+        assert self.escalation.status == "resolved"
+
+    def test_bulk_acknowledge(self):
+        esc2 = Escalation.objects.create(
+            patient=self.patient,
+            reason="Second",
+            severity="routine",
+            status="pending",
+        )
+        response = self.client.post(
+            "/clinician/escalations/bulk-acknowledge/",
+            {"escalation_ids": [str(self.escalation.id), str(esc2.id)]},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["acknowledged"] == 2
+
+    def test_escalation_idor(self):
+        """Escalation for patient in different hospital should be rejected."""
+        other_hospital = Hospital.objects.create(name="Other", code=_code())
+        other_user = User.objects.create_user(
+            username="idor_esc_pat",
+            password="pass",  # pragma: allowlist secret
+            role="patient",
+        )
+        other_patient = Patient.objects.create(
+            user=other_user,
+            hospital=other_hospital,
+            status="green",
+            date_of_birth=_DOB,
+            leaflet_code=_lc(),
+        )
+        other_esc = Escalation.objects.create(
+            patient=other_patient,
+            reason="Other",
+            severity="routine",
+            status="pending",
+        )
+        response = self.client.post(
+            f"/clinician/escalations/{other_esc.id}/acknowledge/",
+        )
+        assert response.status_code == 403
+
+
+class LifecycleTransitionTest(ViewTestBase):
+    def test_valid_transition(self):
+        self.patient.lifecycle_status = "post_op"
+        self.patient.save()
+        response = self.client.post(
+            f"/clinician/patients/{self.patient.id}/lifecycle/",
+            {"new_status": "discharged"},
+        )
+        assert response.status_code == 200
+
+    def test_invalid_transition(self):
+        self.patient.lifecycle_status = "pre_surgery"
+        self.patient.save()
+        response = self.client.post(
+            f"/clinician/patients/{self.patient.id}/lifecycle/",
+            {"new_status": "recovered"},
+        )
+        assert response.status_code == 400
+
+
+class ScheduleViewTest(ViewTestBase):
+    def test_schedule_renders(self):
+        response = self.client.get("/clinician/schedule/")
+        assert response.status_code == 200
+        assert b"Schedule" in response.content
+
+    def test_schedule_week_navigation(self):
+        response = self.client.get("/clinician/schedule/?week_offset=1")
+        assert response.status_code == 200
+
+
+class ExportHandoffTest(ViewTestBase):
+    def test_export_handoff_json(self):
+        response = self.client.get(
+            f"/clinician/patients/{self.patient.id}/export-handoff/",
+        )
+        assert response.status_code == 200
+        assert response["Content-Type"] == "application/json"
+
+
+class TimelineDayTest(ViewTestBase):
+    def test_timeline_day_empty(self):
+        response = self.client.get(
+            f"/clinician/patients/{self.patient.id}/timeline/2026-03-20/",
+        )
+        assert response.status_code == 200
+
+    def test_timeline_day_invalid_date(self):
+        response = self.client.get(
+            f"/clinician/patients/{self.patient.id}/timeline/invalid/",
+        )
+        assert response.status_code == 400
