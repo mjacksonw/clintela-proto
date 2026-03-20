@@ -38,10 +38,9 @@ class TestIngestDocumentCommand:
 
     def _make_temp_file(self, suffix=".md", content="# Test\nSome clinical content."):
         """Create a temporary file and return its path (caller must clean up)."""
-        f = tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False)
-        f.write(content)
-        f.close()
-        return f.name
+        with tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False) as f:
+            f.write(content)
+            return f.name
 
     @patch("apps.knowledge.management.commands.ingest_document.IngestionPipeline")
     def test_basic_execution_creates_source_and_ingests(self, mock_pipeline):
