@@ -120,6 +120,8 @@
         <i data-lucide="message-circle" class="w-6 h-6"></i>
     </button>
 
+    {% include "components/_dev_toolbar.html" %}
+
     <!-- Tablet collapse button (when expanded) -->
     <button x-show="tabletExpanded && window.innerWidth >= 768 && window.innerWidth < 1024"
             @click="tabletExpanded = false"

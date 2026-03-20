@@ -81,6 +81,11 @@ def patient_dashboard_view(request):
         "debug": settings.DEBUG,
     }
 
+    if settings.DEBUG:
+        from .models import Patient
+
+        context["all_patients"] = Patient.objects.select_related("user").all()[:20]
+
     return render(request, "patients/dashboard.html", context)
 
 
