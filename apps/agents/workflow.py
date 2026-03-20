@@ -4,6 +4,7 @@ import json
 import logging
 from typing import Any
 
+from django.conf import settings
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -45,6 +46,79 @@ class AgentWorkflow:
         }
 
         self._workflow: CompiledStateGraph | None = None
+        self._rag_enabled = getattr(settings, "ENABLE_RAG", False)
+
+    async def _retrieve_clinical_evidence(
+        self,
+        message: str,
+        context: dict[str, Any],
+    ):
+        """Retrieve clinical evidence from the knowledge base.
+
+        Returns EMPTY_RAG_RESULT when RAG is disabled or on any error,
+        so callers can always safely use the result.
+        """
+        from apps.knowledge.retrieval import EMPTY_RAG_RESULT
+
+        if not self._rag_enabled:
+            return EMPTY_RAG_RESULT
+
+        try:
+            from apps.knowledge.retrieval import KnowledgeRetrievalService
+
+            service = KnowledgeRetrievalService()
+            patient = context.get("patient", {})
+            hospital_id = patient.get("hospital_id")
+            patient_id = patient.get("id")
+            agent_type = context.get("agent_type", "")
+
+            return await service.search_and_format(
+                query=message,
+                hospital_id=hospital_id,
+                agent_type=agent_type,
+                patient_id=patient_id,
+            )
+        except Exception:
+            logger.exception("RAG retrieval failed, continuing without evidence")
+            return EMPTY_RAG_RESULT
+
+    async def _store_citations(
+        self,
+        agent_message_id: Any | None,
+        rag_result,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Store citation records linking an AgentMessage to KnowledgeDocuments.
+
+        Args:
+            agent_message_id: UUID of the AgentMessage (None to skip).
+            rag_result: The RAG result containing citations.
+            metadata: Optional dict to update with RAG metadata summary.
+        """
+        if not rag_result.has_results or agent_message_id is None:
+            return
+
+        try:
+            from asgiref.sync import sync_to_async
+
+            from apps.agents.models import MessageCitation
+
+            citations_to_create = [
+                MessageCitation(
+                    agent_message_id=agent_message_id,
+                    knowledge_doc_id=r.document_id,
+                    similarity_score=r.combined_score,
+                )
+                for r in rag_result.citations
+            ]
+            await sync_to_async(MessageCitation.objects.bulk_create)(citations_to_create, ignore_conflicts=True)
+
+            if metadata is not None:
+                metadata["rag_result_count"] = len(rag_result.citations)
+                metadata["rag_top_similarity"] = rag_result.top_similarity
+
+        except Exception:
+            logger.exception("Failed to store citations")
 
     def _get_workflow(self) -> CompiledStateGraph:
         """Get or create the compiled workflow.
@@ -176,10 +250,20 @@ class AgentWorkflow:
         context = state.get("context", {})
 
         try:
+            # Retrieve clinical evidence
+            rag_result = await self._retrieve_clinical_evidence(message, context)
+            context["rag_context"] = rag_result.context_str
+            context["rag_top_similarity"] = rag_result.top_similarity if rag_result.has_results else None
+
             result = await self.care_coordinator.process(message, context)
+
+            # Store RAG metadata in result
+            result_dict = result.to_dict()
+            result_dict["rag_result"] = rag_result
+
             return {
                 **state,
-                "result": result.to_dict(),
+                "result": result_dict,
                 "should_escalate": result.escalate,
                 "escalation_reason": result.escalation_reason,
             }
@@ -209,10 +293,19 @@ class AgentWorkflow:
         context = state.get("context", {})
 
         try:
+            # Retrieve clinical evidence
+            rag_result = await self._retrieve_clinical_evidence(message, context)
+            context["rag_context"] = rag_result.context_str
+            context["rag_top_similarity"] = rag_result.top_similarity if rag_result.has_results else None
+
             result = await self.nurse_triage.process(message, context)
+
+            result_dict = result.to_dict()
+            result_dict["rag_result"] = rag_result
+
             return {
                 **state,
-                "result": result.to_dict(),
+                "result": result_dict,
                 "should_escalate": result.escalate,
                 "escalation_reason": result.escalation_reason,
             }
@@ -245,11 +338,21 @@ class AgentWorkflow:
         agent = self.specialists.get(specialist_type, self.specialists["specialist_cardiology"])
 
         try:
+            # Retrieve clinical evidence
+            rag_result = await self._retrieve_clinical_evidence(message, context)
+            context["rag_context"] = rag_result.context_str
+            context["rag_top_similarity"] = rag_result.top_similarity if rag_result.has_results else None
+
             result = await agent.process(message, context)
+
+            result_dict = result.to_dict()
+            result_dict["rag_result"] = rag_result
+
+            # Specialists still escalate (placeholders), but with RAG context
             return {
                 **state,
-                "result": result.to_dict(),
-                "should_escalate": True,  # Specialists always escalate
+                "result": result_dict,
+                "should_escalate": True,  # Specialists always escalate (placeholder)
                 "escalation_reason": f"Routed to {specialist_type}",
             }
         except Exception as e:
