@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Login — Clintela Admin Dashboard{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4" style="background-color: var(--color-bg);">
+    <div class="w-full max-w-sm">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold tracking-tight" style="color: var(--color-text);">Clintela</h1>
+            <p class="text-sm mt-1" style="color: var(--color-text-secondary);">Administrator Dashboard</p>
+        </div>
+
+        <div class="card">
+            <form method="post" action="{% url 'administrators:login' %}">
+                {% csrf_token %}
+
+                {% if error %}
+                <div class="mb-4 p-3 rounded-md text-sm bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300"
+                     role="alert">
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
+                        Username
+                    </label>
+                    <input type="text" name="username" id="username" required autofocus
+                           class="w-full h-12 px-3 rounded-md border text-base"
+                           style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+                </div>
+
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium mb-1.5" style="color: var(--color-text);">
+                        Password
+                    </label>
+                    <input type="password" name="password" id="password" required
+                           class="w-full h-12 px-3 rounded-md border text-base"
+                           style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+                </div>
+
+                <button type="submit"
+                        class="w-full h-12 rounded-md text-base font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors">
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

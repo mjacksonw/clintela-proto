@@ -1,0 +1,30 @@
+<div class="kpi-card animate-in" role="button" aria-expanded="false" tabindex="0">
+    {% if pathways.error %}
+    <div class="text-sm" style="color: var(--color-text-secondary);">{{ pathways.error }}</div>
+    {% else %}
+    <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium" style="color: var(--color-text-secondary);">Pathway Performance</span>
+        <span class="text-xs" style="color: var(--color-border);">&#9656;</span>
+    </div>
+
+    {% if pathways %}
+    <div class="space-y-1 mt-2">
+        {% for p in pathways|slice:":4" %}
+        <div class="flex justify-between py-1 text-sm {% if not forloop.last %}border-b{% endif %}"
+             style="border-color: var(--color-bg);">
+            <span style="color: var(--color-text);">{{ p.name|truncatechars:30 }}</span>
+            <span class="font-semibold tabular-nums" style="color: var(--color-text);">{{ p.display_rate }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    <a href="{% url 'administrators:pathway_list' %}"
+       class="block mt-3 text-xs text-teal-600 hover:underline">
+        View all pathways &rarr;
+    </a>
+    {% else %}
+    <div class="text-sm mt-2" style="color: var(--color-text-secondary);">
+        No pathways configured. <a href="{% url 'administrators:pathway_list' %}" class="text-teal-600 hover:underline">Create one</a>.
+    </div>
+    {% endif %}
+    {% endif %}
+</div>

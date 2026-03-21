@@ -1,0 +1,16 @@
+<div class="kpi-card animate-in" role="button" aria-expanded="false" tabindex="0">
+    {% if data.error %}
+    <div class="text-sm" style="color: var(--color-text-secondary);">{{ data.error }}</div>
+    {% else %}
+    <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium" style="color: var(--color-text-secondary);">Message Volume</span>
+        <span class="text-xs" style="color: var(--color-border);">&#9656;</span>
+    </div>
+    <div class="text-3xl font-bold tracking-tight tabular-nums" style="color: var(--color-text);">
+        {{ data.total|default:"0" }}
+    </div>
+    <div class="text-sm mt-1" style="color: var(--color-text-secondary);">
+        {{ data.avg_per_patient }}/patient avg
+    </div>
+    {% endif %}
+</div>

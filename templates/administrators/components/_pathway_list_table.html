@@ -1,0 +1,64 @@
+{% if pathways.error %}
+<div class="card text-sm" style="color: var(--color-text-secondary);">{{ pathways.error }}</div>
+{% elif pathways %}
+<div class="card overflow-x-auto" style="padding: 0;">
+    <table class="w-full text-sm">
+        <thead>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+                <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary); height: 48px;">Pathway</th>
+                <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Surgery Type</th>
+                <th class="text-right px-4 py-3 font-medium tabular-nums" style="color: var(--color-text-secondary);">Active</th>
+                <th class="text-right px-4 py-3 font-medium tabular-nums" style="color: var(--color-text-secondary);">Completed</th>
+                <th class="text-right px-4 py-3 font-medium tabular-nums" style="color: var(--color-text-secondary);">Rate</th>
+                <th class="text-right px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Duration</th>
+                <th class="text-center px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Status</th>
+                <th class="text-right px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pathways %}
+            <tr style="border-bottom: 1px solid var(--color-border); height: 48px;"
+                class="hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                <td class="px-4 py-3">
+                    <a href="{% url 'administrators:pathway_detail' p.id %}"
+                       class="font-medium hover:underline" style="color: var(--color-text);">
+                        {{ p.name }}
+                    </a>
+                </td>
+                <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ p.surgery_type|default:"—" }}</td>
+                <td class="px-4 py-3 text-right tabular-nums" style="color: var(--color-text);">{{ p.active_count }}</td>
+                <td class="px-4 py-3 text-right tabular-nums" style="color: var(--color-text);">{{ p.completed_count }}</td>
+                <td class="px-4 py-3 text-right tabular-nums font-semibold" style="color: var(--color-text);">{{ p.display_rate }}</td>
+                <td class="px-4 py-3 text-right tabular-nums" style="color: var(--color-text-secondary);">{{ p.duration_days }}d</td>
+                <td class="px-4 py-3 text-center">
+                    {% if p.is_active %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-right">
+                    <form method="post" action="{% url 'administrators:pathway_toggle' p.id %}"
+                          hx-post="{% url 'administrators:pathway_toggle' p.id %}"
+                          hx-target="#pathway-list"
+                          hx-swap="innerHTML">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                                style="border-color: var(--color-border); color: var(--color-text-secondary);">
+                            {% if p.is_active %}Deactivate{% else %}Activate{% endif %}
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card text-center py-12">
+    <p class="text-sm" style="color: var(--color-text-secondary);">
+        No pathways configured yet. Pathways define the clinical recovery milestones for patients after surgery.
+    </p>
+</div>
+{% endif %}

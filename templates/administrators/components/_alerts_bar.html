@@ -1,0 +1,11 @@
+{% if alerts %}
+<div class="flex items-center gap-3 px-4 py-2.5 rounded-lg border"
+     style="background-color: #FEF3C7; border-color: #F59E0B;"
+     role="alert">
+    {% for alert in alerts %}
+    <span class="alert-badge {% if alert.severity == 'critical' %}alert-badge--critical{% else %}alert-badge--warning{% endif %}">
+        {{ alert.message }}
+    </span>
+    {% endfor %}
+</div>
+{% endif %}
