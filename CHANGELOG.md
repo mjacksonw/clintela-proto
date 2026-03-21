@@ -12,10 +12,10 @@ All notable changes to this project will be documented in this file.
 - Patient score history with CSS bars and accessible aria-labels
 - System messages in chat for survey completions (green) and missed surveys (amber)
 - Deterministic scoring engine with automatic escalation and score change alerts
-- Celery tasks for daily instance creation and 30-minute expiration checks
-- Pathway auto-assignment via Django post_save signal
-- DESIGN.md Data Visualization section (sparklines, score bars, delta badges, trend indicators)
-- 43 tests covering instruments, models, and scoring logic
+- Automated survey scheduling: daily instance creation and 30-minute expiration with missed-survey notifications
+- Surveys auto-assigned when a patient receives a care pathway
+- Data Visualization design system section in DESIGN.md (sparklines, score bars, delta badges, trend indicators)
+- 43 new tests covering instruments, models, and scoring logic
 
 ### Fixed
 - Race condition in survey instance creation (catch IntegrityError from concurrent requests)
