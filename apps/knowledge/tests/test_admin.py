@@ -29,6 +29,10 @@ def dashboard_admin():
 @pytest.mark.django_db
 class TestKnowledgeDashboardView:
     def test_dashboard_renders_empty_state(self, admin_user, request_factory, dashboard_admin):
+        # Clean up any leaked data from parallel test workers
+        KnowledgeGap.objects.all().delete()
+        KnowledgeSource.objects.all().delete()
+
         request = request_factory.get("/admin/knowledge/knowledgedashboardproxy/dashboard/")
         request.user = admin_user
         response = dashboard_admin.dashboard_view(request)
@@ -108,6 +112,9 @@ class TestKnowledgeDashboardView:
         assert freshness_values["Stale Source"] == "stale"
 
     def test_dashboard_knowledge_gaps(self, admin_user, request_factory, dashboard_admin):
+        # Clean up any leaked data from parallel test workers
+        KnowledgeGap.objects.all().delete()
+
         KnowledgeGap.objects.create(
             query="Can I take ibuprofen with warfarin?",
             max_similarity=0.45,
