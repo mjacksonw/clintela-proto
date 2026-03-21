@@ -6,6 +6,7 @@ Use the /browse skill from gstack for all web browsing. Never use mcp__claude-in
 
 ### Available Skills
 
+- `/office-hours` - Office hours mode
 - `/plan-ceo-review` - Founder/CEO mode: Rethink the problem, find the 10-star product
 - `/plan-eng-review` - Eng manager/tech lead mode: Lock in architecture, data flow, diagrams, edge cases
 - `/plan-design-review` - Senior product designer mode: Designer's eye audit, 80-item checklist, AI Slop detection
@@ -15,21 +16,17 @@ Use the /browse skill from gstack for all web browsing. Never use mcp__claude-in
 - `/browse` - QA engineer mode: Browser automation, screenshots, console checks
 - `/qa` - QA + fix engineer mode: Test app, find bugs, fix with atomic commits
 - `/qa-only` - QA reporter mode: Report-only QA testing, never fixes
-- `/qa-design-review` - Designer + frontend engineer mode: Design audit then fixes with atomic commits
+- `/design-review` - Design audit mode
 - `/setup-browser-cookies` - Session manager mode: Import cookies from real browser
 - `/retro` - Engineering manager mode: Team-aware retrospective with per-person praise
+- `/investigate` - Debug and investigate errors
 - `/document-release` - Technical writer mode: Update README, ARCHITECTURE, CONTRIBUTING, project docs
-
-### OpenCode Compatibility Notes
-
-- Skills are installed at `~/.config/opencode/skills/gstack` (symlink to `~/.claude/skills/gstack`)
-- Browse binary located at: `/Users/jackson/.claude/skills/gstack/browse/dist/browse`
-- If gstack skills aren't working, run: `cd ~/.claude/skills/gstack && ./setup` to rebuild
-
-### Tool Adaptations for OpenCode
-
-- `AskUserQuestion` → OpenCode uses `question` tool (functionally equivalent)
-- Browse binary path is auto-discovered from `$PROJECT_ROOT/.claude/skills/gstack/browse/dist/browse` or global install
+- `/codex` - Second opinion / adversarial code review
+- `/careful` - Extra caution mode for production systems
+- `/freeze` - Scope edits to one module/directory
+- `/guard` - Maximum safety mode (destructive warnings + edit restrictions)
+- `/unfreeze` - Remove edit restrictions
+- `/gstack-upgrade` - Upgrade gstack to latest version
 
 ## Design System
 
