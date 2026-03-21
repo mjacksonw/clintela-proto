@@ -26,9 +26,7 @@
                 </p>
             </div>
         </div>
-        <button hx-post="{% url 'surveys:start' instance.id %}"
-                hx-target="#survey-modal-container"
-                hx-swap="innerHTML"
+        <button onclick="openSurvey('{{ instance.id }}')"
                 class="px-5 py-2.5 rounded-md text-base font-semibold text-white"
                 style="background-color: #2563EB; min-height: 44px;">
             {% if instance.status == 'in_progress' %}Continue{% else %}Start{% endif %}
@@ -53,6 +51,3 @@
     </div>
 </div>
 {% endif %}
-
-<!-- Modal container -->
-<div id="survey-modal-container"></div>

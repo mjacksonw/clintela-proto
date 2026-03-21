@@ -3,7 +3,7 @@ Survey wizard modal — full-screen overlay with intro, questions, and completio
 Uses Alpine.js for state management.
 {% endcomment %}
 
-<div x-data="surveyWizard({{ instance.id|safe|default:'null' }})"
+<div x-data="surveyWizard()"
      x-show="open"
      x-transition.opacity
      class="fixed inset-0 z-50 flex items-center justify-center"
@@ -17,7 +17,7 @@ Uses Alpine.js for state management.
     <!-- Modal panel -->
     <div class="w-full h-full sm:h-auto sm:max-w-xl sm:mx-6 sm:rounded-lg overflow-y-auto"
          style="background-color: var(--color-surface); max-height: 100vh;"
-         @click.outside="closeSurvey()">
+>
 
         <!-- Header -->
         <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b"
@@ -165,98 +165,10 @@ Uses Alpine.js for state management.
 </div>
 
 <script>
-function surveyWizard(instanceId) {
-    return {
-        open: true,
-        step: 0,
-        instanceId: instanceId,
-        answers: {{ existing_answers|safe|default:"{}" }},
-        submitting: false,
-        totalQuestions: {{ questions|length }},
-
-        get currentQuestion() {
-            return this.step;
-        },
-
-        get progress() {
-            return (this.step / this.totalQuestions) * 100;
-        },
-
-        setAnswer(code, value) {
-            this.answers[code] = value;
-        },
-
-        hasAnswer() {
-            const questions = {{ questions|safe }};
-            const q = questions[this.step - 1];
-            if (!q) return false;
-            return this.answers[q.code] !== undefined && this.answers[q.code] !== null;
-        },
-
-        nextStep() {
-            if (this.step < this.totalQuestions) {
-                // Save partial answers
-                this.savePartial();
-                this.step++;
-                this.$nextTick(() => {
-                    const ref = this.$refs['q' + this.step];
-                    if (ref) ref.focus();
-                    if (window.lucide) lucide.createIcons();
-                });
-            }
-        },
-
-        prevStep() {
-            if (this.step > 1) {
-                this.step--;
-            }
-        },
-
-        savePartial() {
-            const formData = new FormData();
-            for (const [code, value] of Object.entries(this.answers)) {
-                formData.append('q_' + code, value);
-            }
-            fetch(`/patient/surveys/${this.instanceId}/answer/`, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
-                        || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
-                },
-            });
-        },
-
-        async submitSurvey() {
-            this.submitting = true;
-            const formData = new FormData();
-            for (const [code, value] of Object.entries(this.answers)) {
-                formData.append('q_' + code, value);
-            }
-            try {
-                const resp = await fetch(`/patient/surveys/${this.instanceId}/complete/`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
-                            || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
-                    },
-                });
-                const html = await resp.text();
-                document.getElementById('survey-modal-container').innerHTML = html;
-                if (window.lucide) lucide.createIcons();
-            } catch (err) {
-                this.submitting = false;
-            }
-        },
-
-        closeSurvey() {
-            this.open = false;
-            this.$nextTick(() => {
-                document.getElementById('survey-modal-container').innerHTML = '';
-                document.body.dispatchEvent(new CustomEvent('surveyCompleted'));
-            });
-        },
-    };
-}
+window._surveyWizardConfig = {
+    instanceId: "{{ instance.id }}",
+    existingAnswers: {{ existing_answers_json|safe|default:"{}" }},
+    totalQuestions: {{ questions|length }},
+    questions: {{ questions_json|safe }},
+};
 </script>

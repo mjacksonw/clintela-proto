@@ -63,13 +63,132 @@
 </div>
 
 <script>
+// Survey wizard Alpine component — defined statically so it's available when modal loads
+function surveyWizard() {
+    var cfg = window._surveyWizardConfig || {};
+    return {
+        open: true,
+        step: 0,
+        instanceId: cfg.instanceId || null,
+        answers: cfg.existingAnswers || {},
+        submitting: false,
+        totalQuestions: cfg.totalQuestions || 0,
+        questions: cfg.questions || [],
+
+        get currentQuestion() { return this.step; },
+        get progress() { return (this.step / this.totalQuestions) * 100; },
+
+        setAnswer(code, value) { this.answers[code] = value; },
+
+        hasAnswer() {
+            var q = this.questions[this.step - 1];
+            if (!q) return false;
+            return this.answers[q.code] !== undefined && this.answers[q.code] !== null;
+        },
+
+        nextStep() {
+            if (this.step < this.totalQuestions) {
+                this.savePartial();
+                this.step++;
+                this.$nextTick(function() {
+                    if (window.lucide) lucide.createIcons();
+                });
+            }
+        },
+
+        prevStep() { if (this.step > 1) this.step--; },
+
+        savePartial() {
+            var formData = new FormData();
+            for (var code in this.answers) {
+                formData.append('q_' + code, this.answers[code]);
+            }
+            fetch('/patient/surveys/' + this.instanceId + '/answer/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                        || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+                },
+            });
+        },
+
+        submitSurvey() {
+            var self = this;
+            self.submitting = true;
+            var formData = new FormData();
+            for (var code in self.answers) {
+                formData.append('q_' + code, self.answers[code]);
+            }
+            fetch('/patient/surveys/' + self.instanceId + '/complete/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                        || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+                },
+            }).then(function(resp) { return resp.text(); }).then(function(html) {
+                var container = document.getElementById('survey-modal-container');
+                container.innerHTML = html;
+                Alpine.initTree(container);
+                if (window.lucide) lucide.createIcons();
+            }).catch(function() {
+                self.submitting = false;
+            });
+        },
+
+        closeSurvey() {
+            this.open = false;
+            var self = this;
+            this.$nextTick(function() {
+                document.getElementById('survey-modal-container').innerHTML = '';
+                document.body.dispatchEvent(new CustomEvent('surveyCompleted'));
+            });
+        },
+    };
+}
+
+function openSurvey(instanceId) {
+    var csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+        || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+    fetch('/patient/surveys/' + instanceId + '/start/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf },
+    }).then(function(r) { return r.text(); }).then(function(html) {
+        var container = document.getElementById('survey-modal-container');
+        container.innerHTML = html;
+        // Execute script tags to set _surveyWizardConfig
+        container.querySelectorAll('script').forEach(function(oldScript) {
+            var newScript = document.createElement('script');
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+        // Initialize Alpine on the new content
+        Alpine.initTree(container);
+        if (window.lucide) lucide.createIcons();
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var survey = document.getElementById('survey-section');
     var history = document.getElementById('score-history-section');
-    if (survey) htmx.ajax('GET', survey.getAttribute('hx-get'), {target: survey, swap: 'innerHTML'});
-    if (history) htmx.ajax('GET', history.getAttribute('hx-get'), {target: history, swap: 'innerHTML'});
+    if (survey) {
+        htmx.ajax('GET', survey.getAttribute('hx-get'), {target: survey, swap: 'innerHTML'}).then(function() {
+            htmx.process(survey);
+            if (window.lucide) lucide.createIcons();
+        });
+    }
+    if (history) {
+        htmx.ajax('GET', history.getAttribute('hx-get'), {target: history, swap: 'innerHTML'}).then(function() {
+            htmx.process(history);
+            if (window.lucide) lucide.createIcons();
+        });
+    }
 });
 </script>
+
+<!-- Survey modal container — must be outside HTMX-swapped sections -->
+<div id="survey-modal-container"></div>
 
 <!-- What to Expect -->
 {% if days_post_op is not None %}

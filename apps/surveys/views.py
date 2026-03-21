@@ -93,13 +93,16 @@ def start_survey(request, instance_id):
     inst_cls = registry.get(instance.instrument.code)
     display_config = inst_cls().get_display_config() if inst_cls else {"mode": "single_page"}
 
+    import json
+
     return render(
         request,
         "surveys/_survey_modal.html",
         {
             "instance": instance,
             "questions": questions,
-            "existing_answers": existing_answers,
+            "questions_json": json.dumps(questions),
+            "existing_answers_json": json.dumps(existing_answers),
             "display_config": display_config,
         },
     )
