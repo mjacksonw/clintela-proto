@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.10.0] - 2026-03-21
+
+### Added
+- Administrator KPI dashboard with 9 metric cards: 30-day readmission rate (CMS cohort-based), discharge to community, follow-up completion, program engagement (multi-horizon 7/14/30/90d), message volume, check-in completion, escalation response time, census with triage distribution, pathway performance
+- Operational alerts bar surfacing SLA breaches, stale escalations, and inactive patients
+- Global hospital filter and time range filter (30/60/90/120 days) scoping all KPI cards
+- CSV export with formula injection protection for board presentations
+- Print-friendly CSS stylesheet for dashboard
+- Pathway administration page with effectiveness stats, per-milestone check-in rates, inline edit, and active/inactive toggle
+- DailyMetrics pipeline: hospital-scoped pre-aggregation, Celery Beat nightly task, backfill management command
+- Admin auth with `@admin_required` decorator (mirrors clinician auth pattern)
+- `create_test_admin` management command for development
+- 117 new tests with 91%+ coverage for admin dashboard
+
 ## [0.2.9.0] - 2026-03-21
 
 ### Added
