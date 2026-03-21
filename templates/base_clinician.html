@@ -47,6 +47,7 @@
 {% block body %}
 <div x-data="clinicianDashboard()"
      @keydown.window="handleKeydown($event)"
+     {% if hospital_id %}data-hospital-id="{{ hospital_id }}"{% endif %}
      class="h-screen flex flex-col overflow-hidden">
 
     {% include "clinicians/components/_header.html" %}
@@ -196,5 +197,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/clinician-dashboard.js' %}"></script>
+<script src="{% static 'js/clinician-dashboard.js' %}?v=2"></script>
 {% endblock %}

@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.9.0] - 2026-03-21
+
+### Added
+- Cardiology service demo data management command with 45 patients, realistic conversations, escalations, and appointments
+- Cardiac pathways seed command with post-operative milestone definitions
+- Conversation history context — agents now receive last 10 messages for continuity
+
+### Fixed
+- WebSocket support: added daphne to INSTALLED_APPS for ASGI dev server
+- Patient chat loaded wrong conversation when clinician had active research thread (added clinician__isnull=True filter)
+- Clinician-to-patient real-time push: messages now route through notification WebSocket group instead of unused chat group
+- Patient-to-clinician real-time push: messages route through hospital dashboard WebSocket group with patient_message handler
+- Typing indicator never hiding after AI response: migrated Alpine v2 API (el.__x) to v3 (Alpine.$data), switched from hx-on::after-swap to htmx:afterSettle for reliable post-swap handling
+- Empty response handling when clinician has chat control (no AI response generated)
+- Chat scroll-to-bottom on clinician side (runs on each HTMX fragment swap)
+- Escalation acknowledge/resolve not updating UI: views now refresh_from_db() after service call to return updated state
+- Dashboard WebSocket not connecting: added data-hospital-id attribute to clinician template
+
 ## [0.2.8.0] - 2026-03-20
 
 ### Added

@@ -73,7 +73,8 @@ LOCAL_APPS = [
     "apps.surveys",
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+# Daphne must be first so its ASGI-capable runserver replaces Django's WSGI one.
+INSTALLED_APPS = ["daphne"] + DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 # =============================================================================
 # MIDDLEWARE

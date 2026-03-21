@@ -238,6 +238,11 @@ function clinicianDashboard() {
                     target: '#patient-list-panel',
                     swap: 'innerHTML',
                 });
+            } else if (data.type === 'patient_message') {
+                // New patient message — refresh chat if viewing that patient
+                if (this.selectedPatientId && String(data.patient_id) === String(this.selectedPatientId)) {
+                    this._loadChat(this.selectedPatientId);
+                }
             }
         },
 
