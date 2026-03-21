@@ -36,6 +36,7 @@ urlpatterns = [
     path("patient/", include("apps.patients.urls", namespace="patients")),
     path("", include("apps.messages_app.urls", namespace="messages")),
     path("clinician/", include("apps.clinicians.urls", namespace="clinicians")),
+    path("patient/surveys/", include("apps.surveys.urls", namespace="surveys")),
     path("admin-dashboard/", include("apps.administrators.urls", namespace="administrators")),
     # path("caregivers/", include("apps.caregivers.urls")),
 ]

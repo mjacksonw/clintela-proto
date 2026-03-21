@@ -1,0 +1,116 @@
+{% load humanize %}
+{% comment %}
+Clinician survey results detail view — shown in the detail panel.
+{% endcomment %}
+
+<div style="padding: 16px;">
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-4">
+        <div>
+            <h3 class="text-base font-semibold" style="color: var(--color-text);">
+                {{ instance.instrument.name }}
+            </h3>
+            <p class="text-xs" style="color: var(--color-text-secondary);">
+                {{ instance.patient.user.get_full_name }} &middot; {{ instance.completed_at|date:"M d, Y g:i A" }}
+            </p>
+        </div>
+        <div class="text-right">
+            <span class="text-2xl font-bold" style="color: var(--color-text);">
+                {{ instance.total_score|floatformat:0 }}
+            </span>
+            {% if instance.scoring_error %}
+            <span class="block text-xs" style="color: #D97706;">Scoring error</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Interpretation -->
+    {% if interpretation %}
+    <div class="px-3 py-2 rounded-lg mb-4"
+         style="background-color: {% if instance.total_score >= 75 %}#D1FAE5{% elif instance.total_score >= 50 %}#FEF3C7{% else %}#FEE2E2{% endif %};">
+        <p class="text-sm font-medium"
+           style="color: {% if instance.total_score >= 75 %}#065F46{% elif instance.total_score >= 50 %}#92400E{% else %}#991B1B{% endif %};">
+            {{ interpretation }}
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Domain Scores -->
+    {% if instance.domain_scores %}
+    <div class="mb-4">
+        <h4 class="text-xs font-semibold mb-2" style="color: var(--color-text-secondary);">
+            DOMAIN SCORES
+        </h4>
+        <div class="space-y-2">
+            {% for domain, score in instance.domain_scores.items %}
+            <div class="flex items-center gap-3">
+                <span class="text-xs w-32 truncate" style="color: var(--color-text);">
+                    {{ domain|title }}
+                </span>
+                <div class="flex-1 h-2 rounded-full" style="background-color: var(--color-border);">
+                    <div class="h-2 rounded-full"
+                         style="width: {{ score }}%; background-color: {% if score >= 50 %}#0D9488{% else %}#D97706{% endif %};"></div>
+                </div>
+                <span class="text-xs font-medium w-8 text-right" style="color: var(--color-text);">
+                    {{ score|floatformat:0 }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Individual Answers -->
+    <div class="mb-4">
+        <h4 class="text-xs font-semibold mb-2" style="color: var(--color-text-secondary);">
+            INDIVIDUAL ANSWERS
+        </h4>
+        <div class="border rounded-lg overflow-hidden" style="border-color: var(--color-border);">
+            <table class="w-full text-sm">
+                <tbody>
+                    {% for answer in answers %}
+                    <tr class="{% if not forloop.first %}border-t{% endif %}" style="border-color: var(--color-border);">
+                        <td class="px-3 py-2 text-xs" style="color: var(--color-text-secondary);">
+                            {{ answer.question.text|truncatewords:10 }}
+                        </td>
+                        <td class="px-3 py-2 text-right font-medium text-xs" style="color: var(--color-text);">
+                            {{ answer.raw_value|default:answer.value }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Score Trend -->
+    {% if previous_scores|length > 1 %}
+    <div>
+        <h4 class="text-xs font-semibold mb-2" style="color: var(--color-text-secondary);">
+            SCORE TREND
+        </h4>
+        <div class="flex items-end gap-1 h-12">
+            {% for score, date in previous_scores %}
+            <div class="flex-1 rounded-t"
+                 style="height: {{ score }}%; background-color: {% if score >= 50 %}#0D9488{% else %}#D97706{% endif %}; min-height: 4px;"
+                 title="{{ date|date:'M d' }}: {{ score|floatformat:0 }}"></div>
+            {% endfor %}
+        </div>
+        <div class="flex gap-1 mt-1">
+            {% for score, date in previous_scores %}
+            <span class="flex-1 text-center text-xs" style="color: var(--color-text-secondary);">
+                {{ date|date:"M d" }}
+            </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if instance.escalation_triggered %}
+    <div class="mt-4 px-3 py-2 rounded-lg flex items-center gap-2"
+         style="background-color: #FEE2E2; color: #991B1B;">
+        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+        <span class="text-xs font-medium">Escalation triggered by this survey</span>
+    </div>
+    {% endif %}
+</div>

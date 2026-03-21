@@ -31,6 +31,7 @@ Clintela deploys a multi-agent system that augments clinical teams with intellig
 Multi-modal access to care coordination:
 - Conversational AI that meets patients where they are
 - Proactive check-ins and symptom monitoring
+- Patient-reported outcome surveys (PHQ-2, KCCQ-12, Daily Symptom Check, and more)
 - Medication reminders and care plan guidance
 - Seamless escalation to human clinicians when needed
 
@@ -38,12 +39,12 @@ Multi-modal access to care coordination:
 
 Three-panel dashboard for nurses and physicians:
 - **Patient list**: Severity-sorted with triage color dots, unread badges, and search/sort
-- **Patient detail**: Four tabs — Details (timeline, escalations, notes), Care Plan (pathway milestones), Research (LLM chat with specialist routing), Tools (lifecycle transitions, consent, caregivers)
+- **Patient detail**: Five tabs — Details (timeline, escalations, notes), Care Plan (pathway milestones), Research (LLM chat with specialist routing), Surveys (ePRO scores, trends, assignment management), Tools (lifecycle transitions, consent, caregivers)
 - **Patient chat**: Read conversation history, inject clinician messages, take control of the AI thread
 - **Take-control mode**: Clinician takes over patient chat — AI pauses, patient sees messages from named clinician, race-safe locking with automatic timeout release
 - **Scheduling**: Weekly calendar with availability management and appointment CRUD
 - **Shift handoff**: Summary of changes since last login — new escalations, status changes, missed check-ins
-- **Keyboard shortcuts**: j/k navigate, 1-4 switch tabs, e acknowledge escalation, / search, ? help
+- **Keyboard shortcuts**: j/k navigate, 1-5 switch tabs, e acknowledge escalation, / search, ? help
 - **Real-time**: WebSocket escalation alerts, desktop notifications for critical events
 - **Dark mode**: Full support across all clinician views
 
@@ -121,7 +122,7 @@ Non-LLM workflows handle: permissions, thresholds, escalation rules, retries, ti
 
 This repository contains the prototype implementation of Clintela's user interfaces and core systems.
 
-**Current Phase**: Phase 6 complete — administrator KPI dashboard with 9 metric cards, operational alerts, pathway administration, DailyMetrics pipeline, CSV export, and 91%+ test coverage (1222 tests)
+**Current Phase**: Phase 6 complete — Survey/ePRO system with 6 clinical instruments, patient survey wizard, clinician Surveys tab, deterministic scoring with automatic escalation, and chat integration. Also: administrator KPI dashboard with 9 metric cards, operational alerts, pathway administration, and DailyMetrics pipeline. 90%+ test coverage
 
 ---
 
@@ -140,6 +141,7 @@ This repository contains the prototype implementation of Clintela's user interfa
 - [Phase 3 Acceptance Testing](./docs/ACCEPTANCE-TESTING-PHASE3.md) — Manual QA guide for SMS, voice, notifications, and WebSocket features
 - [Phase 4 Plan](./docs/plans/2026-03-20-phase4-clinical-knowledge-rag.md) — Clinical knowledge RAG design and implementation notes
 - [Phase 5 Plan](./docs/plans/2026-03-20-phase5-clinician-dashboard.md) — Clinician dashboard design and implementation notes
+- [Phase 6 Plan](./docs/plans/2026-03-21-phase6-survey-epro.md) — Survey/ePRO system design with 6 clinical instruments
 - [Implementation Handoff](./IMPLEMENTATION_HANDOFF.md) — Session handoff with architecture, environment, and testing details
 - [TODOs](./TODOS.md) — Deferred work and future phases
 

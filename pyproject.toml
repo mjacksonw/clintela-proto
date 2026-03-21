@@ -20,48 +20,39 @@ dependencies = [
     "django>=5.1,<5.2",
     "django-environ>=0.11.2",
     "django-extensions>=3.2.3",
-
     # Database
     "psycopg2-binary>=2.9.9",
     "pgvector>=0.3.0",
-
     # Real-time (WebSockets)
     "channels>=4.0",
     "daphne>=4.0",
     "channels-redis>=4.2",
-
     # AI/LLM
     "langchain>=0.2.0",
     "langchain-core>=0.2.0",
     "langgraph>=0.0.50",
-
     # Communications
     "twilio>=9.0",
-
     # HTTP/API
     "httpx>=0.27",
     "django-ninja>=1.0",
-
     # Security
     "argon2-cffi>=23.1",
     "cryptography>=42.0",
     "django-ratelimit>=4.1.0",
-
     # Document parsing
     "pdfplumber>=0.10.0",
     "beautifulsoup4>=4.12",
-
     # Utilities
     "pydantic>=2.7",
     "python-dateutil>=2.9",
     "phonenumbers>=8.13",
     "bleach>=6.1",
-
     # Async
     "asgiref>=3.8",
-
     # Background Tasks
     "celery[redis]>=5.4",
+    "django-debug-toolbar>=6.2.0",
 ]
 
 [project.optional-dependencies]
@@ -279,3 +270,14 @@ skips = ["B101", "B311"]  # B101: assert_used in tests, B311: random used for de
 
 [tool.bandit.assert_used]
 excludes = ["tests/*", "*/tests/*"]
+
+[dependency-groups]
+dev = [
+    "factory-boy>=3.3.3",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.0.0",
+    "pytest-django>=4.12.0",
+    "pytest-xdist>=3.8.0",
+    "ruff>=0.15.6",
+]

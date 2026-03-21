@@ -5,16 +5,27 @@ All notable changes to this project will be documented in this file.
 ## [0.2.10.0] - 2026-03-21
 
 ### Added
-- Administrator KPI dashboard replacing manual EHR-to-Excel workflows — 9 live metric cards: readmission rate (CMS cohort-based, 7/30/60/90/120d), discharge to community, follow-up completion, program engagement (7/14/30/90d horizons), message volume, check-in completion, escalation response time, census with triage distribution, pathway performance
-- Operational alerts bar surfacing SLA breaches, stale escalations, and inactive patients
-- Global hospital filter and time range filter (30/60/90/120 days) scoping all KPI cards
-- CSV export with formula injection protection for board presentations
-- Print-friendly CSS stylesheet for dashboard
-- Pathway administration page with effectiveness stats, per-milestone check-in rates, inline edit, and active/inactive toggle
-- DailyMetrics pipeline for trend analysis: hospital-scoped nightly pre-aggregation via Celery Beat, with backfill management command
-- Admin auth with `@admin_required` decorator (mirrors clinician auth pattern)
-- `create_test_admin` management command for development
-- 117 new tests with 91%+ coverage for admin dashboard
+- Survey/ePRO system with 6 clinical instruments (PHQ-2, Daily Symptom Check, KCCQ-12, SAQ-7, AFEQT, PROMIS Global-10)
+- Patient survey wizard with intro screen, progress bar, post-completion reassurance, and abandon/resume flow
+- Clinician Surveys tab (5th tab) with scores-first layout, sparkline trends, and assignment management
+- Survey dashboard card with color-coded urgency borders and warm "All caught up!" empty state
+- Patient score history with CSS bars and accessible aria-labels
+- System messages in chat for survey completions (green) and missed surveys (amber)
+- Deterministic scoring engine with automatic escalation and score change alerts
+- Automated survey scheduling: daily instance creation and 30-minute expiration with missed-survey notifications
+- Surveys auto-assigned when a patient receives a care pathway
+- Data Visualization design system section in DESIGN.md (sparklines, score bars, delta badges, trend indicators)
+- Administrator KPI dashboard replacing manual EHR-to-Excel workflows — 9 live metric cards
+- Operational alerts bar, global hospital/time filters, CSV export, pathway administration
+- DailyMetrics pipeline for trend analysis with nightly pre-aggregation
+- 113 survey tests + 117 admin dashboard tests
+
+### Fixed
+- Race condition in survey instance creation (catch IntegrityError from concurrent requests)
+- Race condition in expire task (atomic queryset update prevents overwriting completed surveys)
+- Alpine.js :style binding overwriting static width/height on survey buttons (numeric 44px, Likert 56px)
+- Survey modal overlay rendering inline instead of full-viewport (container moved to body)
+- Score bar width calculated as percentage of 100 instead of instrument max score
 
 ## [0.2.9.0] - 2026-03-21
 

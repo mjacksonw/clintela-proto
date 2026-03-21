@@ -1,0 +1,53 @@
+{% load humanize %}
+
+{% if instances %}
+<!-- Pending Surveys -->
+{% for instance in instances %}
+<div class="card mb-3"
+     style="border-left: 4px solid {% if instance.status == 'in_progress' %}#2563EB{% elif instance.due_date == today %}#D97706{% else %}#D6D3D1{% endif %}; padding: 20px;">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i data-lucide="clipboard-list" class="w-5 h-5 flex-shrink-0"
+               style="color: {% if instance.status == 'in_progress' %}#2563EB{% elif instance.due_date == today %}#D97706{% else %}var(--color-text-secondary){% endif %};"></i>
+            <div>
+                <h3 class="text-base font-semibold" style="color: var(--color-text);">
+                    {{ instance.instrument.name }}
+                </h3>
+                <p class="text-sm" style="color: var(--color-text-secondary);">
+                    ~{{ instance.instrument.estimated_minutes }} min
+                    &middot;
+                    {% if instance.status == 'in_progress' %}
+                        <span style="color: #2563EB; font-weight: 500;">In Progress</span>
+                    {% elif instance.due_date == today %}
+                        <span style="color: #D97706; font-weight: 500;">Due today</span>
+                    {% else %}
+                        Due {{ instance.due_date|date:"l" }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <button onclick="openSurvey('{{ instance.id }}')"
+                class="px-5 py-2.5 rounded-md text-base font-semibold text-white"
+                style="background-color: #2563EB; min-height: 44px;">
+            {% if instance.status == 'in_progress' %}Continue{% else %}Start{% endif %}
+        </button>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<!-- All Caught Up Empty State -->
+<div class="card mb-3" style="padding: 24px;">
+    <div class="text-center" style="color: var(--color-text-secondary);">
+        <i data-lucide="clipboard-check" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+        <h3 class="text-lg font-semibold mb-1" style="color: var(--color-text);">All caught up!</h3>
+        {% if next_date %}
+        <p class="text-sm">
+            Your next check-in is <strong>{{ next_date|date:"l" }}</strong>.
+            Keep up the great work with your recovery.
+        </p>
+        {% else %}
+        <p class="text-sm">No check-ins scheduled right now.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

@@ -75,6 +75,7 @@ function clinicianDashboard() {
                 details: `/clinician/patients/${patientId}/detail/`,
                 care_plan: `/clinician/patients/${patientId}/care-plan/`,
                 research: `/clinician/patients/${patientId}/research/`,
+                surveys: `/patient/surveys/clinician/${patientId}/`,
                 tools: `/clinician/patients/${patientId}/tools/`,
             };
 
@@ -127,6 +128,10 @@ function clinicianDashboard() {
                     this.switchTab('research');
                     break;
                 case '4':
+                    event.preventDefault();
+                    this.switchTab('surveys');
+                    break;
+                case '5':
                     event.preventDefault();
                     this.switchTab('tools');
                     break;

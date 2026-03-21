@@ -1,0 +1,170 @@
+{% load humanize %}
+{% comment %}
+Clinician Surveys tab — scores-first layout per design review.
+Top: sparklines per instrument. Middle: recent completions. Bottom: assignments.
+{% endcomment %}
+
+<div class="space-y-4" style="padding: 16px;">
+
+    <!-- Score Trends -->
+    {% if trend_list %}
+    <div>
+        <h3 class="text-sm font-semibold mb-3" style="color: var(--color-text);">
+            Score Trends
+        </h3>
+        <div class="space-y-2">
+            {% for trend in trend_list %}
+            <div class="flex items-center gap-3 py-2 px-3 rounded-lg"
+                 style="background-color: var(--color-surface); border: 1px solid var(--color-border);">
+                <span class="text-xs font-medium flex-shrink-0 w-24 truncate" style="color: var(--color-text);">
+                    {{ trend.name }}
+                </span>
+                <div class="flex-1"></div>
+                <div class="text-right flex-shrink-0">
+                    <span class="text-sm font-semibold" style="color: var(--color-text);">
+                        {{ trend.latest|floatformat:0 }}
+                    </span>
+                    {% if trend.delta is not None %}
+                    <span class="text-xs ml-1" style="color: {% if trend.delta > 0 %}#059669{% elif trend.delta < 0 %}#D97706{% else %}var(--color-text-secondary){% endif %};">
+                        {% if trend.delta > 0 %}+{% endif %}{{ trend.delta|floatformat:0 }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Completions -->
+    {% if recent %}
+    <div>
+        <h3 class="text-sm font-semibold mb-3" style="color: var(--color-text);">
+            Recent Completions
+        </h3>
+        <div class="border rounded-lg overflow-hidden" style="border-color: var(--color-border);">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr style="background-color: var(--color-surface);">
+                        <th class="text-left px-3 py-2 text-xs font-medium" style="color: var(--color-text-secondary);">Date</th>
+                        <th class="text-left px-3 py-2 text-xs font-medium" style="color: var(--color-text-secondary);">Instrument</th>
+                        <th class="text-right px-3 py-2 text-xs font-medium" style="color: var(--color-text-secondary);">Score</th>
+                        <th class="text-right px-3 py-2 text-xs font-medium" style="color: var(--color-text-secondary);">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for instance in recent %}
+                    <tr class="border-t" style="border-color: var(--color-border);">
+                        <td class="px-3 py-2 text-xs" style="color: var(--color-text-secondary);">
+                            {{ instance.completed_at|date:"M d" }}
+                        </td>
+                        <td class="px-3 py-2" style="color: var(--color-text);">
+                            {{ instance.instrument.name }}
+                        </td>
+                        <td class="px-3 py-2 text-right font-medium" style="color: var(--color-text);">
+                            {{ instance.total_score|floatformat:0 }}
+                        </td>
+                        <td class="px-3 py-2 text-right">
+                            <a href="{% url 'surveys:results' instance.id %}"
+                               class="text-xs font-medium"
+                               style="color: var(--color-primary);"
+                               hx-get="{% url 'surveys:results' instance.id %}"
+                               hx-target="#detail-panel"
+                               hx-swap="innerHTML">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Assignment Management -->
+    <div>
+        <h3 class="text-sm font-semibold mb-3" style="color: var(--color-text);">
+            Active Assignments
+        </h3>
+
+        {% if assignments %}
+        <div class="space-y-2">
+            {% for assignment in assignments %}
+            <div class="flex items-center justify-between px-3 py-2.5 rounded-lg border"
+                 style="border-color: var(--color-border);">
+                <div>
+                    <p class="text-sm font-medium" style="color: var(--color-text);">
+                        {{ assignment.instrument.name }}
+                    </p>
+                    <p class="text-xs" style="color: var(--color-text-secondary);">
+                        {{ assignment.get_schedule_type_display }} &middot; Since {{ assignment.start_date|date:"M d" }}
+                    </p>
+                </div>
+                <button hx-post="{% url 'surveys:deactivate' assignment.id %}"
+                        hx-target="closest div.flex"
+                        hx-swap="outerHTML"
+                        hx-confirm="Deactivate {{ assignment.instrument.name }} for this patient?"
+                        class="text-xs px-2 py-1 rounded"
+                        style="color: var(--color-text-secondary); border: 1px solid var(--color-border);">
+                    Deactivate
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4" style="color: var(--color-text-secondary);">
+            <p class="text-sm">No surveys assigned for this patient.</p>
+        </div>
+        {% endif %}
+
+        <!-- Assign new survey -->
+        {% if available_instruments %}
+        <form hx-post="{% url 'surveys:assign' patient.id %}"
+              hx-target="closest div"
+              hx-swap="innerHTML"
+              class="flex items-end gap-2 mt-3 pt-3 border-t"
+              style="border-color: var(--color-border);">
+            {% csrf_token %}
+            <div class="flex-1">
+                <label class="block text-xs font-medium mb-1" style="color: var(--color-text-secondary);">
+                    Assign Survey
+                </label>
+                <select name="instrument_code"
+                        class="w-full px-3 py-2 rounded-md border text-sm"
+                        style="border-color: var(--color-border); background-color: var(--color-surface); color: var(--color-text);">
+                    {% for instrument in available_instruments %}
+                    <option value="{{ instrument.code }}">{{ instrument.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <select name="schedule_type"
+                        class="px-3 py-2 rounded-md border text-sm"
+                        style="border-color: var(--color-border); background-color: var(--color-surface); color: var(--color-text);">
+                    <option value="daily">Daily</option>
+                    <option value="weekly" selected>Weekly</option>
+                    <option value="biweekly">Biweekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="one_time">One Time</option>
+                </select>
+            </div>
+            <button type="submit"
+                    class="px-4 py-2 rounded-md text-sm font-medium text-white"
+                    style="background-color: var(--color-primary);">
+                Assign
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if not recent and not assignments %}
+    <div class="text-center py-8" style="color: var(--color-text-secondary);">
+        <i data-lucide="clipboard-list" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+        <p class="text-sm">No survey data for this patient.</p>
+        {% if available_instruments %}
+        <p class="text-xs mt-1">Use the form above to assign a survey.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
