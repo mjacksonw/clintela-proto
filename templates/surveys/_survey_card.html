@@ -29,8 +29,8 @@
         <button hx-post="{% url 'surveys:start' instance.id %}"
                 hx-target="#survey-modal-container"
                 hx-swap="innerHTML"
-                class="px-4 py-2 rounded-md text-sm font-medium text-white"
-                style="background-color: #2563EB;">
+                class="px-5 py-2.5 rounded-md text-base font-semibold text-white"
+                style="background-color: #2563EB; min-height: 44px;">
             {% if instance.status == 'in_progress' %}Continue{% else %}Start{% endif %}
         </button>
     </div>

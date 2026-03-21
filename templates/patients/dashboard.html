@@ -49,24 +49,27 @@
 <!-- Surveys -->
 <div id="survey-section"
      hx-get="{% url 'surveys:available' %}"
-     hx-trigger="revealed, surveyCompleted from:body"
+     hx-trigger="surveyCompleted from:body"
      hx-swap="innerHTML"
      class="animate-in animate-in-delay-1 mb-6">
-    <div class="card" style="padding: 24px;">
-        <div class="text-center" style="color: var(--color-text-secondary);">
-            <div class="w-8 h-8 mx-auto mb-2 rounded-full animate-pulse" style="background-color: var(--color-border);"></div>
-            <div class="h-4 w-32 mx-auto rounded animate-pulse" style="background-color: var(--color-border);"></div>
-        </div>
-    </div>
 </div>
 
 <!-- Score History -->
 <div id="score-history-section"
      hx-get="{% url 'surveys:history' %}"
-     hx-trigger="revealed, surveyCompleted from:body"
+     hx-trigger="surveyCompleted from:body"
      hx-swap="innerHTML"
      class="animate-in animate-in-delay-1 mb-6">
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var survey = document.getElementById('survey-section');
+    var history = document.getElementById('score-history-section');
+    if (survey) htmx.ajax('GET', survey.getAttribute('hx-get'), {target: survey, swap: 'innerHTML'});
+    if (history) htmx.ajax('GET', history.getAttribute('hx-get'), {target: history, swap: 'innerHTML'});
+});
+</script>
 
 <!-- What to Expect -->
 {% if days_post_op is not None %}
