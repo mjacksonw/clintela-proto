@@ -8,27 +8,26 @@
     </div>
 
     <div class="space-y-3">
-        {% for instance in history %}
+        {% for item in history %}
         <div class="flex items-center gap-3">
             <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium truncate" style="color: var(--color-text);">
-                    {{ instance.instrument.name }}
+                    {{ item.instance.instrument.name }}
                 </p>
                 <p class="text-xs" style="color: var(--color-text-secondary);">
-                    {{ instance.completed_at|naturaltime }}
+                    {{ item.instance.completed_at|naturaltime }}
                 </p>
             </div>
             <!-- Score bar -->
             <div class="w-24 flex items-center gap-2">
                 <div class="flex-1 h-2 rounded-full" style="background-color: var(--color-border);"
                      role="img"
-                     aria-label="{{ instance.instrument.name }} score: {{ instance.total_score|floatformat:0 }}, {{ instance.completed_at|date:'M d' }}">
-                    {% widthratio instance.total_score 100 100 as score_pct %}
+                     aria-label="{{ item.instance.instrument.name }} score: {{ item.instance.total_score|floatformat:0 }} out of {{ item.max_score }}, {{ item.instance.completed_at|date:'M d' }}">
                     <div class="h-2 rounded-full"
-                         style="width: {{ score_pct|default:0 }}%; background-color: {% if instance.total_score >= 50 %}#0D9488{% else %}#D97706{% endif %};"></div>
+                         style="width: {{ item.pct }}%; background-color: {% if item.pct >= 50 %}#0D9488{% else %}#D97706{% endif %};"></div>
                 </div>
-                <span class="text-xs font-medium" style="color: var(--color-text);">
-                    {{ instance.total_score|floatformat:0 }}
+                <span class="text-xs font-medium tabular-nums" style="color: var(--color-text);">
+                    {{ item.instance.total_score|floatformat:0 }}
                 </span>
             </div>
         </div>

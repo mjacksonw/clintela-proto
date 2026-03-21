@@ -196,10 +196,23 @@ def score_history(request):
         return HttpResponse(status=403)
     history = SurveyService.get_score_history(patient)
 
+    # Annotate each instance with max_score and percentage for bar rendering
+    history_with_pct = []
+    for instance in history:
+        max_score = SurveyService._get_max_score(instance.instrument.code) or 100
+        pct = round((instance.total_score / max_score) * 100) if max_score else 0
+        history_with_pct.append(
+            {
+                "instance": instance,
+                "max_score": max_score,
+                "pct": min(pct, 100),
+            }
+        )
+
     return render(
         request,
         "surveys/_score_history.html",
-        {"history": history},
+        {"history": history_with_pct},
     )
 
 

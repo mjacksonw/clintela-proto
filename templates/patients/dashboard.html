@@ -155,7 +155,13 @@ function openSurvey(instanceId) {
         method: 'POST',
         headers: { 'X-CSRFToken': csrf },
     }).then(function(r) { return r.text(); }).then(function(html) {
+        // Create container on <body> for proper fixed positioning
         var container = document.getElementById('survey-modal-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'survey-modal-container';
+            document.body.appendChild(container);
+        }
         container.innerHTML = html;
         // Execute script tags to set _surveyWizardConfig
         container.querySelectorAll('script').forEach(function(oldScript) {
@@ -186,9 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
-<!-- Survey modal container — must be outside HTMX-swapped sections -->
-<div id="survey-modal-container"></div>
 
 <!-- What to Expect -->
 {% if days_post_op is not None %}
