@@ -1,0 +1,55 @@
+<div class="hero-card animate-in">
+    {% if data.error %}
+    <div class="text-sm" style="color: var(--color-text-secondary);">
+        {{ data.error }}
+        <button hx-get="{% url 'administrators:hero_readmission' %}"
+                hx-target="closest .hero-card"
+                hx-swap="outerHTML"
+                class="ml-2 text-teal-600 hover:underline text-sm">Try again</button>
+    </div>
+    {% else %}
+    <div class="flex items-start justify-between flex-wrap gap-4">
+        <div>
+            <div class="section-label mb-2">{{ data.days }}-DAY READMISSION RATE</div>
+            {% if data.rate is not None %}
+            <div class="text-5xl font-bold tracking-tight tabular-nums" style="color: var(--color-text); line-height: 1;">
+                {{ data.display }}
+            </div>
+            <div class="mt-2 text-sm" style="color: var(--color-text-secondary);">
+                {{ data.readmissions }} readmission{{ data.readmissions|pluralize }} / {{ data.discharges }} discharge{{ data.discharges|pluralize }} (last {{ data.days }} days)
+            </div>
+            {% else %}
+            <div class="text-4xl font-bold tracking-tight tabular-nums" style="color: var(--color-border);">N/A</div>
+            <div class="mt-2 text-sm" style="color: var(--color-text-secondary);">No discharges in period</div>
+            {% endif %}
+        </div>
+
+        <div class="flex flex-col items-end gap-3">
+            <!-- Period tabs -->
+            <div class="period-tabs">
+                {% for p in period_options %}
+                <button class="period-tab {% if p == selected_period %}active{% endif %}"
+                        hx-get="{% url 'administrators:hero_readmission' %}?period={{ p }}"
+                        hx-target="closest .hero-card"
+                        hx-swap="outerHTML">
+                    {{ p }}d
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- Trend sparkline placeholder -->
+            {% if trend %}
+            <div class="w-64 h-14">
+                {{ trend|json_script:"readmission-trend-data" }}
+                <canvas id="readmission-sparkline" class="w-full h-full"
+                        aria-label="Readmission rate trend: {{ data.display|default:'N/A' }}"></canvas>
+            </div>
+            {% else %}
+            <div class="text-xs" style="color: var(--color-text-secondary);">
+                Trend data available after first nightly computation
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>

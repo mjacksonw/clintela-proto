@@ -49,12 +49,17 @@ Three-panel dashboard for nurses and physicians:
 
 ### 3. Administrator Interface
 
-Metrics and oversight for clinical leadership:
-- 30-day readmission rates with trend analysis
-- Patient population overview and engagement metrics
-- Unscheduled escalation tracking
-- Complication analytics
-- Operational dashboards for quality improvement
+KPI scorecard for clinical leadership — live metrics replacing manual EHR-to-Excel workflows:
+- **Hero metric**: CMS cohort-based readmission rate with period tabs (7/30/60/90/120 days) and sparkline trend
+- **Outcome cards**: Discharge to community rate, follow-up completion (on-time milestone tracking), functional improvement (pending ePRO)
+- **Engagement cards**: Program engagement (multi-horizon 7/14/30/90d), message volume, check-in completion rate
+- **Operations cards**: Escalation response time with SLA compliance, census with triage color distribution, pathway performance
+- **Operational alerts bar**: SLA breaches, stale escalations, inactive patients
+- **Pathway administration**: Effectiveness stats, per-milestone check-in rates, inline edit, active/inactive toggle
+- **Global filters**: Hospital filter and time range (30/60/90/120 days) scoping all cards
+- **CSV export**: Formula injection protection for board presentations
+- **Print-friendly**: CSS stylesheet for browser "Save as PDF"
+- **Dark mode**: Full support across all admin views
 
 ---
 
@@ -116,7 +121,7 @@ Non-LLM workflows handle: permissions, thresholds, escalation rules, retries, ti
 
 This repository contains the prototype implementation of Clintela's user interfaces and core systems.
 
-**Current Phase**: Phase 5 complete — clinician dashboard with three-panel layout, 4 detail tabs, take-control mode, scheduling UI, shift handoff, keyboard shortcuts, and 90%+ test coverage
+**Current Phase**: Phase 6 complete — administrator KPI dashboard with 9 metric cards, operational alerts, pathway administration, DailyMetrics pipeline, CSV export, and 91%+ test coverage (1222 tests)
 
 ---
 
@@ -135,6 +140,7 @@ This repository contains the prototype implementation of Clintela's user interfa
 - [Phase 3 Acceptance Testing](./docs/ACCEPTANCE-TESTING-PHASE3.md) — Manual QA guide for SMS, voice, notifications, and WebSocket features
 - [Phase 4 Plan](./docs/plans/2026-03-20-phase4-clinical-knowledge-rag.md) — Clinical knowledge RAG design and implementation notes
 - [Phase 5 Plan](./docs/plans/2026-03-20-phase5-clinician-dashboard.md) — Clinician dashboard design and implementation notes
+- [Implementation Handoff](./IMPLEMENTATION_HANDOFF.md) — Session handoff with architecture, environment, and testing details
 - [TODOs](./TODOS.md) — Deferred work and future phases
 
 ---

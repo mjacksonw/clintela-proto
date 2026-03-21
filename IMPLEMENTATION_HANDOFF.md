@@ -1,8 +1,8 @@
 # Implementation Session Handoff
 
-**Date:** 2026-03-20
-**Branch:** claude/brave-goldwasser (Phase 5), feature/phase4-clinical-knowledge-rag (Phase 4)
-**Status:** Phase 5 COMPLETE - Clinician Dashboard UI with three-panel layout, detail tabs, take-control, scheduling, shift handoff
+**Date:** 2026-03-21
+**Branch:** claude/vibrant-hopper (Phase 6), claude/brave-goldwasser (Phase 5), feature/phase4-clinical-knowledge-rag (Phase 4)
+**Status:** Phase 6 COMPLETE - Administrator KPI Dashboard with 9 metric cards, operational alerts, pathway administration, DailyMetrics pipeline
 
 ---
 
@@ -22,7 +22,7 @@
 ✅ **Django Project Structure**
 - Django 5.1.15 with Python 3.12
 - Split settings: `base.py`, `development.py`, `production.py`, `test.py`
-- 9 Django apps with models:
+- 10 Django apps with models:
   - `accounts/` - Custom User model with roles
   - `patients/` - Patient, Hospital models
   - `clinicians/` - Healthcare provider profiles
@@ -31,7 +31,8 @@
   - `messages_app/` - SMS/chat/voice messages
   - `pathways/` - Clinical pathways
   - `notifications/` - Alerts and escalations
-  - `analytics/` - Metrics and reporting
+  - `analytics/` - Metrics, DailyMetrics pipeline
+  - `administrators/` - Admin KPI dashboard, pathway administration
 - All migrations created and applied
 
 ### Phase 2: Agent System ✅ COMPLETE (2026-03-19)
@@ -242,12 +243,49 @@ python manage.py shell
 - 90%+ test coverage (pre-push hook enforced)
 - QA: 3 issues found and fixed, health score 64 → 100
 
-### Phase 6: Polish & Testing
+### Phase 6: Administrator KPI Dashboard ✅ COMPLETE (2026-03-21)
+
+✅ **KPI Scorecard Dashboard**
+- Hero metric: CMS cohort-based readmission rate with period tabs (7/30/60/90/120d) and Chart.js sparkline trend
+- 9 metric cards in 3-column grid: Outcomes (discharge to community, follow-up completion, functional improvement), Engagement (program engagement 7/14/30/90d, message volume, check-in completion), Operations (escalation response time, census + triage distribution, pathway performance)
+- Operational alerts bar: SLA breaches, stale escalations (>24h), inactive patients (>7d)
+- HTMX lazy-loaded card fragments with per-card graceful degradation on DB errors
+
+✅ **Global Filters & Export**
+- Hospital filter dropdown scoping all KPI cards
+- Time range filter (30/60/90/120 days)
+- CSV export with StreamingHttpResponse and formula injection protection (`=`, `-`, `+`, `@` prefixed with tab)
+- Print-friendly CSS stylesheet (force light mode, 2-column grid, hide nav)
+
+✅ **Pathway Administration**
+- Pathway list with effectiveness stats (completion rate, patient count)
+- Pathway detail with milestones, per-milestone check-in rates
+- Inline edit for pathway metadata (name, description, duration)
+- Active/inactive toggle
+
+✅ **DailyMetrics Pipeline**
+- Hospital-scoped pre-aggregation: per-hospital rows + NULL-hospital aggregate
+- `DailyMetricsService.compute_for_date()` computing 13 metric fields
+- Celery Beat nightly task (2:07 AM daily) with retry logic
+- `compute_daily_metrics` management command with `--date` and `--backfill N` flags
+- `unique_together = [("date", "hospital")]` constraint on DailyMetrics
+
+✅ **Admin Auth & Security**
+- `@admin_required` decorator (mirrors `@clinician_required` pattern)
+- `create_test_admin` management command
+- No PHI — services return aggregate dicts only, templates never render individual patient data
+- `json_script` template tag for XSS-safe JSON rendering
+
+✅ **Testing**
+- 117 new tests: auth (7), services (30+), views (20+), coverage gaps (40+)
+- 91%+ test coverage (pre-push hook enforced)
+- N+1 query elimination via pre-fetched lookup dict pattern
+
+### Phase 7: Polish & Testing
 - [ ] Multilingual support (i18n)
 - [ ] Visual recovery timeline
 - [ ] Smart scheduling
 - [ ] Recovery milestone celebrations
-- [ ] Comprehensive test suite (>90%)
 - [ ] Load testing
 - [ ] Security audit
 
@@ -307,10 +345,23 @@ clintela/
 │   │   ├── tasks.py          # Async delivery + scheduled reminders
 │   │   └── tests/            # Notification tests
 │   ├── pathways/              # Clinical pathways
-│   └── analytics/             # Metrics
+│   ├── analytics/             # DailyMetrics pipeline + nightly Celery task
+│   └── administrators/        # Admin KPI dashboard + pathway administration
+│       ├── auth.py            # @admin_required decorator
+│       ├── services.py        # 7 service classes (Census, Readmission, Outcomes, Engagement, Escalation, Pathway, Alerts)
+│       ├── views.py           # Dashboard, 11 HTMX KPI fragments, CSV export, pathway CRUD
+│       ├── urls.py            # 24 URL patterns
+│       └── management/commands/create_test_admin.py
 ├── templates/
 │   ├── base_patient.html      # Patient layout with notification bell
 │   ├── base_clinician.html    # Clinician three-panel layout shell
+│   ├── base_admin.html        # Admin layout shell (max-w-1200px, Chart.js, print CSS)
+│   ├── administrators/        # Admin KPI dashboard + pathway admin templates
+│   │   ├── dashboard.html     # KPI scorecard with HTMX lazy-loaded cards
+│   │   ├── login.html         # Admin login page
+│   │   ├── pathways.html      # Pathway list with breadcrumbs
+│   │   ├── pathway_detail.html # Pathway detail with milestones + edit forms
+│   │   └── components/        # 11 HTMX card fragments + alerts bar + pathway list table
 │   ├── clinicians/            # Clinician dashboard templates
 │   │   ├── login.html         # Clinician login page
 │   │   ├── dashboard.html     # Dashboard (extends base_clinician)
@@ -323,6 +374,7 @@ clintela/
 │       └── _dev_toolbar.html  # SMS simulator, patient switcher
 ├── static/
 │   └── js/
+│       ├── admin-dashboard.js      # Alpine adminDashboard() with Chart.js, filters, dark mode
 │       ├── clinician-dashboard.js  # Alpine clinicianDashboard() component
 │       ├── clinician-research-chat.js # Research tab LLM chat
 │       ├── notifications.js   # WebSocket notification client
@@ -430,6 +482,21 @@ RAG_TEXT_WEIGHT=0.3                           # Weight for full-text search scor
 - `static/js/clinician-dashboard.js` - Alpine clinicianDashboard() with keyboard shortcuts
 - `static/js/clinician-research-chat.js` - Research tab LLM chat interface
 
+### Phase 6: Administrator KPI Dashboard
+- `apps/administrators/auth.py` - `@admin_required` decorator with role check + hospital scoping
+- `apps/administrators/services.py` - 7 service classes: Census, Readmission, Outcomes, Engagement, Escalation, Pathway, OperationalAlert
+- `apps/administrators/views.py` - Dashboard, 11 HTMX KPI fragment views, CSV export, pathway CRUD (list, detail, toggle, edit)
+- `apps/administrators/urls.py` - 24 URL patterns under `administrators` namespace
+- `apps/administrators/management/commands/create_test_admin.py` - Test admin user creation
+- `apps/analytics/models.py` - Extended DailyMetrics with hospital FK + 13 metric fields
+- `apps/analytics/services.py` - `DailyMetricsService.compute_for_date()` with per-hospital aggregation
+- `apps/analytics/tasks.py` - `compute_daily_metrics` Celery periodic task (nightly)
+- `apps/analytics/management/commands/compute_daily_metrics.py` - Manual/backfill with `--date` and `--backfill N`
+- `templates/base_admin.html` - Admin layout shell with Chart.js CDN, print CSS, dark mode, KPI card styles
+- `templates/administrators/dashboard.html` - KPI scorecard with HTMX lazy-loaded cards in 3-column grid
+- `templates/administrators/components/` - 11 HTMX card fragment templates + alerts bar + pathway list table
+- `static/js/admin-dashboard.js` - Alpine.js component for filters, Chart.js config, dark mode
+
 ### Phase 3: Communication & Multi-modality
 - `config/celery.py` - Celery app configuration with Redis broker
 - `apps/messages_app/backends.py` - SMS backend abstraction (Twilio/Console/LocMem)
@@ -452,10 +519,12 @@ RAG_TEXT_WEIGHT=0.3                           # Weight for full-text search scor
 ### Full Test Suite
 ```bash
 POSTGRES_PORT=5434 pytest
-# 1000+ tests, ≥90% coverage
+# 1222 tests, ≥91% coverage
 ```
 
 ### Test Coverage by App
+- `apps/administrators/` - Auth decorator, 7 service classes, views (20+ endpoints), management command, 117 tests
+- `apps/analytics/` - DailyMetrics pipeline, services, Celery task, backfill management command
 - `apps/clinicians/` - Models, auth decorator, views (25+ endpoints), services, management command, coverage tests
 - `apps/knowledge/` - Embeddings, parsers, ingestion, retrieval, sanitizer, admin, management commands
 - `apps/agents/` - Agent routing, LLM client, services, tasks, workflow, RAG integration, specialists, WebSocket consumers
@@ -483,19 +552,25 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 
 ## Open Questions for Next Session
 
-1. **Phase 6 Polish:**
+1. **Phase 7 Polish:**
    - Multilingual support (i18n) for patient-facing content
    - Visual recovery timeline component
    - Smart scheduling (pathway-suggested appointments)
    - Recovery milestone celebrations
 
-2. **Infrastructure:**
+2. **Admin Dashboard Enhancements:**
+   - Anomaly detection / automated weekly digest emails (see TODO-017)
+   - Multi-site anonymized benchmarking (see TODO-018)
+   - Extend `create_cardiology_service` with LLM-produced seed data for admin dashboard demo
+   - Design review on live admin dashboard
+
+3. **Infrastructure:**
    - Server-side pagination for patient list (see TODO-015)
    - Migrate async wrappers to Django 5.1 native async ORM (see TODO-016)
    - Load testing and performance benchmarks (see TODO-010)
    - Production LLM migration (see TODO-008)
 
-3. **Deferred improvements:**
+4. **Deferred improvements:**
    - Embedding cache (Redis, TTL-based) — see TODO-012
    - OCR for scanned PDFs — see TODO-011
    - Caregiver read-only dashboard — see TODO-013
@@ -504,14 +579,16 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 
 ## What to Do in Next Session
 
-1. **Test clinician dashboard:** `python manage.py create_test_clinician` → log in as dr_smith / testpass123
-2. **Explore dashboard:** Three-panel layout, click patients, cycle through 4 tabs, try keyboard shortcuts (j/k, 1-4, /, ?)
-3. **Test take-control:** Select a patient, send a message in the chat panel to take control, release it
-4. **Test scheduling:** Navigate to Schedule page, set availability, create an appointment
-5. **Test patient UI:** `python manage.py create_test_patient` → auth URL → DOB `06/15/1985` → explore chat + citations
-6. **Focus on:** Phase 6 — Polish, i18n, visual recovery timeline, load testing, security audit
-7. **Run tests:** `POSTGRES_PORT=5434 pytest` for full suite, `pytest tests/e2e/ -p no:xdist` for E2E
-8. **Verify:** Pre-commit hooks passing, coverage ≥90%
+1. **Test admin dashboard:** `python manage.py create_test_admin` → log in at `/admin-dashboard/` as admin_test / testpass123
+2. **Explore KPI cards:** Verify hero readmission rate, period tabs, hospital filter, time range filter
+3. **Test pathway admin:** Navigate to Pathways page, edit a pathway, toggle active/inactive
+4. **Test CSV export:** Click Export CSV, verify formula injection protection
+5. **Run design review:** `/design-review` on the live admin dashboard at `http://localhost:8000/admin-dashboard/`
+6. **Test clinician dashboard:** `python manage.py create_test_clinician` → three-panel layout, 4 tabs, take-control
+7. **Test patient UI:** `python manage.py create_test_patient` → auth URL → DOB `06/15/1985` → chat + citations
+8. **Focus on:** Phase 7 — Polish, i18n, visual recovery timeline, load testing, security audit
+9. **Run tests:** `POSTGRES_PORT=5434 pytest` for full suite, `pytest tests/e2e/ -p no:xdist` for E2E
+10. **Verify:** Pre-commit hooks passing, coverage ≥91%
 
 ---
 
@@ -537,7 +614,8 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 - **Phase 3 communication** (2026-03-19) - SMS, voice, notifications, Celery, dev toolbar
 - **Phase 4 RAG** (2026-03-20) - pgvector, knowledge models, ingestion pipeline, specialists, lifecycle, caregiver flow, consent, admin dashboard
 - **Phase 5 clinician dashboard** (2026-03-20) - Models, auth, views, services, templates, JS, scheduling, take-control, tests, QA fixes
+- **Phase 6 admin dashboard** (2026-03-21) - KPI scorecard, 7 service classes, DailyMetrics pipeline, pathway admin, 117 tests
 
 ---
 
-*Phase 5 Complete (v0.2.8.0) — Clinician Dashboard UI: three-panel layout, 4 detail tabs, take-control mode, scheduling UI, shift handoff summary, keyboard shortcuts, desktop notifications, auth hardening with IDOR prevention, and ≥90% test coverage. Ready for Phase 6: Polish & Testing.*
+*Phase 6 Complete (v0.2.10.0) — Administrator KPI Dashboard: 9 metric cards, operational alerts, pathway administration, DailyMetrics pipeline, CSV export, global hospital/time filters, print-friendly CSS, and ≥91% test coverage (1222 tests). Ready for Phase 7: Polish & Testing.*

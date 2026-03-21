@@ -1,0 +1,29 @@
+<div class="kpi-card animate-in" role="button" aria-expanded="false" tabindex="0">
+    <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium" style="color: var(--color-text-secondary);">Program Engagement</span>
+        <span class="text-xs" style="color: var(--color-border);">&#9656;</span>
+    </div>
+    {% with thirty=horizons.30 %}
+    {% if thirty.error %}
+    <div class="text-sm" style="color: var(--color-text-secondary);">{{ thirty.error }}</div>
+    {% elif thirty.rate is not None %}
+    <div class="text-3xl font-bold tracking-tight tabular-nums" style="color: var(--color-text);">{{ thirty.display }}</div>
+    <div class="text-sm mt-1" style="color: var(--color-text-secondary);">active at 30 days</div>
+    {% else %}
+    <div class="text-3xl font-bold tracking-tight tabular-nums" style="color: var(--color-border);">N/A</div>
+    <div class="text-sm mt-1" style="color: var(--color-text-secondary);">No active patients</div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Multi-horizon display -->
+    <div class="flex gap-3 mt-3 text-xs tabular-nums">
+        {% for days, data in horizons.items %}
+        <div>
+            <span class="font-semibold {% if days == 30 %}text-teal-600{% endif %}" style="{% if days != 30 %}color: var(--color-text);{% endif %}">
+                {{ data.display|default:"—" }}
+            </span>
+            <span style="color: var(--color-text-secondary);">@{{ days }}d</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>

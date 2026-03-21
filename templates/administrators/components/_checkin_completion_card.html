@@ -1,0 +1,19 @@
+<div class="kpi-card animate-in" role="button" aria-expanded="false" tabindex="0">
+    {% if data.error %}
+    <div class="text-sm" style="color: var(--color-text-secondary);">{{ data.error }}</div>
+    {% else %}
+    <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium" style="color: var(--color-text-secondary);">Check-in Completion</span>
+        <span class="text-xs" style="color: var(--color-border);">&#9656;</span>
+    </div>
+    {% if data.rate is not None %}
+    <div class="text-3xl font-bold tracking-tight tabular-nums" style="color: var(--color-text);">{{ data.display }}</div>
+    <div class="text-sm mt-1" style="color: var(--color-text-secondary);">
+        {{ data.completed }} completed, {{ data.skipped }} skipped
+    </div>
+    {% else %}
+    <div class="text-3xl font-bold tracking-tight tabular-nums" style="color: var(--color-border);">N/A</div>
+    <div class="text-sm mt-1" style="color: var(--color-text-secondary);">No check-ins in period</div>
+    {% endif %}
+    {% endif %}
+</div>
