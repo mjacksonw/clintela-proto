@@ -703,7 +703,7 @@ requires-dist = [
     { name = "pytest-playwright", marker = "extra == 'dev'", specifier = ">=0.5.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.5" },
     { name = "python-dateutil", specifier = ">=2.9" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.6" },
     { name = "sentry-sdk", marker = "extra == 'prod'", specifier = ">=2.0" },
     { name = "structlog", marker = "extra == 'prod'", specifier = ">=24.1" },
     { name = "twilio", specifier = ">=9.0" },
