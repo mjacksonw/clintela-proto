@@ -15,7 +15,6 @@ from apps.surveys.models import (
     SurveyAssignment,
     SurveyInstance,
     SurveyInstrument,
-    SurveyQuestion,
 )
 from apps.surveys.services import SurveyService
 
@@ -120,9 +119,7 @@ class CreateInstanceTest(SurveyServiceTestBase):
 
     def test_concurrent_creation_handled(self):
         """IntegrityError from concurrent creation is caught gracefully."""
-        with patch.object(
-            SurveyInstance.objects, "create", side_effect=IntegrityError("duplicate")
-        ):
+        with patch.object(SurveyInstance.objects, "create", side_effect=IntegrityError("duplicate")):
             result = SurveyService.create_instance_for_assignment(self.assignment)
             self.assertIsNone(result)
 
@@ -200,9 +197,7 @@ class StartAndCompleteTest(SurveyServiceTestBase):
             SurveyAnswer.objects.create(instance=self.instance, question=q, value=0)
 
         SurveyService.complete_instance(self.instance)
-        system_msgs = AgentMessage.objects.filter(
-            conversation=self.conversation, role="system"
-        )
+        system_msgs = AgentMessage.objects.filter(conversation=self.conversation, role="system")
         self.assertEqual(system_msgs.count(), 1)
         msg = system_msgs.first()
         self.assertEqual(msg.metadata["type"], "survey_completed")
@@ -335,3 +330,42 @@ class HelperMethodsTest(SurveyServiceTestBase):
         self.assertEqual(SurveyService._get_max_score("phq_2"), 6)
         self.assertEqual(SurveyService._get_max_score("kccq_12"), 100)
         self.assertIsNone(SurveyService._get_max_score("nonexistent"))
+
+    def test_get_available_surveys_returns_sorted(self):
+        """Surveys sorted by estimated_minutes ascending."""
+        daily = SurveyInstrument.objects.get(code="daily_symptom")
+        kccq = SurveyInstrument.objects.get(code="kccq_12")
+        now = timezone.now()
+        for inst in [kccq, daily]:
+            a = SurveyAssignment.objects.create(
+                patient=self.patient, instrument=inst, schedule_type="daily", start_date=date.today()
+            )
+            SurveyInstance.objects.create(
+                assignment=a,
+                patient=self.patient,
+                instrument=inst,
+                status="available",
+                due_date=date.today(),
+                window_start=now,
+                window_end=now + timedelta(days=1),
+            )
+        result = SurveyService.get_available_surveys(self.patient)
+        self.assertEqual(len(result), 2)
+        # Daily (2 min) should come before KCCQ (8 min)
+        self.assertLessEqual(
+            result[0].instrument.estimated_minutes,
+            result[1].instrument.estimated_minutes,
+        )
+
+
+class AutoAssignFromPathwayTest(SurveyServiceTestBase):
+    def test_auto_assign_with_no_defaults(self):
+        """No survey_defaults in pathway metadata — no assignments created."""
+        from apps.pathways.models import ClinicalPathway, PatientPathway
+
+        pathway = ClinicalPathway.objects.create(
+            name="Test Pathway", surgery_type="Test", description="test", duration_days=30
+        )
+        pp = PatientPathway.objects.create(patient=self.patient, pathway=pathway)
+        SurveyService.auto_assign_from_pathway(pp)
+        self.assertEqual(SurveyAssignment.objects.filter(patient=self.patient).count(), 0)

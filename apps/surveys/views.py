@@ -254,7 +254,7 @@ def clinician_surveys_tab(request, patient_id):
     ).exclude(code__in=assigned_codes)
 
     # Score trends per instrument (last 5 per instrument)
-    trends = {}
+    trend_list = []
     for assignment in assignments:
         scores = list(
             SurveyInstance.objects.filter(
@@ -267,11 +267,15 @@ def clinician_surveys_tab(request, patient_id):
             .values_list("total_score", flat=True)
         )
         if scores:
-            trends[assignment.instrument.code] = {
-                "scores": list(reversed(scores)),
-                "latest": scores[0],
-                "delta": scores[0] - scores[1] if len(scores) > 1 else None,
-            }
+            trend_list.append(
+                {
+                    "name": assignment.instrument.name,
+                    "code": assignment.instrument.code,
+                    "scores": list(reversed(scores)),
+                    "latest": scores[0],
+                    "delta": scores[0] - scores[1] if len(scores) > 1 else None,
+                }
+            )
 
     return render(
         request,
@@ -281,7 +285,7 @@ def clinician_surveys_tab(request, patient_id):
             "recent": recent,
             "assignments": assignments,
             "available_instruments": available_instruments,
-            "trends": trends,
+            "trend_list": trend_list,
         },
     )
 

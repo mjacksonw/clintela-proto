@@ -41,9 +41,7 @@ class CreateInstancesTaskTest(TaskTestBase):
             start_date=date.today(),
         )
         create_survey_instances()
-        self.assertEqual(
-            SurveyInstance.objects.filter(patient=self.patient).count(), 1
-        )
+        self.assertEqual(SurveyInstance.objects.filter(patient=self.patient).count(), 1)
 
     def test_skips_inactive_assignments(self):
         SurveyAssignment.objects.create(
@@ -54,9 +52,7 @@ class CreateInstancesTaskTest(TaskTestBase):
             is_active=False,
         )
         create_survey_instances()
-        self.assertEqual(
-            SurveyInstance.objects.filter(patient=self.patient).count(), 0
-        )
+        self.assertEqual(SurveyInstance.objects.filter(patient=self.patient).count(), 0)
 
     def test_skips_future_start_date(self):
         SurveyAssignment.objects.create(
@@ -66,9 +62,7 @@ class CreateInstancesTaskTest(TaskTestBase):
             start_date=date.today() + timedelta(days=7),
         )
         create_survey_instances()
-        self.assertEqual(
-            SurveyInstance.objects.filter(patient=self.patient).count(), 0
-        )
+        self.assertEqual(SurveyInstance.objects.filter(patient=self.patient).count(), 0)
 
     def test_skips_past_end_date(self):
         SurveyAssignment.objects.create(
@@ -79,9 +73,7 @@ class CreateInstancesTaskTest(TaskTestBase):
             end_date=date.today() - timedelta(days=1),
         )
         create_survey_instances()
-        self.assertEqual(
-            SurveyInstance.objects.filter(patient=self.patient).count(), 0
-        )
+        self.assertEqual(SurveyInstance.objects.filter(patient=self.patient).count(), 0)
 
 
 class ExpireInstancesTaskTest(TaskTestBase):
@@ -176,3 +168,80 @@ class ExpireInstancesTaskTest(TaskTestBase):
         expire_survey_instances()
         instance.refresh_from_db()
         self.assertEqual(instance.status, "completed")  # NOT overwritten to missed
+
+
+class ConsecutiveMissesTest(TaskTestBase):
+    def setUp(self):
+        self.assignment = SurveyAssignment.objects.create(
+            patient=self.patient,
+            instrument=self.instrument,
+            schedule_type="daily",
+            start_date=date.today() - timedelta(days=10),
+        )
+        AgentConversation.objects.create(patient=self.patient, status="active")
+
+    def test_escalation_after_3_consecutive_misses(self):
+        """3 consecutive missed surveys creates an escalation."""
+        from apps.agents.models import Escalation
+
+        now = timezone.now()
+        # Create 2 already-missed instances + 1 available that will expire
+        for i in range(2):
+            SurveyInstance.objects.create(
+                assignment=self.assignment,
+                patient=self.patient,
+                instrument=self.instrument,
+                status="missed",
+                due_date=date.today() - timedelta(days=3 - i),
+                window_start=now - timedelta(days=4 - i),
+                window_end=now - timedelta(days=3 - i),
+            )
+        # One available that's past window — will be marked missed by task
+        SurveyInstance.objects.create(
+            assignment=self.assignment,
+            patient=self.patient,
+            instrument=self.instrument,
+            status="available",
+            due_date=date.today() - timedelta(days=1),
+            window_start=now - timedelta(days=2),
+            window_end=now - timedelta(hours=1),
+        )
+
+        expire_survey_instances()
+
+        # 3rd instance should now be missed
+        missed_count = SurveyInstance.objects.filter(patient=self.patient, status="missed").count()
+        self.assertEqual(missed_count, 3)
+
+        # Escalation should be created for 3 consecutive misses
+        escalations = Escalation.objects.filter(patient=self.patient)
+        self.assertTrue(escalations.exists())
+
+    def test_no_escalation_with_fewer_than_3_misses(self):
+        from apps.agents.models import Escalation
+
+        now = timezone.now()
+        # 1 already missed + 1 available that will expire = only 2 misses
+        SurveyInstance.objects.create(
+            assignment=self.assignment,
+            patient=self.patient,
+            instrument=self.instrument,
+            status="missed",
+            due_date=date.today() - timedelta(days=2),
+            window_start=now - timedelta(days=3),
+            window_end=now - timedelta(days=2),
+        )
+        SurveyInstance.objects.create(
+            assignment=self.assignment,
+            patient=self.patient,
+            instrument=self.instrument,
+            status="available",
+            due_date=date.today() - timedelta(days=1),
+            window_start=now - timedelta(days=2),
+            window_end=now - timedelta(hours=1),
+        )
+
+        expire_survey_instances()
+
+        escalations = Escalation.objects.filter(patient=self.patient)
+        self.assertFalse(escalations.exists())

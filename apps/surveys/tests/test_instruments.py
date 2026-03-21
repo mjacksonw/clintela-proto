@@ -206,6 +206,25 @@ class SAQ7Test(TestCase):
         self.assertGreater(result.total_score, 75)
         self.assertFalse(result.escalation_needed)
 
+    def test_score_severe_angina(self):
+        answers = {q["code"]: 1 for q in self.instrument.get_questions()}
+        result = self.instrument.score(answers)
+        self.assertLess(result.total_score, 25)
+        self.assertTrue(result.escalation_needed)
+
+    def test_score_moderate(self):
+        answers = {q["code"]: 3 for q in self.instrument.get_questions()}
+        result = self.instrument.score(answers)
+        self.assertGreater(result.total_score, 25)
+        self.assertLess(result.total_score, 75)
+
+    def test_display_config(self):
+        config = self.instrument.get_display_config()
+        self.assertEqual(config["mode"], "grouped")
+
+    def test_domains(self):
+        self.assertEqual(len(self.instrument.get_domains()), 3)
+
 
 class AFEQTTest(TestCase):
     def setUp(self):
@@ -219,6 +238,24 @@ class AFEQTTest(TestCase):
         result = self.instrument.score(answers)
         self.assertEqual(result.total_score, 100.0)
         self.assertFalse(result.escalation_needed)
+
+    def test_score_severe_impact(self):
+        answers = {q["code"]: 5 for q in self.instrument.get_questions()}
+        result = self.instrument.score(answers)
+        self.assertLess(result.total_score, 25)
+        self.assertTrue(result.escalation_needed)
+
+    def test_score_moderate(self):
+        answers = {q["code"]: 3 for q in self.instrument.get_questions()}
+        result = self.instrument.score(answers)
+        self.assertGreater(result.total_score, 25)
+
+    def test_domains(self):
+        self.assertEqual(len(self.instrument.get_domains()), 3)
+
+    def test_display_config(self):
+        config = self.instrument.get_display_config()
+        self.assertEqual(config["mode"], "grouped")
 
 
 class PROMISGlobalTest(TestCase):
@@ -235,5 +272,22 @@ class PROMISGlobalTest(TestCase):
         self.assertGreater(result.total_score, 40)
         self.assertFalse(result.escalation_needed)
 
+    def test_score_poor_health(self):
+        answers = {q["code"]: 1 for q in self.instrument.get_questions()}
+        answers["pain"] = 10  # Worst pain
+        result = self.instrument.score(answers)
+        self.assertLess(result.total_score, 30)
+        self.assertTrue(result.escalation_needed)
+
+    def test_score_moderate(self):
+        answers = {q["code"]: 3 for q in self.instrument.get_questions()}
+        answers["pain"] = 5
+        result = self.instrument.score(answers)
+        self.assertGreater(result.total_score, 30)
+
     def test_domains(self):
         self.assertEqual(self.instrument.get_domains(), ["physical", "mental"])
+
+    def test_display_config(self):
+        config = self.instrument.get_display_config()
+        self.assertEqual(config["mode"], "grouped")
