@@ -89,10 +89,9 @@ Uses Alpine.js for state management.
                         :aria-checked="answers['{{ question.code }}'] === {{ option.value }}"
                         @click="setAnswer('{{ question.code }}', {{ option.value }})"
                         class="w-full text-left px-4 rounded-lg border-2 transition-colors duration-150"
-                        style="min-height: 56px; display: flex; align-items: center;"
-                        :style="answers['{{ question.code }}'] === {{ option.value }}
-                            ? 'border-color: #2563EB; background-color: #EFF6FF; color: #2563EB;'
-                            : 'border-color: var(--color-border); background-color: var(--color-surface); color: var(--color-text);'">
+                        :style="'min-height:56px;display:flex;align-items:center;' + (answers['{{ question.code }}'] === {{ option.value }}
+                            ? 'border-color:#2563EB;background-color:#EFF6FF;color:#2563EB;'
+                            : 'border-color:var(--color-border);background-color:var(--color-surface);color:var(--color-text);')">
                     {{ option.label }}
                 </button>
                 {% endfor %}
@@ -112,10 +111,9 @@ Uses Alpine.js for state management.
                             :aria-checked="answers['{{ question.code }}'] === {{ forloop.counter0 }}"
                             @click="setAnswer('{{ question.code }}', {{ forloop.counter0 }})"
                             class="flex items-center justify-center rounded-lg border-2 font-medium transition-colors duration-150"
-                            style="width: 44px; height: 44px;"
-                            :style="answers['{{ question.code }}'] === {{ forloop.counter0 }}
-                                ? 'border-color: #2563EB; background-color: #EFF6FF; color: #2563EB;'
-                                : 'border-color: var(--color-border); background-color: var(--color-surface); color: var(--color-text);'">
+                            :style="'width:44px;height:44px;' + (answers['{{ question.code }}'] === {{ forloop.counter0 }}
+                                ? 'border-color:#2563EB;background-color:#EFF6FF;color:#2563EB;'
+                                : 'border-color:var(--color-border);background-color:var(--color-surface);color:var(--color-text);')">
                         {{ forloop.counter0 }}
                     </button>
                     {% endif %}
