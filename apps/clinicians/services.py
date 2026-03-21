@@ -332,7 +332,7 @@ class TakeControlService:
 
     @staticmethod
     def push_to_clinician(conversation: AgentConversation, message_data: dict):
-        """Push a patient message to the controlling clinician's WebSocket group.
+        """Push a patient message to the controlling clinician via the hospital dashboard group.
 
         Gracefully degrades if channel layer is unavailable.
         """
@@ -340,12 +340,18 @@ class TakeControlService:
             return
 
         try:
+            patient = conversation.patient
+            hospital_id = patient.hospital_id
+            if not hospital_id:
+                return
+
             channel_layer = get_channel_layer()
-            group_name = f"clinician_chat_{conversation.pk}"
+            group_name = f"hospital_{hospital_id}"
             async_to_sync(channel_layer.group_send)(
                 group_name,
                 {
                     "type": "patient_message",
+                    "patient_id": str(patient.id),
                     "message": message_data,
                 },
             )

@@ -11,10 +11,10 @@ const clintelaChat = (() => {
     let timeoutStage = 0;
     const TIMEOUT_STAGES = [
         { at: 0, text: 'Your care team is thinking...' },
-        { at: 10000, text: 'Still working on your question...' },
-        { at: 25000, text: 'This is taking longer than usual...' },
+        { at: 15000, text: 'Still working on your question...' },
+        { at: 45000, text: 'This is taking longer than usual...' },
     ];
-    const TIMEOUT_ERROR_MS = 45000;
+    const TIMEOUT_ERROR_MS = 90000;
 
     // --- Helpers ---
     function qs(sel, root) { return (root || document).querySelector(sel); }
@@ -64,10 +64,10 @@ const clintelaChat = (() => {
     function showTyping() {
         const el = typingEl();
         if (!el) return;
-        const alpine = el.__x;
-        if (alpine) {
-            alpine.$data.visible = true;
-            alpine.$data.text = TIMEOUT_STAGES[0].text;
+        const data = Alpine.$data(el);
+        if (data) {
+            data.visible = true;
+            data.text = TIMEOUT_STAGES[0].text;
         } else {
             el.style.display = '';
             el.removeAttribute('x-cloak');
@@ -78,9 +78,9 @@ const clintelaChat = (() => {
     function hideTyping() {
         const el = typingEl();
         if (!el) return;
-        const alpine = el.__x;
-        if (alpine) {
-            alpine.$data.visible = false;
+        const data = Alpine.$data(el);
+        if (data) {
+            data.visible = false;
         } else {
             el.style.display = 'none';
         }
@@ -97,8 +97,8 @@ const clintelaChat = (() => {
             const stage = TIMEOUT_STAGES[i];
             setTimeout(() => {
                 if (!el) return;
-                const alpine = el.__x;
-                if (alpine) alpine.$data.text = stage.text;
+                const data = Alpine.$data(el);
+                if (data) data.text = stage.text;
             }, stage.at);
         }
 
@@ -149,6 +149,40 @@ const clintelaChat = (() => {
         `;
         container.appendChild(bubble);
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
+
+    function appendIncomingBubble(message) {
+        const container = messagesEl();
+        if (!container) return;
+
+        // Remove empty chat state if present
+        const empty = container.querySelector('.flex.flex-col.items-center');
+        if (empty) empty.remove();
+
+        const name = message.clinician_name || 'Your Care Team';
+        const bubble = document.createElement('div');
+        bubble.className = 'flex justify-start';
+        bubble.innerHTML = `
+            <div class="max-w-[85%]">
+                <div class="text-xs mb-1 flex items-center gap-1" style="color: var(--color-text-secondary);">
+                    <span>\u2695 ${escapeHtml(name)}</span>
+                </div>
+                <div class="agent-message-content px-4 py-2.5 text-lg leading-relaxed"
+                     style="background-color: var(--color-surface);
+                            border: 1px solid var(--color-border);
+                            border-radius: 16px 16px 16px 4px;"
+                     data-raw-content="${escapeHtml(message.content)}">
+                    ${escapeHtml(message.content)}
+                </div>
+                <div class="text-xs mt-1" style="color: var(--color-text-secondary);">
+                    just now
+                </div>
+            </div>
+        `;
+        container.appendChild(bubble);
+        renderAgentMessages(bubble);
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        playNotifySound();
     }
 
     function appendErrorBubble(text) {
@@ -369,6 +403,37 @@ const clintelaChat = (() => {
             container.scrollTop = container.scrollHeight;
         }
 
+        // Handle ALL chat form responses. Use afterSettle (fires after DOM
+        // is updated) so new message bubbles are in the DOM for markdown
+        // rendering and scroll.
+        document.body.addEventListener('htmx:afterSettle', (event) => {
+            if (event.detail.elt?.id !== 'chat-form') return;
+            const xhr = event.detail.xhr;
+            if (!xhr || xhr.status !== 200) return;
+
+            hideTyping();
+            const formEl = document.getElementById('chat-form');
+            if (formEl) {
+                const alpineData = Alpine.$data(formEl);
+                if (alpineData) alpineData.inflight = false;
+            }
+            setChipsDisabled(false);
+
+            // If non-empty response (AI message was swapped in), do post-swap work
+            if (xhr.responseText.trim()) {
+                renderAgentMessages();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                const container = messagesEl();
+                if (container) {
+                    checkEscalation(container);
+                    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+                }
+                playNotifySound();
+                const textarea = document.getElementById('chat-textarea');
+                if (textarea) textarea.focus();
+            }
+        });
+
         // Expose sound toggle
         window.clintelaSoundToggle = toggleSound;
     }
@@ -388,5 +453,6 @@ const clintelaChat = (() => {
         onBeforeRequest,
         onAfterSwap,
         onError,
+        appendIncomingBubble,
     };
 })();
