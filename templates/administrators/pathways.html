@@ -1,0 +1,18 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Pathways — Clintela Admin{% endblock %}
+
+{% block admin_content %}
+<!-- Breadcrumb -->
+<nav class="text-sm mb-4" style="color: var(--color-text-secondary);" aria-label="Breadcrumb">
+    <a href="{% url 'administrators:dashboard' %}" class="hover:underline">Dashboard</a>
+    <span class="mx-1">&gt;</span>
+    <span style="color: var(--color-text);">Pathways</span>
+</nav>
+
+<h1 class="text-2xl font-semibold mb-6" style="color: var(--color-text);">Clinical Pathways</h1>
+
+<div id="pathway-list">
+    {% include "administrators/components/_pathway_list_table.html" %}
+</div>
+{% endblock %}

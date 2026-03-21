@@ -15,7 +15,10 @@ All notable changes to this project will be documented in this file.
 - Automated survey scheduling: daily instance creation and 30-minute expiration with missed-survey notifications
 - Surveys auto-assigned when a patient receives a care pathway
 - Data Visualization design system section in DESIGN.md (sparklines, score bars, delta badges, trend indicators)
-- 43 new tests covering instruments, models, and scoring logic
+- Administrator KPI dashboard replacing manual EHR-to-Excel workflows — 9 live metric cards
+- Operational alerts bar, global hospital/time filters, CSV export, pathway administration
+- DailyMetrics pipeline for trend analysis with nightly pre-aggregation
+- 113 survey tests + 117 admin dashboard tests
 
 ### Fixed
 - Race condition in survey instance creation (catch IntegrityError from concurrent requests)

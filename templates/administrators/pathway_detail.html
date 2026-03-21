@@ -1,0 +1,128 @@
+{% extends "base_admin.html" %}
+
+{% block title %}{{ data.pathway.name }} — Clintela Admin{% endblock %}
+
+{% block admin_content %}
+<!-- Breadcrumb -->
+<nav class="text-sm mb-4" style="color: var(--color-text-secondary);" aria-label="Breadcrumb">
+    <a href="{% url 'administrators:dashboard' %}" class="hover:underline">Dashboard</a>
+    <span class="mx-1">&gt;</span>
+    <a href="{% url 'administrators:pathway_list' %}" class="hover:underline">Pathways</a>
+    <span class="mx-1">&gt;</span>
+    <span style="color: var(--color-text);">{{ data.pathway.name }}</span>
+</nav>
+
+{% if data.error %}
+<div class="card">
+    <p class="text-sm" style="color: var(--color-text-secondary);">{{ data.error }}</p>
+</div>
+{% else %}
+
+{% if data.success %}
+<div class="mb-4 p-3 rounded-md text-sm bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300" role="status">
+    {{ data.success }}
+</div>
+{% endif %}
+
+<!-- Pathway header + edit form -->
+<div class="card mb-6">
+    <div class="flex items-start justify-between mb-4">
+        <div>
+            <h1 class="text-2xl font-semibold" style="color: var(--color-text);">{{ data.pathway.name }}</h1>
+            <p class="text-sm mt-1" style="color: var(--color-text-secondary);">
+                {{ data.pathway.surgery_type|default:"No surgery type specified" }}
+                &middot; {{ data.pathway.duration_days }} days
+                &middot; {% if data.pathway.is_active %}<span class="text-green-600">Active</span>{% else %}<span class="text-gray-500">Inactive</span>{% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if data.pathway.description %}
+    <p class="text-sm mb-4" style="color: var(--color-text);">{{ data.pathway.description }}</p>
+    {% endif %}
+
+    <!-- Edit form (collapsible) -->
+    <details class="mt-4 border-t pt-4" style="border-color: var(--color-border);">
+        <summary class="text-sm font-medium cursor-pointer" style="color: var(--color-text-secondary);">Edit pathway</summary>
+        <form method="post" action="{% url 'administrators:pathway_edit' data.pathway.id %}" class="mt-3 space-y-3">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">Name</label>
+                <input type="text" name="name" value="{{ data.pathway.name }}" required
+                       class="w-full px-3 py-2 rounded-md border text-sm"
+                       style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+                {% if data.errors.name %}<p class="text-xs text-red-600 mt-1">{{ data.errors.name }}</p>{% endif %}
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">Description</label>
+                <textarea name="description" rows="2"
+                          class="w-full px-3 py-2 rounded-md border text-sm"
+                          style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">{{ data.pathway.description }}</textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">Duration (days)</label>
+                <input type="number" name="duration_days" value="{{ data.pathway.duration_days }}" min="1"
+                       class="w-32 px-3 py-2 rounded-md border text-sm"
+                       style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+                {% if data.errors.duration_days %}<p class="text-xs text-red-600 mt-1">{{ data.errors.duration_days }}</p>{% endif %}
+            </div>
+            <button type="submit"
+                    class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 transition-colors">
+                Save Changes
+            </button>
+        </form>
+    </details>
+</div>
+
+<!-- Effectiveness stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="card text-center">
+        <div class="text-2xl font-bold tabular-nums" style="color: var(--color-text);">{{ data.total_assigned }}</div>
+        <div class="text-sm" style="color: var(--color-text-secondary);">Total Assigned</div>
+    </div>
+    <div class="card text-center">
+        <div class="text-2xl font-bold tabular-nums" style="color: var(--color-text);">{{ data.completed }}</div>
+        <div class="text-sm" style="color: var(--color-text-secondary);">Completed</div>
+    </div>
+    <div class="card text-center">
+        <div class="text-2xl font-bold tabular-nums" style="color: var(--color-text);">{{ data.display_rate }}</div>
+        <div class="text-sm" style="color: var(--color-text-secondary);">Completion Rate</div>
+    </div>
+</div>
+
+<!-- Milestones -->
+<h2 class="text-lg font-semibold mb-3" style="color: var(--color-text);">Milestones</h2>
+
+{% if data.milestones %}
+<div class="card" style="padding: 0;">
+    <table class="w-full text-sm">
+        <thead>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+                <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary); height: 48px;">Day</th>
+                <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Title</th>
+                <th class="text-right px-4 py-3 font-medium tabular-nums" style="color: var(--color-text-secondary);">Sent</th>
+                <th class="text-right px-4 py-3 font-medium tabular-nums" style="color: var(--color-text-secondary);">Completed</th>
+                <th class="text-right px-4 py-3 font-medium tabular-nums" style="color: var(--color-text-secondary);">Rate</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in data.milestones %}
+            <tr style="border-bottom: 1px solid var(--color-border); height: 48px;">
+                <td class="px-4 py-3 tabular-nums font-medium" style="color: var(--color-text);">Day {{ m.day }}</td>
+                <td class="px-4 py-3" style="color: var(--color-text);">{{ m.title }}</td>
+                <td class="px-4 py-3 text-right tabular-nums" style="color: var(--color-text);">{{ m.sent }}</td>
+                <td class="px-4 py-3 text-right tabular-nums" style="color: var(--color-text);">{{ m.completed }}</td>
+                <td class="px-4 py-3 text-right tabular-nums font-semibold" style="color: var(--color-text);">{{ m.display_rate }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card text-center py-8">
+    <p class="text-sm" style="color: var(--color-text-secondary);">No milestones defined for this pathway.</p>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

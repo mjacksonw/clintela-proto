@@ -1,0 +1,114 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Dashboard — Clintela Admin{% endblock %}
+
+{% block admin_content %}
+<div x-data="{ filterParams() { return '?hospital=' + (hospitalFilter || '') + '&days=' + daysFilter; } }">
+
+    <!-- Operational Alerts (auto-refresh every 5 min) -->
+    <div hx-get="{% url 'administrators:alerts' %}"
+         hx-trigger="load, every 300s"
+         hx-target="this"
+         hx-swap="innerHTML"
+         class="mb-5">
+        <div class="skeleton h-10 rounded-lg"></div>
+    </div>
+
+    <!-- Hero: Readmission Rate -->
+    <div hx-get="{% url 'administrators:hero_readmission' %}"
+         :hx-vals="JSON.stringify({hospital: hospitalFilter || '', days: daysFilter})"
+         hx-trigger="load"
+         hx-target="this"
+         hx-swap="innerHTML"
+         class="mb-6">
+        <div class="hero-card animate-pulse">
+            <div class="skeleton h-6 w-48 mb-3"></div>
+            <div class="skeleton h-14 w-32 mb-2"></div>
+            <div class="skeleton h-4 w-64"></div>
+        </div>
+    </div>
+
+    <!-- OUTCOMES -->
+    <div class="section-label mb-3">OUTCOMES</div>
+    <div class="kpi-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div hx-get="{% url 'administrators:discharge_to_community' %}"
+             :hx-vals="JSON.stringify({hospital: hospitalFilter || '', days: daysFilter})"
+             hx-trigger="load"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="kpi-card"><div class="skeleton h-4 w-36 mb-3"></div><div class="skeleton h-8 w-20"></div></div>
+        </div>
+
+        <div hx-get="{% url 'administrators:functional_improvement' %}"
+             hx-trigger="load"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="kpi-card kpi-card--pending"><div class="skeleton h-4 w-36 mb-3"></div><div class="skeleton h-8 w-20"></div></div>
+        </div>
+
+        <div hx-get="{% url 'administrators:followup_completion' %}"
+             :hx-vals="JSON.stringify({hospital: hospitalFilter || '', days: daysFilter})"
+             hx-trigger="load"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="kpi-card"><div class="skeleton h-4 w-36 mb-3"></div><div class="skeleton h-8 w-20"></div></div>
+        </div>
+    </div>
+
+    <!-- ENGAGEMENT -->
+    <div class="section-label mb-3">ENGAGEMENT</div>
+    <div class="kpi-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div hx-get="{% url 'administrators:engagement' %}"
+             :hx-vals="JSON.stringify({hospital: hospitalFilter || ''})"
+             hx-trigger="load"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="kpi-card"><div class="skeleton h-4 w-36 mb-3"></div><div class="skeleton h-8 w-20"></div></div>
+        </div>
+
+        <div hx-get="{% url 'administrators:message_volume' %}"
+             :hx-vals="JSON.stringify({hospital: hospitalFilter || '', days: daysFilter})"
+             hx-trigger="load"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="kpi-card"><div class="skeleton h-4 w-36 mb-3"></div><div class="skeleton h-8 w-20"></div></div>
+        </div>
+
+        <div hx-get="{% url 'administrators:checkin_completion' %}"
+             :hx-vals="JSON.stringify({hospital: hospitalFilter || '', days: daysFilter})"
+             hx-trigger="load"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="kpi-card"><div class="skeleton h-4 w-36 mb-3"></div><div class="skeleton h-8 w-20"></div></div>
+        </div>
+    </div>
+
+    <!-- OPERATIONS -->
+    <div class="section-label mb-3">OPERATIONS</div>
+    <div class="kpi-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div hx-get="{% url 'administrators:escalation_response' %}"
+             :hx-vals="JSON.stringify({hospital: hospitalFilter || '', days: daysFilter})"
+             hx-trigger="load"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="kpi-card"><div class="skeleton h-4 w-36 mb-3"></div><div class="skeleton h-8 w-20"></div></div>
+        </div>
+
+        <div hx-get="{% url 'administrators:census' %}"
+             :hx-vals="JSON.stringify({hospital: hospitalFilter || ''})"
+             hx-trigger="load"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="kpi-card"><div class="skeleton h-4 w-36 mb-3"></div><div class="skeleton h-8 w-20"></div></div>
+        </div>
+
+        <div hx-get="{% url 'administrators:pathway_performance' %}"
+             hx-trigger="load"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="kpi-card"><div class="skeleton h-4 w-36 mb-3"></div><div class="skeleton h-8 w-20"></div></div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

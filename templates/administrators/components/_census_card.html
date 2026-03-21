@@ -1,0 +1,30 @@
+<div class="kpi-card animate-in" role="button" aria-expanded="false" tabindex="0">
+    {% if triage.error %}
+    <div class="text-sm" style="color: var(--color-text-secondary);">{{ triage.error }}</div>
+    {% else %}
+    <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium" style="color: var(--color-text-secondary);">Census</span>
+        <span class="text-xs" style="color: var(--color-border);">&#9656;</span>
+    </div>
+    <div class="text-3xl font-bold tracking-tight tabular-nums" style="color: var(--color-text);">
+        {{ triage.total }}
+    </div>
+    <div class="text-sm mt-1" style="color: var(--color-text-secondary);">active patients</div>
+
+    <!-- Triage distribution bar -->
+    {% if triage.total > 0 %}
+    <div class="triage-bar mt-3">
+        {% if triage.green %}<div class="triage-green" style="flex: {{ triage.green }};"></div>{% endif %}
+        {% if triage.yellow %}<div class="triage-yellow" style="flex: {{ triage.yellow }};"></div>{% endif %}
+        {% if triage.orange %}<div class="triage-orange" style="flex: {{ triage.orange }};"></div>{% endif %}
+        {% if triage.red %}<div class="triage-red" style="flex: {{ triage.red }};"></div>{% endif %}
+    </div>
+    <div class="flex gap-4 mt-2 text-xs" style="color: var(--color-text-secondary);">
+        <span><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#059669;"></span>{{ triage.green }} stable</span>
+        <span><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#D97706;"></span>{{ triage.yellow }} notice</span>
+        <span><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#EA580C;"></span>{{ triage.orange }} warning</span>
+        <span><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#DC2626;"></span>{{ triage.red }} critical</span>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>

@@ -71,6 +71,7 @@ LOCAL_APPS = [
     "apps.analytics",
     "apps.knowledge",
     "apps.surveys",
+    "apps.administrators",
 ]
 
 # Daphne must be first so its ASGI-capable runserver replaces Django's WSGI one.
@@ -337,6 +338,8 @@ VOICE_MEMO_MAX_DURATION_SECONDS = env.int("VOICE_MEMO_MAX_DURATION_SECONDS", def
 # =============================================================================
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6380/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
+from celery.schedules import crontab  # noqa: E402
+
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -357,6 +360,10 @@ CELERY_BEAT_SCHEDULE = {
     "expire-survey-instances": {
         "task": "apps.surveys.tasks.expire_survey_instances",
         "schedule": 1800,  # every 30 minutes
+    },
+    "compute-daily-metrics": {
+        "task": "apps.analytics.tasks.compute_daily_metrics",
+        "schedule": crontab(hour=2, minute=7),  # 2:07 AM daily
     },
 }
 
