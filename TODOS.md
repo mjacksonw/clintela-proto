@@ -372,6 +372,54 @@ The patient list in `apps/clinicians/views.py:patient_list_fragment` uses Django
 
 ---
 
+### TODO-017: Anomaly Detection & Weekly Digest Emails
+**What:** Automated anomaly detection on KPI metrics with weekly digest emails for administrators showing trends, outliers, and actionable insights.
+
+**Why:** Administrators shouldn't have to log in every day to catch problems. Proactive alerts for metric anomalies (sudden readmission spikes, engagement drops) enable faster intervention.
+
+**Pros:**
+- Proactive problem detection without manual dashboard monitoring
+- Weekly digest keeps leadership informed with minimal effort
+- Establishes patterns for future alerting infrastructure
+
+**Cons:**
+- Email delivery infrastructure needed
+- Threshold tuning to avoid alert fatigue
+- Anomaly detection algorithm complexity
+
+**Context:**
+The admin KPI dashboard (Phase 6) provides live metrics. This TODO adds passive monitoring: background analysis of DailyMetrics trends, anomaly detection (statistical outliers vs rolling average), and a weekly HTML email digest summarizing key metric movements. Start simple (z-score based) and iterate.
+
+**Effort:** Medium (human: ~1-2 weeks / CC: ~30 min)
+**Priority:** P2
+**Blocked by:** DailyMetrics pipeline (shipped in v0.2.10.0)
+
+---
+
+### TODO-018: Multi-Site Anonymized Benchmarking
+**What:** Cross-hospital benchmarking allowing administrators to compare their metrics against anonymized aggregate data from other Clintela-using hospitals.
+
+**Why:** Hospitals want to know how they compare to peers. Anonymized benchmarks provide context without revealing individual hospital data.
+
+**Pros:**
+- Contextualizes metrics ("is our 8% readmission rate good or bad?")
+- Drives competitive improvement
+- Network effect — more hospitals = better benchmarks
+
+**Cons:**
+- Data privacy and anonymization complexity
+- Requires multiple hospital deployments
+- Statistical validity concerns with small N
+
+**Context:**
+The admin dashboard (Phase 6) currently shows hospital-specific metrics only. The user explicitly noted "you are your own benchmark" as the right V1 framing — continuous improvement vs. prior period. Multi-site benchmarking is a future network effect once multiple hospitals are live.
+
+**Effort:** Large (human: ~2-3 weeks / CC: ~1 hour)
+**Priority:** P3
+**Blocked by:** Multiple hospital deployments, data sharing agreements
+
+---
+
 ### TODO-014: Chat Sidebar Suggestion Chips Touch Target
 **What:** Increase suggestion chip height from 38px to 44px minimum WCAG touch target in `_chat_sidebar.html`.
 
@@ -417,5 +465,5 @@ When deferring new work:
 
 ---
 
-*Last updated: 2026-03-20*
-*Source: CEO Review Scope Expansion + Phase 3 completion (v0.2.6.0) + Phase 4 completion (v0.2.7.0) + Phase 5 completion (v0.2.8.0) + Design review deferrals*
+*Last updated: 2026-03-21*
+*Source: CEO Review Scope Expansion + Phase 3 completion (v0.2.6.0) + Phase 4 completion (v0.2.7.0) + Phase 5 completion (v0.2.8.0) + Phase 6 completion (v0.2.10.0) + Design review deferrals*
