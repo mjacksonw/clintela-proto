@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.10.0] - 2026-03-21
+
+### Added
+- Survey/ePRO system with 6 clinical instruments (PHQ-2, Daily Symptom Check, KCCQ-12, SAQ-7, AFEQT, PROMIS Global-10)
+- Patient survey wizard with intro screen, progress bar, post-completion reassurance, and abandon/resume flow
+- Clinician Surveys tab (5th tab) with scores-first layout, sparkline trends, and assignment management
+- Survey dashboard card with color-coded urgency borders and warm "All caught up!" empty state
+- Patient score history with CSS bars and accessible aria-labels
+- System messages in chat for survey completions (green) and missed surveys (amber)
+- Deterministic scoring engine with automatic escalation and score change alerts
+- Celery tasks for daily instance creation and 30-minute expiration checks
+- Pathway auto-assignment via Django post_save signal
+- DESIGN.md Data Visualization section (sparklines, score bars, delta badges, trend indicators)
+- 43 tests covering instruments, models, and scoring logic
+
+### Fixed
+- Race condition in survey instance creation (catch IntegrityError from concurrent requests)
+- Race condition in expire task (atomic queryset update prevents overwriting completed surveys)
+- Alpine.js :style binding overwriting static width/height on survey buttons (numeric 44px, Likert 56px)
+- Survey modal overlay rendering inline instead of full-viewport (container moved to body)
+- Score bar width calculated as percentage of 100 instead of instrument max score
+
 ## [0.2.9.0] - 2026-03-21
 
 ### Added
