@@ -16,6 +16,7 @@ AGENT_DISPLAY_NAMES = {
     "specialist_pt_rehab": "Rehab Specialist",
     "specialist_palliative": "Palliative Care",
     "specialist_pharmacy": "Pharmacist",
+    "clinician": "Your Care Team",
 }
 
 AGENT_ICONS = {
@@ -30,6 +31,7 @@ AGENT_ICONS = {
     "specialist_pt_rehab": "activity",
     "specialist_palliative": "hand-heart",
     "specialist_pharmacy": "pill",
+    "clinician": "user-round",
 }
 
 

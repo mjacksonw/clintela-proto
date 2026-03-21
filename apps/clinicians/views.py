@@ -281,6 +281,7 @@ def research_chat_send_view(request, patient_id):
 def _render_tools_html(request, patient):
     """Render tools tab HTML fragment (shared by GET and lifecycle POST)."""
     from apps.caregivers.models import CaregiverRelationship
+    from apps.pathways.models import ClinicalPathway, PatientPathway
     from apps.patients.models import ConsentRecord, Patient
 
     consents = ConsentRecord.objects.filter(patient=patient).order_by("-granted_at")
@@ -292,6 +293,10 @@ def _render_tools_html(request, patient):
         [],
     )
 
+    # Pathway assignment context
+    active_pathway = PatientPathway.objects.filter(patient=patient, status="active").select_related("pathway").first()
+    available_pathways = ClinicalPathway.objects.filter(is_active=True).order_by("name")
+
     return render_to_string(
         "clinicians/components/_tab_tools.html",
         {
@@ -299,6 +304,8 @@ def _render_tools_html(request, patient):
             "consents": consents,
             "caregivers": caregivers,
             "valid_transitions": valid_transitions,
+            "active_pathway": active_pathway,
+            "available_pathways": available_pathways,
         },
         request=request,
     )
@@ -454,12 +461,8 @@ def inject_chat_message_view(request, patient_id):
     # Update paused_at to reset inactivity timer
     AgentConversation.objects.filter(pk=conversation.pk).update(paused_at=timezone.now())
 
-    html = render_to_string(
-        "clinicians/components/_chat_message_clinician.html",
-        {"msg": msg, "clinician_name": request.user.get_full_name()},
-        request=request,
-    )
-    return HttpResponse(html)
+    # Return the full chat panel so take-control bar reflects new state
+    return HttpResponse(_render_chat_html(request, patient))
 
 
 @clinician_required
@@ -627,6 +630,77 @@ def lifecycle_transition_view(request, patient_id):
         return HttpResponseBadRequest(str(e))
 
     # Return updated tools tab
+    return HttpResponse(_render_tools_html(request, patient))
+
+
+# ---------------------------------------------------------------------------
+# Pathway Assignment
+# ---------------------------------------------------------------------------
+
+
+@clinician_required
+@require_POST
+def assign_pathway_view(request, patient_id):
+    """POST: Assign or change a care pathway for a patient."""
+    from apps.pathways.models import ClinicalPathway, PatientPathway
+
+    patient = request.patient
+    pathway_id = request.POST.get("pathway_id", "").strip()
+
+    if not pathway_id:
+        return HttpResponseBadRequest("Pathway selection is required.")
+
+    try:
+        pathway = ClinicalPathway.objects.get(id=pathway_id, is_active=True)
+    except ClinicalPathway.DoesNotExist:
+        return HttpResponseBadRequest("Invalid pathway selected.")
+
+    # Discontinue any existing active pathway
+    PatientPathway.objects.filter(patient=patient, status="active").update(
+        status="discontinued",
+        completed_at=timezone.now(),
+    )
+
+    # Create new assignment
+    PatientPathway.objects.create(
+        patient=patient,
+        pathway=pathway,
+        status="active",
+    )
+
+    logger.info(
+        "Clinician %s assigned pathway '%s' to patient %s",
+        request.user.username,
+        pathway.name,
+        patient.id,
+    )
+
+    # Return updated tools tab
+    return HttpResponse(_render_tools_html(request, patient))
+
+
+@clinician_required
+@require_POST
+def unassign_pathway_view(request, patient_id):
+    """POST: Discontinue the active care pathway for a patient."""
+    from apps.pathways.models import PatientPathway
+
+    patient = request.patient
+
+    updated = PatientPathway.objects.filter(patient=patient, status="active").update(
+        status="discontinued",
+        completed_at=timezone.now(),
+    )
+
+    if not updated:
+        return HttpResponseBadRequest("No active pathway to discontinue.")
+
+    logger.info(
+        "Clinician %s discontinued pathway for patient %s",
+        request.user.username,
+        patient.id,
+    )
+
     return HttpResponse(_render_tools_html(request, patient))
 
 

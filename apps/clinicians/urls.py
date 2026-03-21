@@ -84,6 +84,17 @@ urlpatterns = [
         views.lifecycle_transition_view,
         name="lifecycle_transition",
     ),
+    # Pathway assignment
+    path(
+        "patients/<int:patient_id>/assign-pathway/",
+        views.assign_pathway_view,
+        name="assign_pathway",
+    ),
+    path(
+        "patients/<int:patient_id>/unassign-pathway/",
+        views.unassign_pathway_view,
+        name="unassign_pathway",
+    ),
     # Scheduling
     path("schedule/", views.schedule_view, name="schedule"),
     path(

@@ -919,3 +919,121 @@ class HandoffServiceTest(CoverageTestBase):
         assert "resolved_escalations" in summary
         assert "status_changes" in summary
         assert "new_escalation_count" in summary
+
+
+# ---------------------------------------------------------------------------
+# Pathway Assignment Views
+# ---------------------------------------------------------------------------
+
+
+class AssignPathwayViewTest(CoverageTestBase):
+    """Tests for assign_pathway_view and unassign_pathway_view."""
+
+    def setUp(self):
+        super().setUp()
+        from apps.pathways.models import ClinicalPathway
+
+        self.pathway = ClinicalPathway.objects.create(
+            name="Total Knee Recovery",
+            surgery_type="Total Knee Replacement",
+            description="Standard TKR recovery protocol",
+            duration_days=90,
+            is_active=True,
+        )
+
+    def test_assign_pathway_success(self):
+        """Assigning a pathway creates PatientPathway record."""
+        from apps.pathways.models import PatientPathway
+
+        self.client.login(username=self.clin_user.username, password="testpass")  # pragma: allowlist secret
+        resp = self.client.post(
+            f"/clinician/patients/{self.patient.id}/assign-pathway/",
+            {"pathway_id": self.pathway.id},
+        )
+        assert resp.status_code == 200
+        assert PatientPathway.objects.filter(patient=self.patient, pathway=self.pathway, status="active").exists()
+
+    def test_assign_pathway_replaces_existing(self):
+        """Assigning a new pathway discontinues the previous one."""
+        from apps.pathways.models import ClinicalPathway, PatientPathway
+
+        PatientPathway.objects.create(patient=self.patient, pathway=self.pathway, status="active")
+        new_pathway = ClinicalPathway.objects.create(
+            name="Hip Recovery",
+            surgery_type="Hip Replacement",
+            description="Standard hip protocol",
+            duration_days=60,
+            is_active=True,
+        )
+        self.client.login(username=self.clin_user.username, password="testpass")  # pragma: allowlist secret
+        resp = self.client.post(
+            f"/clinician/patients/{self.patient.id}/assign-pathway/",
+            {"pathway_id": new_pathway.id},
+        )
+        assert resp.status_code == 200
+        old = PatientPathway.objects.get(patient=self.patient, pathway=self.pathway)
+        assert old.status == "discontinued"
+        assert PatientPathway.objects.filter(patient=self.patient, pathway=new_pathway, status="active").exists()
+
+    def test_assign_pathway_missing_id(self):
+        """Missing pathway_id returns 400."""
+        self.client.login(username=self.clin_user.username, password="testpass")  # pragma: allowlist secret
+        resp = self.client.post(
+            f"/clinician/patients/{self.patient.id}/assign-pathway/",
+            {},
+        )
+        assert resp.status_code == 400
+
+    def test_assign_pathway_invalid_id(self):
+        """Invalid pathway_id returns 400."""
+        self.client.login(username=self.clin_user.username, password="testpass")  # pragma: allowlist secret
+        resp = self.client.post(
+            f"/clinician/patients/{self.patient.id}/assign-pathway/",
+            {"pathway_id": 99999},
+        )
+        assert resp.status_code == 400
+
+    def test_unassign_pathway_success(self):
+        """Discontinuing an active pathway sets status to discontinued."""
+        from apps.pathways.models import PatientPathway
+
+        PatientPathway.objects.create(patient=self.patient, pathway=self.pathway, status="active")
+        self.client.login(username=self.clin_user.username, password="testpass")  # pragma: allowlist secret
+        resp = self.client.post(
+            f"/clinician/patients/{self.patient.id}/unassign-pathway/",
+        )
+        assert resp.status_code == 200
+        pp = PatientPathway.objects.get(patient=self.patient, pathway=self.pathway)
+        assert pp.status == "discontinued"
+
+    def test_unassign_pathway_none_active(self):
+        """Discontinuing when no active pathway returns 400."""
+        self.client.login(username=self.clin_user.username, password="testpass")  # pragma: allowlist secret
+        resp = self.client.post(
+            f"/clinician/patients/{self.patient.id}/unassign-pathway/",
+        )
+        assert resp.status_code == 400
+
+    def test_tools_tab_shows_pathway_dropdown(self):
+        """Tools tab includes pathway dropdown when pathways exist."""
+        self.client.login(username=self.clin_user.username, password="testpass")  # pragma: allowlist secret
+        resp = self.client.get(
+            f"/clinician/patients/{self.patient.id}/tools/",
+        )
+        assert resp.status_code == 200
+        content = resp.content.decode()
+        assert "Total Knee Recovery" in content
+        assert "assign-pathway" in content
+
+    def test_tools_tab_shows_active_pathway(self):
+        """Tools tab shows active pathway with discontinue button."""
+        from apps.pathways.models import PatientPathway
+
+        PatientPathway.objects.create(patient=self.patient, pathway=self.pathway, status="active")
+        self.client.login(username=self.clin_user.username, password="testpass")  # pragma: allowlist secret
+        resp = self.client.get(
+            f"/clinician/patients/{self.patient.id}/tools/",
+        )
+        content = resp.content.decode()
+        assert "Total Knee Recovery" in content
+        assert "Discontinue" in content

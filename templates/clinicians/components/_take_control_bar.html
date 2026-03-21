@@ -31,9 +31,9 @@
     </div>
     <!-- Message input -->
     <form hx-post="{% url 'clinicians:inject_message' patient.id %}"
-          hx-target="#chat-messages"
-          hx-swap="beforeend"
-          hx-on::after-request="this.reset(); scrollChat()"
+          hx-target="#chat-panel"
+          hx-swap="innerHTML"
+          hx-on::after-request="scrollChat()"
           class="p-3 flex gap-2">
         {% csrf_token %}
         <input type="text" name="message" placeholder="Type a message to the patient..."
@@ -49,9 +49,9 @@
 <!-- No control — default state -->
 <div class="border-t flex-shrink-0" style="border-color: var(--color-border);">
     <form hx-post="{% url 'clinicians:inject_message' patient.id %}"
-          hx-target="#chat-messages"
-          hx-swap="beforeend"
-          hx-on::after-request="this.reset(); scrollChat()"
+          hx-target="#chat-panel"
+          hx-swap="innerHTML"
+          hx-on::after-request="scrollChat()"
           class="p-3">
         {% csrf_token %}
         <div class="flex gap-2">
