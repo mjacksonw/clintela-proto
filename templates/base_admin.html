@@ -71,8 +71,9 @@
         padding: 2px;
     }
     .period-tab {
-        padding: 4px 12px;
-        font-size: 12px;
+        padding: 8px 12px;
+        min-height: 36px;
+        font-size: 13px;
         font-weight: 500;
         border-radius: 4px;
         color: var(--color-text-secondary);
@@ -83,6 +84,10 @@
     }
     .period-tab:hover {
         color: var(--color-text);
+    }
+    .period-tab:focus-visible {
+        outline: 2px solid #0D9488;
+        outline-offset: 1px;
     }
     .period-tab.active {
         background-color: var(--color-surface);
