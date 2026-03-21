@@ -62,13 +62,16 @@ def patient_dashboard_view(request):
     # Load conversation history for chat sidebar
     messages = []
     try:
-        from apps.agents.services import ConversationService
+        from apps.agents.models import AgentConversation
 
-        conversation = ConversationService.get_or_create_conversation(patient)
-        msg_objects = conversation.messages.prefetch_related(
-            "citations__knowledge_doc__source",
-        ).order_by("created_at")[:50]
-        messages = list(msg_objects)
+        conversation = (
+            AgentConversation.objects.filter(patient=patient, status="active").order_by("-created_at").first()
+        )
+        if conversation:
+            msg_objects = conversation.messages.prefetch_related(
+                "citations__knowledge_doc__source",
+            ).order_by("created_at")[:50]
+            messages = list(msg_objects)
     except Exception:
         logger.exception("Failed to load conversation history")
 

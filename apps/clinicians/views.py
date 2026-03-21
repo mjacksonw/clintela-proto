@@ -461,12 +461,8 @@ def inject_chat_message_view(request, patient_id):
     # Update paused_at to reset inactivity timer
     AgentConversation.objects.filter(pk=conversation.pk).update(paused_at=timezone.now())
 
-    html = render_to_string(
-        "clinicians/components/_chat_message_clinician.html",
-        {"msg": msg, "clinician_name": request.user.get_full_name()},
-        request=request,
-    )
-    return HttpResponse(html)
+    # Return the full chat panel so take-control bar reflects new state
+    return HttpResponse(_render_chat_html(request, patient))
 
 
 @clinician_required
