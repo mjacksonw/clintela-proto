@@ -222,6 +222,10 @@ omit = [
     "config/settings/*",
     "config/wsgi.py",
     "config/asgi.py",
+    # Demo/seed data management commands — fixture generators, not application logic
+    "*/management/commands/create_cardiology_service.py",
+    "*/management/commands/seed_cardiac_pathways.py",
+    "*/management/commands/seed_pathways.py",
 ]
 
 [tool.coverage.report]
