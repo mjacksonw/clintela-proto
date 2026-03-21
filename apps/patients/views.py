@@ -65,7 +65,9 @@ def patient_dashboard_view(request):
         from apps.agents.models import AgentConversation
 
         conversation = (
-            AgentConversation.objects.filter(patient=patient, status="active").order_by("-created_at").first()
+            AgentConversation.objects.filter(patient=patient, status="active", clinician__isnull=True)
+            .order_by("-created_at")
+            .first()
         )
         if conversation:
             msg_objects = conversation.messages.prefetch_related(
@@ -110,6 +112,11 @@ def patient_chat_send_view(request):
         from apps.agents.services import process_patient_message
 
         result = process_patient_message(patient, message_text, channel="chat")
+
+        # When a clinician has control, no AI response is generated.
+        # Return empty 200 — JS detects empty response and hides typing indicator.
+        if result["agent_message"] is None:
+            return HttpResponse("")
 
         # Render the message bubble HTML fragment
         html = render_to_string(

@@ -108,6 +108,17 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             )
         )
 
+    async def chat_message(self, event):
+        """Handle clinician chat message pushed to patient."""
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "chat.message",
+                    "message": event["message"],
+                }
+            )
+        )
+
     @database_sync_to_async
     def _get_unread_count(self):
         from apps.notifications.models import Notification

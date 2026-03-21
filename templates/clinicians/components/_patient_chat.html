@@ -46,5 +46,13 @@
     <!-- Take control bar + message input -->
     {% include "clinicians/components/_take_control_bar.html" %}
 
+    <script>
+        // Scroll chat to bottom on load (runs each time HTMX swaps this fragment)
+        requestAnimationFrame(() => {
+            const el = document.getElementById('chat-messages');
+            if (el) el.scrollTop = el.scrollHeight;
+        });
+    </script>
+
     {% endif %}
 </div>

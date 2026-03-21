@@ -116,6 +116,15 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
     # Build context and call workflow
     from apps.agents.workflow import get_workflow
 
+    # Load recent conversation history for context
+    recent_messages = list(conversation.messages.order_by("-created_at")[:10])
+    # Reverse to chronological order, exclude the message we just added
+    conversation_history = [
+        {"role": msg.role, "content": msg.content}
+        for msg in reversed(recent_messages)
+        if msg.content != content or msg.role != "user"
+    ]
+
     context = {
         "patient": {
             "name": patient.user.get_full_name(),
@@ -123,6 +132,7 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
             "days_post_op": patient.days_post_op() or 0,
             "hospital": patient.hospital.name if patient.hospital else "Unknown",
         },
+        "conversation_history": conversation_history,
     }
 
     workflow = get_workflow()
@@ -229,6 +239,7 @@ class ConversationService:
             AgentConversation.objects.filter(
                 patient=patient,
                 status="active",
+                clinician__isnull=True,
             )
             .select_for_update()
             .first()

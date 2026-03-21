@@ -82,6 +82,9 @@ def dashboard_view(request):
     # Next appointment for footer toast
     next_appointment = SchedulingService.get_next_appointment(clinician)
 
+    # Hospital ID for dashboard WebSocket connection
+    hospital_id = clinician.hospitals.values_list("id", flat=True).first()
+
     return render(
         request,
         "clinicians/dashboard.html",
@@ -90,6 +93,7 @@ def dashboard_view(request):
             "handoff": handoff,
             "is_first_login": is_first_login,
             "next_appointment": next_appointment,
+            "hospital_id": hospital_id,
         },
     )
 
@@ -436,14 +440,14 @@ def inject_chat_message_view(request, patient_id):
         logger.exception("Failed to inject clinician message")
         return HttpResponseBadRequest("Failed to send message. Please try again.")
 
-    # Push to patient's WebSocket group
+    # Push to patient's notification WebSocket group
     try:
         from asgiref.sync import async_to_sync
         from channels.layers import get_channel_layer
 
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            f"patient_{patient.id}",
+            f"patient_{patient.id}_notifications",
             {
                 "type": "chat.message",
                 "message": {

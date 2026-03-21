@@ -321,3 +321,15 @@ class ClinicianDashboardConsumer(AsyncWebsocketConsumer):
                 }
             )
         )
+
+    async def patient_message(self, event):
+        """Handle new patient message (for clinicians with take-control)."""
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "patient_message",
+                    "patient_id": event["patient_id"],
+                    "message": event["message"],
+                }
+            )
+        )
