@@ -96,6 +96,13 @@ function notificationBell() {
                         this.notifications[idx].is_read = true;
                     }
                     break;
+
+                case 'chat.message':
+                    // Clinician sent a message — append it to the chat
+                    if (data.message && typeof clintelaChat !== 'undefined') {
+                        clintelaChat.appendIncomingBubble(data.message);
+                    }
+                    break;
             }
         },
 
