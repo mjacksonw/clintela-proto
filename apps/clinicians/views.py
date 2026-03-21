@@ -546,6 +546,7 @@ def acknowledge_escalation_view(request, escalation_id):
         return HttpResponse(status=403)
 
     EscalationService.acknowledge_escalation(str(escalation.id), request.user.id)
+    escalation.refresh_from_db()
 
     html = render_to_string(
         "clinicians/components/_escalation_badge.html",
@@ -569,6 +570,7 @@ def resolve_escalation_view(request, escalation_id):
         return HttpResponse(status=403)
 
     EscalationService.resolve_escalation(str(escalation.id))
+    escalation.refresh_from_db()
 
     html = render_to_string(
         "clinicians/components/_escalation_badge.html",
