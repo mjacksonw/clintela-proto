@@ -170,12 +170,12 @@
                 <span class="text-lg font-bold tracking-tight" style="color: #0D9488;">clintela</span>
                 <nav role="navigation" class="flex gap-1">
                     <a href="{% url 'administrators:dashboard' %}"
-                       class="px-3 py-1.5 rounded-md text-sm font-medium {% if request.resolver_match.url_name == 'dashboard' %}bg-teal-50 text-teal-700{% else %}hover:bg-gray-100{% endif %}"
+                       class="px-3 py-2 rounded-md text-sm font-medium {% if request.resolver_match.url_name == 'dashboard' %}bg-teal-50 text-teal-700{% else %}hover:bg-gray-100{% endif %}"
                        {% if request.resolver_match.url_name == 'dashboard' %}style="background-color: rgba(13,148,136,0.1); color: #0D9488;"{% endif %}>
                         Dashboard
                     </a>
                     <a href="{% url 'administrators:pathway_list' %}"
-                       class="px-3 py-1.5 rounded-md text-sm font-medium {% if 'pathway' in request.resolver_match.url_name %}bg-teal-50 text-teal-700{% endif %}"
+                       class="px-3 py-2 rounded-md text-sm font-medium {% if 'pathway' in request.resolver_match.url_name %}bg-teal-50 text-teal-700{% endif %}"
                        {% if 'pathway' in request.resolver_match.url_name %}style="background-color: rgba(13,148,136,0.1); color: #0D9488;"{% endif %}>
                         Pathways
                     </a>
@@ -209,12 +209,12 @@
                 <!-- Export -->
                 <div class="flex gap-2">
                     <a :href="'/admin-dashboard/export/csv/?days=' + daysFilter + (hospitalFilter ? '&hospital=' + hospitalFilter : '')"
-                       class="text-xs px-3 py-1.5 rounded border font-medium"
+                       class="text-sm px-3 py-2 rounded border font-medium"
                        style="border-color: var(--color-border); color: var(--color-text-secondary);">
                         Export CSV
                     </a>
                     <button onclick="window.print()"
-                            class="text-xs px-3 py-1.5 rounded border font-medium"
+                            class="text-sm px-3 py-2 rounded border font-medium"
                             style="border-color: var(--color-border); color: var(--color-text-secondary);">
                         Print
                     </button>
@@ -230,7 +230,7 @@
 
                 <!-- User -->
                 <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.user.get_full_name|default:request.user.username }}</span>
-                <a href="{% url 'administrators:logout' %}" class="text-xs" style="color: var(--color-text-secondary);">Logout</a>
+                <a href="{% url 'administrators:logout' %}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" style="color: var(--color-text-secondary);">Logout</a>
             </div>
         </div>
     </header>
