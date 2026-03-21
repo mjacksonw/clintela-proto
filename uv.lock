@@ -610,6 +610,7 @@ dependencies = [
     { name = "cryptography" },
     { name = "daphne" },
     { name = "django" },
+    { name = "django-debug-toolbar" },
     { name = "django-environ" },
     { name = "django-extensions" },
     { name = "django-ninja" },
@@ -657,6 +658,14 @@ prod = [
     { name = "whitenoise" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-django" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "argon2-cffi", specifier = ">=23.1" },
@@ -671,6 +680,7 @@ requires-dist = [
     { name = "daphne", specifier = ">=4.0" },
     { name = "detect-secrets", marker = "extra == 'dev'", specifier = ">=1.5" },
     { name = "django", specifier = ">=5.1,<5.2" },
+    { name = "django-debug-toolbar", specifier = ">=6.2.0" },
     { name = "django-debug-toolbar", marker = "extra == 'dev'", specifier = ">=4.4" },
     { name = "django-environ", specifier = ">=0.11.2" },
     { name = "django-extensions", specifier = ">=3.2.3" },
@@ -703,13 +713,21 @@ requires-dist = [
     { name = "pytest-playwright", marker = "extra == 'dev'", specifier = ">=0.5.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.5" },
     { name = "python-dateutil", specifier = ">=2.9" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.6" },
     { name = "sentry-sdk", marker = "extra == 'prod'", specifier = ">=2.0" },
     { name = "structlog", marker = "extra == 'prod'", specifier = ">=24.1" },
     { name = "twilio", specifier = ">=9.0" },
     { name = "whitenoise", marker = "extra == 'prod'", specifier = ">=6.6" },
 ]
 provides-extras = ["dev", "prod"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-django", specifier = ">=4.12.0" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
+    { name = "ruff", specifier = ">=0.15.6" },
+]
 
 [[package]]
 name = "colorama"

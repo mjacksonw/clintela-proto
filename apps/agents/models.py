@@ -92,7 +92,10 @@ class AgentMessage(models.Model):
     )
 
     # Message content
-    role = models.CharField(max_length=20, choices=[("user", "User"), ("assistant", "Assistant")])
+    role = models.CharField(
+        max_length=20,
+        choices=[("user", "User"), ("assistant", "Assistant"), ("system", "System")],
+    )
     content = models.TextField()
 
     # Agent metadata

@@ -61,6 +61,57 @@
         </div>
     </div>
 </div>
+{% elif message.role == "system" %}
+<!-- System message — centered, full-width card -->
+<div class="flex justify-center" role="status">
+    <div class="w-full max-w-md">
+        {% if message.metadata.type == "survey_completed" %}
+        <div class="card flex items-start gap-3"
+             style="border-left: 4px solid #059669; padding: 16px;">
+            <i data-lucide="circle-check" class="w-5 h-5 flex-shrink-0" style="color: #059669;"></i>
+            <div class="min-w-0">
+                <p class="text-sm font-medium" style="color: var(--color-text);">
+                    {{ message.metadata.instrument_name|default:"Survey" }} completed
+                </p>
+                {% if message.metadata.total_score is not None and not message.metadata.scoring_error %}
+                <p class="text-xs mt-0.5" style="color: var(--color-text-secondary);">
+                    Score: <strong>{{ message.metadata.total_score }}</strong>{% if message.metadata.max_score %}/{{ message.metadata.max_score }}{% endif %}
+                </p>
+                {% endif %}
+                {% if message.metadata.survey_instance_id %}
+                <a href="{% url 'surveys:results' message.metadata.survey_instance_id %}"
+                   class="text-xs font-medium mt-1 inline-block"
+                   style="color: var(--color-primary);">
+                    View Details
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% elif message.metadata.type == "survey_missed" %}
+        <div class="card flex items-start gap-3"
+             style="border-left: 4px solid #D97706; padding: 16px;">
+            <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0" style="color: #D97706;"></i>
+            <div class="min-w-0">
+                <p class="text-sm" style="color: var(--color-text-secondary);">
+                    {{ message.content }}
+                </p>
+            </div>
+        </div>
+        {% else %}
+        <!-- Generic system message -->
+        <div class="card flex items-start gap-3"
+             style="border-left: 4px solid var(--color-primary); padding: 16px;">
+            <i data-lucide="info" class="w-5 h-5 flex-shrink-0" style="color: var(--color-primary);"></i>
+            <p class="text-sm" style="color: var(--color-text-secondary);">
+                {{ message.content }}
+            </p>
+        </div>
+        {% endif %}
+        <div class="text-xs mt-1 text-center" style="color: var(--color-text-secondary);">
+            {{ message.created_at|naturaltime }}
+        </div>
+    </div>
+</div>
 {% else %}
 <!-- Agent message — left-aligned, surface bg -->
 <div class="flex justify-start" {% if message.escalation_triggered %}data-escalation="true"{% endif %}>

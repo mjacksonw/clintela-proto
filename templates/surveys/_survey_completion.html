@@ -1,0 +1,57 @@
+{% comment %}
+Post-completion screen — shown after survey is submitted and scored.
+Design review decision: Score + reassurance screen with intentional pause.
+{% endcomment %}
+
+<div x-data="{ showButton: false }"
+     x-init="setTimeout(() => showButton = true, 2500)"
+     class="fixed inset-0 z-50 flex items-center justify-center"
+     style="background-color: rgba(0,0,0,0.4);"
+     role="dialog"
+     aria-modal="true"
+     aria-label="Survey completed">
+
+    <div class="w-full h-full sm:h-auto sm:max-w-md sm:mx-6 sm:rounded-lg flex items-center justify-center"
+         style="background-color: var(--color-surface);">
+
+        <div class="text-center px-8 py-12">
+            <!-- Checkmark icon -->
+            <div class="mx-auto mb-6 w-16 h-16 rounded-full flex items-center justify-center"
+                 style="background-color: #D1FAE5;">
+                <i data-lucide="circle-check" class="w-8 h-8" style="color: #059669;"></i>
+            </div>
+
+            {% if instance.scoring_error %}
+            <!-- Scoring failed — reassuring message, no score -->
+            <h3 class="text-xl font-semibold mb-2" style="color: var(--color-text);">
+                Responses Saved
+            </h3>
+            <p class="text-base mb-8" style="color: var(--color-text-secondary);">
+                Your responses have been saved. Your care team will review your answers shortly.
+            </p>
+            {% else %}
+            <!-- Score + interpretation -->
+            <h3 class="text-xl font-semibold mb-2" style="color: var(--color-text);">
+                {{ interpretation|default:"Check-in Complete" }}
+            </h3>
+            <p class="text-base mb-2" style="color: var(--color-text-secondary);">
+                Thank you for completing this check-in. Your care team will review your responses.
+            </p>
+            {% if instance.total_score is not None %}
+            <p class="text-sm mb-8" style="color: var(--color-text-secondary);">
+                Score: <strong>{{ instance.total_score|floatformat:0 }}</strong>
+            </p>
+            {% endif %}
+            {% endif %}
+
+            <!-- Back to Dashboard button (appears after 2.5s pause) -->
+            <div x-show="showButton" x-transition.opacity>
+                <button onclick="document.getElementById('survey-modal-container').innerHTML=''; document.body.dispatchEvent(new CustomEvent('surveyCompleted'));"
+                        class="w-full px-6 py-3 rounded-md text-base font-medium text-white"
+                        style="background-color: #2563EB;">
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

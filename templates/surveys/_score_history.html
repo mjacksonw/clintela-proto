@@ -1,0 +1,44 @@
+{% load humanize %}
+
+{% if history %}
+<div class="card" style="padding: 24px;">
+    <div class="flex items-center gap-2 mb-4">
+        <i data-lucide="bar-chart-3" class="w-5 h-5" style="color: var(--color-primary);"></i>
+        <h2 class="text-lg font-semibold" style="color: var(--color-text);">Recent Check-ins</h2>
+    </div>
+
+    <div class="space-y-3">
+        {% for instance in history %}
+        <div class="flex items-center gap-3">
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate" style="color: var(--color-text);">
+                    {{ instance.instrument.name }}
+                </p>
+                <p class="text-xs" style="color: var(--color-text-secondary);">
+                    {{ instance.completed_at|naturaltime }}
+                </p>
+            </div>
+            <!-- Score bar -->
+            <div class="w-24 flex items-center gap-2">
+                <div class="flex-1 h-2 rounded-full" style="background-color: var(--color-border);"
+                     role="img"
+                     aria-label="{{ instance.instrument.name }} score: {{ instance.total_score|floatformat:0 }}, {{ instance.completed_at|date:'M d' }}">
+                    {% widthratio instance.total_score 100 100 as score_pct %}
+                    <div class="h-2 rounded-full"
+                         style="width: {{ score_pct|default:0 }}%; background-color: {% if instance.total_score >= 50 %}#0D9488{% else %}#D97706{% endif %};"></div>
+                </div>
+                <span class="text-xs font-medium" style="color: var(--color-text);">
+                    {{ instance.total_score|floatformat:0 }}
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<!-- Empty state -->
+<div class="text-center py-4" style="color: var(--color-text-secondary);">
+    <i data-lucide="bar-chart-3" class="w-8 h-8 mx-auto mb-1.5 opacity-30"></i>
+    <p class="text-sm">No check-ins completed yet.</p>
+</div>
+{% endif %}

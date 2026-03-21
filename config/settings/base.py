@@ -70,6 +70,7 @@ LOCAL_APPS = [
     "apps.notifications",
     "apps.analytics",
     "apps.knowledge",
+    "apps.surveys",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -347,6 +348,14 @@ CELERY_BEAT_SCHEDULE = {
     "cleanup-voice-files": {
         "task": "apps.messages_app.tasks.cleanup_expired_voice_files",
         "schedule": 3600,  # every hour
+    },
+    "create-survey-instances": {
+        "task": "apps.surveys.tasks.create_survey_instances",
+        "schedule": 86400,  # daily (task self-schedules at 6:03 AM)
+    },
+    "expire-survey-instances": {
+        "task": "apps.surveys.tasks.expire_survey_instances",
+        "schedule": 1800,  # every 30 minutes
     },
 }
 

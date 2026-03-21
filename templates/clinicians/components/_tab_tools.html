@@ -25,6 +25,21 @@
         </div>
     </div>
 
+    <!-- Manage Surveys link -->
+    <button @click="$dispatch('switch-tab', { tab: 'surveys' }); switchTab && switchTab('surveys')"
+            class="w-full flex items-center gap-3 p-3 rounded-md border text-left group"
+            style="border-color: var(--color-border);"
+            onclick="if(window.Alpine){const d=Alpine.closestRoot(document.querySelector('[x-data]'));if(d&&d._x_dataStack){const c=d._x_dataStack[0];if(c.switchTab)c.switchTab('surveys')}}">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+             style="background-color: #DBEAFE; color: #1E40AF;">
+            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+        </div>
+        <div>
+            <p class="text-xs font-semibold group-hover:underline" style="color: var(--color-text);">Manage Surveys &rarr;</p>
+            <p class="text-[11px]" style="color: var(--color-text-secondary);">Assign, view scores, and manage ePROs</p>
+        </div>
+    </button>
+
     <!-- Care Pathway Assignment -->
     <div class="p-3 rounded-md border" style="border-color: var(--color-border);">
         <h3 class="text-xs font-semibold mb-2" style="color: var(--color-text);">Care Pathway</h3>

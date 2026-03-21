@@ -626,6 +626,47 @@ Provide toggle in settings for clinicians who prefer opposite of system setting.
 
 ---
 
+## Data Visualization
+
+### Sparklines
+
+Inline score trend indicators used in clinician dashboards (Surveys tab, Care Plan tab).
+
+- **Dimensions:** 60px × 20px
+- **Implementation:** CSS-only mini bars or inline SVG
+- **Colors:** Teal (#0D9488) for improving/stable trends, Warning Amber (#D97706) for declining trends
+- **Context:** Always paired with latest score number and delta badge
+
+### Horizontal Score Bars
+
+Used for patient score history and clinician domain score displays.
+
+- **Height:** 8px (patient history), 8px (clinician domain scores)
+- **Border radius:** `rounded-full` (fully rounded)
+- **Track:** Gray 200 (#E7E5E4) background
+- **Fill:** Color-coded by interpretation — Teal (#0D9488) for scores >= 50%, Warning Amber (#D97706) for scores < 50%
+- **Accessibility:** `role="img"` with `aria-label` describing the score value and context
+
+### Delta Badges
+
+Inline indicators showing score changes between completions.
+
+- **Positive change:** Success Green (#059669) text, "+" prefix (e.g., "+5")
+- **Negative change:** Warning Amber (#D97706) text, "−" prefix (e.g., "−3")
+- **No change:** Gray 500 (#78716C) text, "0"
+- **Font:** 12px, tabular-nums, medium weight
+
+### Trend Indicators
+
+Directional arrows paired with delta badges for quick scanning.
+
+- **Improving:** Lucide `trending-up` icon, Teal (#0D9488)
+- **Declining:** Lucide `trending-down` icon, Warning Amber (#D97706)
+- **Stable:** Lucide `minus` icon, Gray 500 (#78716C)
+- **Size:** 16px, inline with score text
+
+---
+
 ## Decisions Log
 
 | Date | Decision | Rationale |
@@ -638,6 +679,9 @@ Provide toggle in settings for clinicians who prefer opposite of system setting.
 | 2026-03-17 | **Intentional motion approach** | Functional animations only; respects user attention and accessibility requirements |
 | 2026-03-17 | **Dark mode as first-class** | Essential for clinicians working night shifts; designed as core feature, not afterthought |
 | 2026-03-17 | **Tight letterspacing on headlines** | Creates confident, modern feel; never applied to lowercase (per Goudy's wisdom) |
+| 2026-03-21 | **Data Visualization section added** | Sparklines, score bars, delta badges, and trend indicators standardized for survey feature and future reuse |
+| 2026-03-21 | **Warning Amber for missed surveys** | Reserve Danger Red for clinical escalations only; missed surveys use Warning Amber (#D97706) to avoid false urgency |
+| 2026-03-21 | **Stacked full-width buttons for healthcare inputs** | 56px height Likert/MC buttons for elderly patients with reduced dexterity; exceeds 44px WCAG minimum |
 
 ---
 

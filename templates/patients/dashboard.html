@@ -46,6 +46,28 @@
     </div>
 </div>
 
+<!-- Surveys -->
+<div id="survey-section"
+     hx-get="{% url 'surveys:available' %}"
+     hx-trigger="revealed, surveyCompleted from:body"
+     hx-swap="innerHTML"
+     class="animate-in animate-in-delay-1 mb-6">
+    <div class="card" style="padding: 24px;">
+        <div class="text-center" style="color: var(--color-text-secondary);">
+            <div class="w-8 h-8 mx-auto mb-2 rounded-full animate-pulse" style="background-color: var(--color-border);"></div>
+            <div class="h-4 w-32 mx-auto rounded animate-pulse" style="background-color: var(--color-border);"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Score History -->
+<div id="score-history-section"
+     hx-get="{% url 'surveys:history' %}"
+     hx-trigger="revealed, surveyCompleted from:body"
+     hx-swap="innerHTML"
+     class="animate-in animate-in-delay-1 mb-6">
+</div>
+
 <!-- What to Expect -->
 {% if days_post_op is not None %}
 <div class="card animate-in animate-in-delay-1 mb-6">
