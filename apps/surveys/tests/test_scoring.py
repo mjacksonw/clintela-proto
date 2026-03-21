@@ -1,7 +1,6 @@
 """Tests for ScoringEngine."""
 
 from datetime import date, timedelta
-from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
@@ -13,7 +12,6 @@ from apps.surveys.models import (
     SurveyAssignment,
     SurveyInstance,
     SurveyInstrument,
-    SurveyQuestion,
 )
 from apps.surveys.scoring import ScoringEngine, ScoringResult
 
@@ -56,9 +54,7 @@ class ScoringEngineTest(TestCase):
         )
         for code, value in answers_dict.items():
             question = self.instrument.questions.get(code=code)
-            SurveyAnswer.objects.create(
-                instance=instance, question=question, value=value
-            )
+            SurveyAnswer.objects.create(instance=instance, question=question, value=value)
         return instance
 
     def test_score_instance(self):
@@ -70,9 +66,7 @@ class ScoringEngineTest(TestCase):
 
     def test_score_instance_unknown_instrument(self):
         """Unknown instrument code returns None."""
-        custom = SurveyInstrument.objects.create(
-            code="custom_unknown", name="Unknown", category="custom"
-        )
+        custom = SurveyInstrument.objects.create(code="custom_unknown", name="Unknown", category="custom")
         assignment = SurveyAssignment.objects.create(
             patient=self.patient,
             instrument=custom,
@@ -105,9 +99,7 @@ class ScoringEngineTest(TestCase):
     def test_check_escalation_uses_assignment_config(self):
         """Assignment escalation config overrides instrument defaults."""
         instance = self._create_instance_with_answers({"interest": 1, "depressed": 0})
-        instance.assignment.escalation_config = {
-            "total": {"threshold": 1, "severity": "urgent"}
-        }
+        instance.assignment.escalation_config = {"total": {"threshold": 1, "severity": "urgent"}}
         instance.assignment.save()
         # Create a result that says escalation is needed (score >= custom threshold)
         result = ScoringResult(
@@ -129,8 +121,6 @@ class ScoringEngineTest(TestCase):
             interpretation="test",
             escalation_needed=True,
         )
-        instance.assignment.escalation_config = {
-            "domains": {"test_domain": {"threshold": 90}}
-        }
+        instance.assignment.escalation_config = {"domains": {"test_domain": {"threshold": 90}}}
         instance.assignment.save()
         self.assertTrue(ScoringEngine.check_escalation(instance, result))
