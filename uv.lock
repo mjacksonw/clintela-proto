@@ -660,7 +660,9 @@ prod = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "factory-boy" },
     { name = "pytest" },
+    { name = "pytest-cov" },
     { name = "pytest-django" },
     { name = "pytest-xdist" },
     { name = "ruff" },
@@ -723,7 +725,9 @@ provides-extras = ["dev", "prod"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "factory-boy", specifier = ">=3.3.3" },
     { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-django", specifier = ">=4.12.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "ruff", specifier = ">=0.15.6" },
