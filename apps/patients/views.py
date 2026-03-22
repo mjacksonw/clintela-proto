@@ -50,7 +50,7 @@ def _get_suggestion_chips(patient):
     except Exception:
         logger.debug("No pathway data for suggestion chips")
 
-    return ["Is this normal?", "My medications", "Talk to my care team"]
+    return ["Am I on track?", "Help me with my medications", "What's coming up next?"]
 
 
 def patient_dashboard_view(request):
@@ -248,6 +248,41 @@ def patient_voice_file_view(request, file_id):
     content_type = f"audio/{ext}" if ext != "webm" else "audio/webm"
 
     return FileResponse(file_path.open("rb"), content_type=content_type)
+
+
+def patient_about_me_view(request):
+    """About Me page — patients share who they are."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return redirect("accounts:start")
+
+    from .models import PatientPreferences
+
+    # Get or create preferences
+    preferences, _ = PatientPreferences.objects.get_or_create(patient=patient)
+
+    if request.method == "POST":
+        preferences.preferred_name = request.POST.get("preferred_name", "").strip()
+        preferences.about_me = request.POST.get("about_me", "").strip()
+        preferences.living_situation = request.POST.get("living_situation", "").strip()
+        preferences.recovery_goals = request.POST.get("recovery_goals", "").strip()
+        preferences.concerns = request.POST.get("concerns", "").strip()
+        preferences.support_network = request.POST.get("support_network", "").strip()
+        preferences.communication_style = request.POST.get("communication_style", "").strip()
+        preferences.preferred_contact_time = request.POST.get("preferred_contact_time", "").strip()
+        preferences.save()
+
+        django_messages.success(request, "Thanks for sharing — this helps us take better care of you.")
+        return redirect("patients:about_me")
+
+    return render(
+        request,
+        "patients/about_me.html",
+        {
+            "patient": patient,
+            "preferences": preferences,
+        },
+    )
 
 
 def patient_consent_view(request):

@@ -64,6 +64,27 @@ def _handle_paused_message(conversation, content, channel, start_time):
     }
 
 
+def _inject_preferences(patient_context: dict, patient) -> None:
+    """Inject patient preferences into a context dict if available."""
+    try:
+        prefs = patient.preferences
+        if prefs.has_any_preferences:
+            patient_context["preferences"] = {
+                "preferred_name": prefs.preferred_name or patient.user.first_name,
+                "about_me": prefs.about_me,
+                "living_situation": prefs.living_situation,
+                "daily_routines": prefs.daily_routines,
+                "recovery_goals": prefs.recovery_goals,
+                "values": prefs.values,
+                "concerns": prefs.concerns,
+                "communication_style": (prefs.get_communication_style_display() if prefs.communication_style else ""),
+                "preferred_contact_time": prefs.preferred_contact_time,
+                "support_network": prefs.support_network,
+            }
+    except Exception:
+        logger.debug("No patient preferences available for patient %s", patient.id)
+
+
 def process_patient_message(patient, content, channel="chat", audio_url=None):
     """Shared helper for processing a patient message through the AI workflow.
 
@@ -134,6 +155,9 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
         },
         "conversation_history": conversation_history,
     }
+
+    # Inject patient preferences for personalized agent interactions
+    _inject_preferences(context["patient"], patient)
 
     workflow = get_workflow()
     result = async_to_sync(workflow.process_message)(content, context)
@@ -428,6 +452,25 @@ class ContextService:
                 "surgery_type": active_pathway.pathway.surgery_type,
                 "started_at": active_pathway.started_at.isoformat(),
             }
+
+        # Include patient preferences for personalized interactions
+        try:
+            prefs = patient.preferences
+            if prefs.has_any_preferences:
+                context["preferences"] = {
+                    "preferred_name": prefs.preferred_name or patient.user.first_name,
+                    "about_me": prefs.about_me,
+                    "living_situation": prefs.living_situation,
+                    "daily_routines": prefs.daily_routines,
+                    "recovery_goals": prefs.recovery_goals,
+                    "values": prefs.values,
+                    "concerns": prefs.concerns,
+                    "communication_style": prefs.get_communication_style_display() if prefs.communication_style else "",
+                    "preferred_contact_time": prefs.preferred_contact_time,
+                    "support_network": prefs.support_network,
+                }
+        except Exception:
+            logger.debug("No patient preferences available")
 
         return context
 

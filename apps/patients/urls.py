@@ -11,6 +11,7 @@ urlpatterns = [
     path("chat/send/", views.patient_chat_send_view, name="chat_send"),
     path("voice/send/", views.patient_voice_send_view, name="voice_send"),
     path("voice/file/<uuid:file_id>/", views.patient_voice_file_view, name="voice_file"),
+    path("about-me/", views.patient_about_me_view, name="about_me"),
     path("consent/", views.patient_consent_view, name="consent"),
     path("consent/toggle/", views.patient_consent_toggle_view, name="consent_toggle"),
     path("caregivers/", views.patient_caregivers_view, name="caregivers"),

@@ -1,0 +1,157 @@
+{% extends "base_patient.html" %}
+{% load static %}
+
+{% block title %}About Me — Clintela{% endblock %}
+
+{% block dashboard_content %}
+
+<!-- Page header -->
+<div class="mb-6 animate-in">
+    <a href="{% url 'patients:dashboard' %}" class="inline-flex items-center gap-1.5 text-sm font-medium mb-4 py-2"
+       style="color: var(--color-primary); min-height: 44px;">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        Back to Dashboard
+    </a>
+    <h1 class="text-2xl font-semibold" style="letter-spacing: -0.02em;">Help Us Know You Better</h1>
+    <p class="mt-1 text-base" style="color: var(--color-text-secondary);">
+        The more we know about you, the better we can support your recovery.
+        Everything here is optional — share what feels right.
+    </p>
+</div>
+
+{% if messages %}
+<div class="mb-4 animate-in">
+    {% for msg in messages %}
+    <div class="px-4 py-3 rounded-lg text-sm flex items-center gap-2 mb-2"
+         style="{% if msg.tags == 'success' %}background-color: #D1FAE5; color: #065F46;{% else %}background-color: #FEE2E2; color: #991B1B;{% endif %}">
+        <i data-lucide="{% if msg.tags == 'success' %}check-circle{% else %}alert-circle{% endif %}" class="w-4 h-4 flex-shrink-0"></i>
+        {{ msg }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'patients:about_me' %}">
+    {% csrf_token %}
+
+    <!-- What should we call you? -->
+    <div class="card mb-4 animate-in animate-in-delay-1">
+        <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="smile" class="w-5 h-5" style="color: var(--color-primary);"></i>
+            <h2 class="text-lg font-semibold">What should we call you?</h2>
+        </div>
+        <input type="text" name="preferred_name" value="{{ preferences.preferred_name }}"
+               placeholder="A nickname, first name, whatever feels right..."
+               class="w-full px-4 py-3 rounded-xl border text-base"
+               style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text); min-height: 44px;">
+    </div>
+
+    <!-- Tell us about yourself -->
+    <div class="card mb-4 animate-in animate-in-delay-1">
+        <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="heart" class="w-5 h-5" style="color: #EA580C;"></i>
+            <h2 class="text-lg font-semibold">Tell us about yourself</h2>
+        </div>
+        <p class="text-sm mb-2" style="color: var(--color-text-secondary);">
+            Anything you'd like your care team to know — your daily life, what you enjoy, who's important to you...
+        </p>
+        <textarea name="about_me" rows="3"
+                  placeholder="For example: 'Retired teacher, love my book club, live in a second-floor walk-up...'"
+                  class="w-full px-4 py-3 rounded-xl border text-base resize-none"
+                  style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">{{ preferences.about_me }}</textarea>
+    </div>
+
+    <!-- Where you live -->
+    <div class="card mb-4 animate-in animate-in-delay-1">
+        <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="home" class="w-5 h-5" style="color: #7C3AED;"></i>
+            <h2 class="text-lg font-semibold">Your living situation</h2>
+        </div>
+        <input type="text" name="living_situation" value="{{ preferences.living_situation }}"
+               placeholder="Do you live alone, with family, with a partner...?"
+               class="w-full px-4 py-3 rounded-xl border text-base"
+               style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text); min-height: 44px;">
+    </div>
+
+    <!-- What are you looking forward to? -->
+    <div class="card mb-4 animate-in animate-in-delay-2">
+        <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="target" class="w-5 h-5" style="color: #0D9488;"></i>
+            <h2 class="text-lg font-semibold">What are you looking forward to?</h2>
+        </div>
+        <p class="text-sm mb-2" style="color: var(--color-text-secondary);">
+            What do you want to get back to doing? This helps us understand what matters most.
+        </p>
+        <textarea name="recovery_goals" rows="2"
+                  placeholder="For example: 'Getting back to my garden,' 'Coaching my son's basketball team'..."
+                  class="w-full px-4 py-3 rounded-xl border text-base resize-none"
+                  style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">{{ preferences.recovery_goals }}</textarea>
+    </div>
+
+    <!-- Is anything worrying you? -->
+    <div class="card mb-4 animate-in animate-in-delay-2">
+        <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="message-circle" class="w-5 h-5" style="color: #D97706;"></i>
+            <h2 class="text-lg font-semibold">Is anything worrying you?</h2>
+        </div>
+        <p class="text-sm mb-2" style="color: var(--color-text-secondary);">
+            It's completely normal to have concerns. Sharing them helps us address them.
+        </p>
+        <textarea name="concerns" rows="2"
+                  placeholder="Stairs at home, managing medications, being alone at night..."
+                  class="w-full px-4 py-3 rounded-xl border text-base resize-none"
+                  style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">{{ preferences.concerns }}</textarea>
+    </div>
+
+    <!-- Who's in your corner? -->
+    <div class="card mb-4 animate-in animate-in-delay-2">
+        <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="users" class="w-5 h-5" style="color: #065F46;"></i>
+            <h2 class="text-lg font-semibold">Who's in your corner?</h2>
+        </div>
+        <textarea name="support_network" rows="2"
+                  placeholder="Family, friends, neighbors who help out..."
+                  class="w-full px-4 py-3 rounded-xl border text-base resize-none"
+                  style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">{{ preferences.support_network }}</textarea>
+    </div>
+
+    <!-- Communication preferences -->
+    <div class="card mb-4 animate-in animate-in-delay-3">
+        <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="settings" class="w-5 h-5" style="color: var(--color-text-secondary);"></i>
+            <h2 class="text-lg font-semibold">How should we communicate?</h2>
+        </div>
+
+        <div class="mb-4">
+            <label class="text-sm font-medium mb-2 block" style="color: var(--color-text);">Communication style</label>
+            <select name="communication_style"
+                    class="w-full px-4 py-3 rounded-xl border text-base"
+                    style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text); min-height: 44px;">
+                <option value="">No preference</option>
+                <option value="conversational" {% if preferences.communication_style == "conversational" %}selected{% endif %}>Conversational and warm</option>
+                <option value="direct" {% if preferences.communication_style == "direct" %}selected{% endif %}>Direct and to-the-point</option>
+                <option value="detailed" {% if preferences.communication_style == "detailed" %}selected{% endif %}>Detailed explanations</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="text-sm font-medium mb-2 block" style="color: var(--color-text);">Best time to reach you</label>
+            <input type="text" name="preferred_contact_time" value="{{ preferences.preferred_contact_time }}"
+                   placeholder="Morning, evening, anytime..."
+                   class="w-full px-4 py-3 rounded-xl border text-base"
+                   style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text); min-height: 44px;">
+        </div>
+    </div>
+
+    <!-- Save button -->
+    <div class="animate-in animate-in-delay-3">
+        <button type="submit"
+                class="w-full py-3.5 rounded-xl font-semibold text-base text-white transition-colors"
+                style="background-color: var(--color-primary); min-height: 44px;"
+                onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+            Save
+        </button>
+    </div>
+</form>
+
+{% endblock %}

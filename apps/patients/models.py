@@ -196,6 +196,83 @@ class PatientStatusTransition(models.Model):
         return f"{self.patient}: {self.from_status} → {self.to_status}"
 
 
+class PatientPreferences(models.Model):
+    """Patient preferences, values, and personal context.
+
+    Captures who the patient is as a person — not just their clinical data.
+    All fields are optional; the system works without preferences but gets
+    better with them. Free-text fields because human lives don't fit checkboxes.
+    """
+
+    COMMUNICATION_STYLE_CHOICES = [
+        ("conversational", "Conversational and warm"),
+        ("direct", "Direct and to-the-point"),
+        ("detailed", "Detailed explanations"),
+    ]
+
+    patient = models.OneToOneField(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name="preferences",
+    )
+
+    # Who they are
+    preferred_name = models.CharField(max_length=100, blank=True, help_text="What they like to be called")
+    about_me = models.TextField(blank=True, help_text="Patient's own words about themselves")
+    living_situation = models.CharField(max_length=200, blank=True, help_text="Lives alone, with spouse, etc.")
+    daily_routines = models.TextField(blank=True, help_text="Morning person, evening routines, etc.")
+
+    # What matters to them
+    recovery_goals = models.TextField(blank=True, help_text="What they want to get back to doing")
+    values = models.TextField(blank=True, help_text="Independence, family time, etc.")
+    concerns = models.TextField(blank=True, help_text="What worries them about recovery")
+
+    # How they want to communicate
+    communication_style = models.CharField(
+        max_length=50,
+        blank=True,
+        choices=COMMUNICATION_STYLE_CHOICES,
+    )
+    preferred_contact_time = models.CharField(max_length=100, blank=True, help_text="Morning, evening, etc.")
+    language_preferences = models.TextField(blank=True, help_text="Any language or cultural considerations")
+
+    # Support network
+    support_network = models.TextField(blank=True, help_text="Who helps them, how often")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "patients_preferences"
+        verbose_name_plural = "patient preferences"
+
+    def __str__(self):
+        name = self.preferred_name or self.patient.user.first_name
+        return f"Preferences for {name}"
+
+    @property
+    def display_name(self):
+        """Return preferred name or first name."""
+        return self.preferred_name or self.patient.user.first_name
+
+    @property
+    def has_any_preferences(self):
+        """Check if any preference fields are populated."""
+        fields = [
+            self.preferred_name,
+            self.about_me,
+            self.living_situation,
+            self.daily_routines,
+            self.recovery_goals,
+            self.values,
+            self.concerns,
+            self.communication_style,
+            self.preferred_contact_time,
+            self.support_network,
+        ]
+        return any(bool(f) for f in fields)
+
+
 class ConsentRecord(models.Model):
     """Track patient consent for data sharing and communications.
 

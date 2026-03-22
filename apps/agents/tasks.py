@@ -58,6 +58,38 @@ from apps.patients.models import Patient
 logger = logging.getLogger(__name__)
 
 
+def _build_checkin_preamble(prefs, day):
+    """Build a personalized check-in preamble from patient preferences.
+
+    Uses simple template logic — not LLM-generated — to keep it
+    genuine and predictable.
+    """
+    name = prefs.preferred_name or "there"
+
+    # Early recovery (days 1-3): acknowledge difficulty
+    if day <= 3:
+        if prefs.living_situation and "alone" in prefs.living_situation.lower():
+            return (
+                f"Good morning {name} — I hope you had a restful night. "
+                "I know the first few days home alone can be tough."
+            )
+        return f"Good morning {name} — I hope you're settling in. The first few days are often the hardest."
+
+    # Active recovery (days 4-14): encourage progress
+    if day <= 14:
+        if prefs.recovery_goals:
+            # Extract first goal phrase
+            goal = prefs.recovery_goals.split(",")[0].split(".")[0].strip()
+            return f"Hi {name} — you're making progress! Getting closer to {goal.lower()} every day."
+        return f"Hi {name} — hope you're feeling a bit stronger today."
+
+    # Established recovery (days 15+): celebrate milestones
+    if prefs.recovery_goals:
+        goal = prefs.recovery_goals.split(",")[0].split(".")[0].strip()
+        return f"Hi {name} — day {day} already! How's the road back to {goal.lower()} going?"
+    return f"Hi {name} — day {day}! You've come a long way."
+
+
 @shared_task(bind=True, max_retries=3)
 def process_patient_message(self, patient_id: str, message: str):
     """Process patient message through agent workflow (async).
@@ -170,11 +202,26 @@ def send_proactive_checkin(patient_id: str, milestone_id: int):
             logger.info(f"Check-in already sent for patient {patient_id}, milestone {milestone_id}")
             return {"success": False, "reason": "Already sent"}
 
-        # Build check-in message
+        # Build check-in message with personalized preamble
         questions = milestone.check_in_questions
         first_name = patient.user.first_name if patient.user else "Patient"
-        if questions:
+
+        # Try to personalize with patient preferences
+        preamble = ""
+        try:
+            prefs = patient.preferences
+            if prefs.has_any_preferences:
+                first_name = prefs.preferred_name or first_name
+                preamble = _build_checkin_preamble(prefs, milestone.day)
+        except Exception:
+            logger.debug("No patient preferences for check-in personalization")
+
+        if preamble and questions:
+            message = f"{preamble} {questions[0]}"
+        elif questions:
             message = f"Hi {first_name}! It's day {milestone.day} of your recovery. {questions[0]}"
+        elif preamble:
+            message = f"{preamble} How are you feeling today?"
         else:
             message = f"Hi {first_name}! How are you feeling on day {milestone.day} of your recovery?"
 

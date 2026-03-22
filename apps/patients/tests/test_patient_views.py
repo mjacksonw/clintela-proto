@@ -533,7 +533,7 @@ class TestSuggestionChips:
         )
 
         chips = _get_suggestion_chips(patient)
-        assert chips == ["Is this normal?", "My medications", "Talk to my care team"]
+        assert chips == ["Am I on track?", "Help me with my medications", "What's coming up next?"]
 
     def test_default_chips_returned_on_exception(self):
         """Returns default chips when exception occurs."""
@@ -551,4 +551,4 @@ class TestSuggestionChips:
         with patch("apps.pathways.models.PatientPathway.objects.filter", side_effect=Exception("DB error")):
             chips = _get_suggestion_chips(patient)
 
-        assert chips == ["Is this normal?", "My medications", "Talk to my care team"]
+        assert chips == ["Am I on track?", "Help me with my medications", "What's coming up next?"]

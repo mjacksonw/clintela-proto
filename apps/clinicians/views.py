@@ -169,6 +169,15 @@ def patient_detail_fragment(request, patient_id):
     # Upcoming appointments
     appointments = SchedulingService.get_patient_appointments(patient)
 
+    # Patient preferences (for "Who They Are" card)
+    patient_preferences = None
+    try:
+        prefs = patient.preferences
+        if prefs.has_any_preferences:
+            patient_preferences = prefs
+    except Exception:
+        logger.debug("No patient preferences available for patient %s", patient_id)
+
     html = render_to_string(
         "clinicians/components/_tab_details.html",
         {
@@ -177,6 +186,7 @@ def patient_detail_fragment(request, patient_id):
             "escalations": escalations,
             "notes": notes,
             "appointments": appointments,
+            "patient_preferences": patient_preferences,
         },
         request=request,
     )

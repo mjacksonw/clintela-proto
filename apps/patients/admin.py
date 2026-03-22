@@ -5,7 +5,7 @@ from django.utils.html import format_html
 
 from apps.accounts.tokens import short_code_token_generator
 
-from .models import Hospital, Patient
+from .models import Hospital, Patient, PatientPreferences
 
 
 @admin.register(Hospital)
@@ -105,3 +105,29 @@ class PatientAdmin(admin.ModelAdmin):
             url,
             url,
         )
+
+
+class PatientPreferencesInline(admin.StackedInline):
+    """Inline admin for patient preferences."""
+
+    model = PatientPreferences
+    extra = 0
+    fieldsets = (
+        ("Who They Are", {"fields": ("preferred_name", "about_me", "living_situation", "daily_routines")}),
+        ("What Matters", {"fields": ("recovery_goals", "values", "concerns")}),
+        ("Communication", {"fields": ("communication_style", "preferred_contact_time", "language_preferences")}),
+        ("Support", {"fields": ("support_network",)}),
+    )
+
+
+# Add inline to PatientAdmin
+PatientAdmin.inlines = [PatientPreferencesInline]
+
+
+@admin.register(PatientPreferences)
+class PatientPreferencesAdmin(admin.ModelAdmin):
+    """Standalone admin for patient preferences."""
+
+    list_display = ("patient", "preferred_name", "communication_style", "updated_at")
+    search_fields = ("patient__user__first_name", "patient__user__last_name", "preferred_name")
+    readonly_fields = ("created_at", "updated_at")
