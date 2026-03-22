@@ -379,9 +379,13 @@ ENABLE_RAG = env("ENABLE_RAG", default=False)
 # =============================================================================
 # EMBEDDING / RAG
 # =============================================================================
-EMBEDDING_MODEL = env("EMBEDDING_MODEL", default="nomic-embed-text")
-EMBEDDING_DIMENSIONS = env.int("EMBEDDING_DIMENSIONS", default=768)
+EMBEDDING_MODEL = env("EMBEDDING_MODEL", default="qwen3-embedding:4b")
+EMBEDDING_DIMENSIONS = env.int("EMBEDDING_DIMENSIONS", default=2000)
 EMBEDDING_BASE_URL = env("EMBEDDING_BASE_URL", default="http://localhost:11434")
+EMBEDDING_QUERY_INSTRUCTION = env(
+    "EMBEDDING_QUERY_INSTRUCTION",
+    default="Retrieve clinical cardiology guidelines relevant to this patient question: ",
+)
 
 RAG_TOP_K = env.int("RAG_TOP_K", default=5)
 RAG_SIMILARITY_THRESHOLD = env.float("RAG_SIMILARITY_THRESHOLD", default=0.7)

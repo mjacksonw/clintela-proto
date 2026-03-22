@@ -22,16 +22,17 @@ from .sanitizer import sanitize_content
 
 logger = logging.getLogger(__name__)
 
-# Chunk size tuned for nomic-embed-text (2048 token context window).
+# Chunk size tuned for Qwen3-Embedding-4B (40K token context window).
 # Clinical text with abbreviations (ACC/AHA/SCAI) tokenizes to ~2.5 chars/token.
-TARGET_CHUNK_TOKENS = 256
-MAX_CHUNK_TOKENS = 384
-OVERLAP_TOKENS = 40
+# 512-token target captures a full ACC/AHA recommendation with its evidence level.
+TARGET_CHUNK_TOKENS = 512
+MAX_CHUNK_TOKENS = 768
+OVERLAP_TOKENS = 64
 CHARS_PER_TOKEN = 2.5
-# Max characters = 384 * 2.5 = 960 chars, safely under 2048 tokens
+# Max characters = 768 * 2.5 = 1920 chars
 MAX_CHUNK_CHARS = int(MAX_CHUNK_TOKENS * CHARS_PER_TOKEN)
-# Embed one at a time to avoid Ollama batching issues
-EMBEDDING_BATCH_SIZE = 1
+# Qwen3-Embedding-4B's 40K context window allows safe batching
+EMBEDDING_BATCH_SIZE = 16
 
 
 @dataclass

@@ -49,7 +49,7 @@ class TestKnowledgeDocument:
     def test_create_document(self):
         doc = KnowledgeDocumentFactory()
         assert doc.source is not None
-        assert len(doc.embedding) == 768
+        assert len(doc.embedding) == 2000
         assert doc.is_active is True
 
     def test_content_hash_auto_generated(self):

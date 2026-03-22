@@ -17,16 +17,16 @@ from apps.knowledge.embeddings import (
 @pytest.mark.asyncio
 class TestMockEmbeddingClient:
     async def test_embed_returns_correct_dimensions(self):
-        client = MockEmbeddingClient(dimensions=768)
+        client = MockEmbeddingClient(dimensions=2000)
         result = await client.embed("test text")
-        assert len(result) == 768
+        assert len(result) == 2000
 
     async def test_embed_batch_returns_correct_count(self):
         client = MockEmbeddingClient()
         texts = ["text one", "text two", "text three"]
         results = await client.embed_batch(texts)
         assert len(results) == 3
-        assert all(len(v) == 768 for v in results)
+        assert all(len(v) == 2000 for v in results)
 
     async def test_embed_batch_empty_input(self):
         client = MockEmbeddingClient()
@@ -82,8 +82,8 @@ class TestEmbeddingClientSingleton:
         # Lines 35-42: __init__ reads settings, assigns attributes, sets _initialized.
         client = EmbeddingClient()
         assert client.base_url == "http://localhost:11434"
-        assert client.model == "nomic-embed-text"
-        assert client.dimensions == 768
+        assert client.model == "qwen3-embedding:4b"
+        assert client.dimensions == 2000
         assert client._client is None
         assert client._initialized is True
 
@@ -161,12 +161,12 @@ class TestEmbeddingClientEmbed:
     async def test_embed_delegates_to_embed_batch(self):
         # Lines 67-68: embed() calls embed_batch([text]) and returns first element.
         client = EmbeddingClient()
-        fake_vector = [0.1] * 768
+        fake_vector = [0.1] * 2000
         client.embed_batch = AsyncMock(return_value=[fake_vector])
 
         result = await client.embed("hello")
 
-        client.embed_batch.assert_awaited_once_with(["hello"])
+        client.embed_batch.assert_awaited_once_with(["hello"], instruction=None)
         assert result == fake_vector
 
 
@@ -211,7 +211,7 @@ class TestEmbeddingClientEmbedBatch:
 
     async def test_embed_batch_posts_correct_payload(self):
         # Lines 87-90: verifies model name and input are sent to the API.
-        vectors = [[0.5] * 768]
+        vectors = [[0.5] * 2000]
         client, _ = self._make_client_with_mock_http(response_data={"embeddings": vectors})
         await client.embed_batch(["single text"])
         client._client.post.assert_awaited_once_with(

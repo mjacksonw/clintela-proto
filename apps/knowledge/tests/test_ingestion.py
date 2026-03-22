@@ -30,7 +30,7 @@ class TestIngestionPipeline:
 
         docs = KnowledgeDocument.objects.filter(source=source)
         assert docs.exists()
-        assert all(len(d.embedding) == 768 for d in docs)
+        assert all(len(d.embedding) == 2000 for d in docs)
         assert all(d.content_hash for d in docs)
 
     def test_ingest_text_populates_search_vector(self):

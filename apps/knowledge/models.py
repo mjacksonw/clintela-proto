@@ -89,8 +89,9 @@ class KnowledgeDocument(models.Model):
     """A chunk of clinical knowledge with embedding for vector search.
 
     Each document is a semantic chunk from a KnowledgeSource, sized at
-    256-512 tokens with 50-token overlap. Embeddings are 768-dimensional
-    vectors from nomic-embed-text via Ollama.
+    512-768 tokens with 64-token overlap. Embeddings are 2000-dimensional
+    vectors from Qwen3-Embedding-4B via Ollama (Matryoshka truncation from
+    native 2560d to stay within pgvector's 2000-dim HNSW index limit).
 
     Hybrid search combines:
         0.7 * cosine_similarity(embedding) + 0.3 * ts_rank(search_vector)
@@ -112,7 +113,7 @@ class KnowledgeDocument(models.Model):
     )
 
     # Vector embedding for semantic search
-    embedding = VectorField(dimensions=768)
+    embedding = VectorField(dimensions=2000)
 
     # Full-text search vector for hybrid search
     search_vector = SearchVectorField(null=True)

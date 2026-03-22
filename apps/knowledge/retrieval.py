@@ -131,7 +131,8 @@ class KnowledgeRetrievalService:
 
         try:
             embedding_client = get_embedding_client()
-            query_embedding = await embedding_client.embed(query)
+            query_instruction = getattr(settings, "EMBEDDING_QUERY_INSTRUCTION", None)
+            query_embedding = await embedding_client.embed(query, instruction=query_instruction)
         except EmbeddingError:
             logger.exception("Failed to embed query for RAG search")
             return []

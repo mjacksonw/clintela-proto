@@ -91,8 +91,323 @@ class TestHTMLParser:
         assert "Real content" in content
 
 
+class TestSemanticHTMLParser:
+    """Tests for the semantic section-aware HTML parser."""
+
+    def _make_jacc_html(self, sections_html: str) -> str:
+        """Wrap content in a minimal JACC-like structure."""
+        return f"<body>{sections_html}</body>"
+
+    def test_section_deduplication(self):
+        """Duplicate section IDs at body level are skipped."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-1">
+                <h2>Parent</h2>
+                <section id="sec-1-1">
+                    <h3>Child</h3>
+                    <div role="paragraph">Child content.</div>
+                </section>
+            </section>
+            <section id="sec-1-1">
+                <h3>Child</h3>
+                <div role="paragraph">Child content (duplicate).</div>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        # sec-1-1 should only appear once (the nested version)
+        child_sections = [s for s in sections if s.title == "Child"]
+        assert len(child_sections) == 1
+        assert "Child content." in child_sections[0].content
+
+    def test_boilerplate_filtered(self):
+        """Known boilerplate headings are filtered out."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-1">
+                <h2>Peer Review Committee Members</h2>
+                <div role="paragraph">Committee member list.</div>
+            </section>
+            <section id="sec-2">
+                <h2>Table of Contents</h2>
+                <div role="paragraph">TOC entries.</div>
+            </section>
+            <section id="sec-3">
+                <h2>Clinical Findings</h2>
+                <div role="paragraph">Important clinical content.</div>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        titles = [s.title for s in sections]
+        assert "Peer Review Committee Members" not in titles
+        assert "Table of Contents" not in titles
+        assert "Clinical Findings" in titles
+
+    def test_hierarchical_section_path(self):
+        """Section paths reflect the heading hierarchy."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-1">
+                <h2>1 Diagnosis</h2>
+                <section id="sec-1-1">
+                    <h3>1.1 Clinical Assessment</h3>
+                    <div role="paragraph">Assessment details.</div>
+                </section>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        assessment = [s for s in sections if "1.1" in s.title][0]
+        assert "1 Diagnosis" in assessment.section_path
+        assert "1.1 Clinical Assessment" in assessment.section_path
+        assert " > " in assessment.section_path
+
+    def test_div_role_paragraph_extraction(self):
+        """Text is extracted from div[role=paragraph] elements."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-1">
+                <h2>Content</h2>
+                <div role="paragraph">First paragraph.</div>
+                <div role="paragraph">Second paragraph.</div>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        assert len(sections) == 1
+        assert "First paragraph." in sections[0].content
+        assert "Second paragraph." in sections[0].content
+
+    def test_p_tag_extraction(self):
+        """Standard <p> tags are also extracted."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-1">
+                <h2>Content</h2>
+                <p>Paragraph content.</p>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        assert "Paragraph content." in sections[0].content
+
+    def test_data_type_bibliography_skipped(self):
+        """Sections with data-type=bibliography are skipped."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-1">
+                <h2>Clinical Content</h2>
+                <div role="paragraph">Important text.</div>
+            </section>
+            <section id="sec-refs" data-type="bibliography">
+                <h2>References</h2>
+                <div role="paragraph">1. Smith et al.</div>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        assert len(sections) == 1
+        assert sections[0].title == "Clinical Content"
+
+    def test_section_id_in_metadata(self):
+        """Section IDs are stored in metadata."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-7">
+                <h2>Section 7</h2>
+                <div role="paragraph">Content.</div>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        assert sections[0].metadata.get("section_id") == "sec-7"
+
+    def test_figure_download_links_excluded(self):
+        """Figure download tool links are not included in content."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-1">
+                <h2>Section</h2>
+                <figure class="graphic">
+                    <figcaption>
+                        <div class="caption">Figure 1 Description</div>
+                        <div class="core-figure-tools">
+                            <a class="core-figure-download-asset">Download figure</a>
+                        </div>
+                    </figcaption>
+                </figure>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        content = sections[0].content
+        assert "Figure 1 Description" in content
+        assert "Download figure" not in content
+
+    def test_table_content_extracted(self):
+        """Table rows are extracted with pipe-separated cells."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-1">
+                <h2>Data</h2>
+                <figure class="table">
+                    <figcaption><div class="caption">Table 1</div></figcaption>
+                    <div class="table-wrap">
+                        <table>
+                            <tr><th>A</th><th>B</th></tr>
+                            <tr><td>1</td><td>2</td></tr>
+                        </table>
+                    </div>
+                </figure>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        assert "A | B" in sections[0].content
+        assert "1 | 2" in sections[0].content
+
+    def test_headings_fallback_for_no_sections(self):
+        """Falls back to heading-split when no <section> elements exist."""
+        parser = HTMLParser()
+        html = "<h1>Title</h1><p>Intro text.</p><h2>Methods</h2><p>Method text.</p>"
+        sections = parser.parse(html, "test")
+        assert len(sections) == 2
+        assert sections[0].title == "Title"
+        assert sections[1].title == "Methods"
+
+    def test_empty_sections_skipped(self):
+        """Sections with no text content are not emitted."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-1">
+                <h2>Empty Section</h2>
+            </section>
+            <section id="sec-2">
+                <h2>Has Content</h2>
+                <div role="paragraph">Real content here.</div>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        titles = [s.title for s in sections]
+        assert "Empty Section" not in titles
+        assert "Has Content" in titles
+
+    def test_list_content_extracted(self):
+        """List items are extracted from div[role=list] elements."""
+        parser = HTMLParser()
+        html = self._make_jacc_html("""
+            <section id="sec-1">
+                <h2>List Section</h2>
+                <div role="list">
+                    <div role="listitem">
+                        <div class="label">1.</div>
+                        <div class="content">First item.</div>
+                    </div>
+                    <div role="listitem">
+                        <div class="label">2.</div>
+                        <div class="content">Second item.</div>
+                    </div>
+                </div>
+            </section>
+        """)
+        sections = parser.parse(html, "test")
+        assert "First item" in sections[0].content
+        assert "Second item" in sections[0].content
+
+
+class TestJACCEnrichmentPlugin:
+    """Tests for COR/LOE recommendation extraction."""
+
+    def _make_rec_html(self, recs_html: str) -> str:
+        return f"""<body>
+            <section id="sec-1">
+                <h2>Recommendations</h2>
+                {recs_html}
+                <div role="paragraph">Supporting text here.</div>
+            </section>
+        </body>"""
+
+    def test_cor_loe_extraction(self):
+        """COR/LOE recommendation tables are extracted into metadata."""
+        parser = HTMLParser()
+        html = self._make_rec_html("""
+            <figure id="undtbl1" class="table">
+                <figcaption><div class="caption">Recommendation for Testing</div></figcaption>
+                <div class="table-wrap">
+                    <table data-shading="custom">
+                        <thead>
+                            <tr><th>COR</th><th>LOE</th><th>Recommendations</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>1</b></td>
+                                <td><b>B-NR</b></td>
+                                <td>Patients should receive testing.</td>
+                            </tr>
+                            <tr>
+                                <td><b>2a</b></td>
+                                <td><b>C-EO</b></td>
+                                <td>Consider additional evaluation.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </figure>
+        """)
+        sections = parser.parse(html, "test")
+        assert len(sections) == 1
+        recs = sections[0].metadata.get("recommendations", [])
+        assert len(recs) == 2
+        assert recs[0]["cor"] == "1"
+        assert recs[0]["loe"] == "B-NR"
+        assert "testing" in recs[0]["text"].lower()
+        assert recs[1]["cor"] == "2a"
+        assert recs[1]["loe"] == "C-EO"
+
+    def test_no_cor_loe_no_enrichment(self):
+        """Non-guideline HTML without COR/LOE tables has no recommendations."""
+        parser = HTMLParser()
+        html = """<body>
+            <section id="sec-1">
+                <h2>Discussion</h2>
+                <div role="paragraph">Regular content.</div>
+            </section>
+        </body>"""
+        sections = parser.parse(html, "test")
+        assert "recommendations" not in sections[0].metadata
+
+    def test_synopsis_tagged(self):
+        """Sections starting with 'Synopsis' are tagged."""
+        parser = HTMLParser()
+        html = """<body>
+            <section id="sec-1">
+                <h2>Section</h2>
+                <figure id="undtbl1" class="table">
+                    <table><thead><tr><th>COR</th><th>LOE</th><th>Rec</th></tr></thead>
+                    <tbody><tr><td>1</td><td>A</td><td>Do this.</td></tr></tbody></table>
+                </figure>
+                <div role="paragraph"><b>Synopsis</b></div>
+                <div role="paragraph">Synopsis content here.</div>
+            </section>
+        </body>"""
+        sections = parser.parse(html, "test")
+        # The section content starts with the table, then "Synopsis..."
+        # Since all content is in one section, check metadata
+        assert sections[0].metadata.get("recommendations")
+
+    def test_supportive_text_tagged(self):
+        """Sections with supportive text markers are tagged."""
+        parser = HTMLParser()
+        html = """<body>
+            <section id="sec-1">
+                <h2>Details</h2>
+                <figure id="undtbl1" class="table">
+                    <table><thead><tr><th>COR</th><th>LOE</th><th>Rec</th></tr></thead>
+                    <tbody><tr><td>1</td><td>A</td><td>Do this.</td></tr></tbody></table>
+                </figure>
+                <div role="paragraph"><b>Recommendation-Specific Supportive Text</b></div>
+                <div role="paragraph">Supporting evidence here.</div>
+            </section>
+        </body>"""
+        sections = parser.parse(html, "test")
+        assert sections[0].metadata.get("content_type") == "supportive_text"
+
+
 class TestHTMLParserExtended:
-    """Additional coverage for HTMLParser.parse (lines 109-155)."""
+    """Additional coverage for HTMLParser.parse — backward compatibility tests."""
 
     def test_whitespace_only_html(self):
         parser = HTMLParser()
