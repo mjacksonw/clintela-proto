@@ -265,10 +265,15 @@ def patient_about_me_view(request):
         preferences.preferred_name = request.POST.get("preferred_name", "").strip()
         preferences.about_me = request.POST.get("about_me", "").strip()
         preferences.living_situation = request.POST.get("living_situation", "").strip()
+        preferences.daily_routines = request.POST.get("daily_routines", "").strip()
         preferences.recovery_goals = request.POST.get("recovery_goals", "").strip()
+        preferences.values = request.POST.get("values", "").strip()
         preferences.concerns = request.POST.get("concerns", "").strip()
         preferences.support_network = request.POST.get("support_network", "").strip()
-        preferences.communication_style = request.POST.get("communication_style", "").strip()
+        preferences.language_preferences = request.POST.get("language_preferences", "").strip()
+        comm_style = request.POST.get("communication_style", "").strip()
+        valid_styles = {c[0] for c in PatientPreferences.COMMUNICATION_STYLE_CHOICES}
+        preferences.communication_style = comm_style if comm_style in valid_styles else ""
         preferences.preferred_contact_time = request.POST.get("preferred_contact_time", "").strip()
         preferences.save()
 

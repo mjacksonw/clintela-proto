@@ -268,6 +268,7 @@ class PatientPreferences(models.Model):
             self.concerns,
             self.communication_style,
             self.preferred_contact_time,
+            self.language_preferences,
             self.support_network,
         ]
         return any(bool(f) for f in fields)

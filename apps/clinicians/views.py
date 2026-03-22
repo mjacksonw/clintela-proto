@@ -3,6 +3,7 @@
 import logging
 
 from django.contrib.auth import authenticate, login, logout
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -175,7 +176,7 @@ def patient_detail_fragment(request, patient_id):
         prefs = patient.preferences
         if prefs.has_any_preferences:
             patient_preferences = prefs
-    except Exception:
+    except ObjectDoesNotExist:
         logger.debug("No patient preferences available for patient %s", patient_id)
 
     html = render_to_string(

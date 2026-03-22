@@ -9,6 +9,7 @@ import time
 from typing import Any
 
 from asgiref.sync import async_to_sync
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
 
@@ -64,24 +65,57 @@ def _handle_paused_message(conversation, content, channel, start_time):
     }
 
 
+def _sanitize_preference_text(text: str, max_length: int = 500) -> str:
+    """Sanitize patient preference text to mitigate prompt injection.
+
+    Truncates to max_length and strips instruction-like patterns that could
+    manipulate LLM behavior. This is defense-in-depth — the prompts also
+    use boundary markers to isolate patient-authored content.
+    """
+    if not text:
+        return ""
+    import re
+
+    sanitized = text[:max_length]
+    # Strip patterns commonly used for prompt injection
+    injection_patterns = [
+        r"(?i)ignore\s+(all\s+)?(previous|above|prior)\s+(instructions?|prompts?|rules?)",
+        r"(?i)you\s+are\s+now\s+a",
+        r"(?i)new\s+instructions?:",
+        r"(?i)system\s*prompt:",
+        r"(?i)forget\s+(everything|all|your)\s+(above|previous|prior)",
+        r"(?i)override\s+(all\s+)?(safety|rules?|instructions?)",
+    ]
+    for pattern in injection_patterns:
+        sanitized = re.sub(pattern, "[content removed]", sanitized)
+    return sanitized.strip()
+
+
 def _inject_preferences(patient_context: dict, patient) -> None:
-    """Inject patient preferences into a context dict if available."""
+    """Inject patient preferences into a context dict if available.
+
+    All free-text fields are sanitized to mitigate prompt injection since
+    they are patient-authored and flow into LLM prompts.
+    """
     try:
         prefs = patient.preferences
         if prefs.has_any_preferences:
             patient_context["preferences"] = {
-                "preferred_name": prefs.preferred_name or patient.user.first_name,
-                "about_me": prefs.about_me,
-                "living_situation": prefs.living_situation,
-                "daily_routines": prefs.daily_routines,
-                "recovery_goals": prefs.recovery_goals,
-                "values": prefs.values,
-                "concerns": prefs.concerns,
+                "preferred_name": _sanitize_preference_text(
+                    prefs.preferred_name or patient.user.first_name, max_length=100
+                ),
+                "about_me": _sanitize_preference_text(prefs.about_me),
+                "living_situation": _sanitize_preference_text(prefs.living_situation, max_length=200),
+                "daily_routines": _sanitize_preference_text(prefs.daily_routines),
+                "recovery_goals": _sanitize_preference_text(prefs.recovery_goals),
+                "values": _sanitize_preference_text(prefs.values),
+                "concerns": _sanitize_preference_text(prefs.concerns),
                 "communication_style": (prefs.get_communication_style_display() if prefs.communication_style else ""),
-                "preferred_contact_time": prefs.preferred_contact_time,
-                "support_network": prefs.support_network,
+                "preferred_contact_time": _sanitize_preference_text(prefs.preferred_contact_time, max_length=100),
+                "language_preferences": _sanitize_preference_text(prefs.language_preferences),
+                "support_network": _sanitize_preference_text(prefs.support_network),
             }
-    except Exception:
+    except ObjectDoesNotExist:
         logger.debug("No patient preferences available for patient %s", patient.id)
 
 
@@ -454,23 +488,7 @@ class ContextService:
             }
 
         # Include patient preferences for personalized interactions
-        try:
-            prefs = patient.preferences
-            if prefs.has_any_preferences:
-                context["preferences"] = {
-                    "preferred_name": prefs.preferred_name or patient.user.first_name,
-                    "about_me": prefs.about_me,
-                    "living_situation": prefs.living_situation,
-                    "daily_routines": prefs.daily_routines,
-                    "recovery_goals": prefs.recovery_goals,
-                    "values": prefs.values,
-                    "concerns": prefs.concerns,
-                    "communication_style": prefs.get_communication_style_display() if prefs.communication_style else "",
-                    "preferred_contact_time": prefs.preferred_contact_time,
-                    "support_network": prefs.support_network,
-                }
-        except Exception:
-            logger.debug("No patient preferences available")
+        _inject_preferences(context, patient)
 
         return context
 

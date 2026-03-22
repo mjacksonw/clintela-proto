@@ -47,6 +47,7 @@ except ImportError:
         return decorator
 
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 from apps.agents.models import AgentConversation, AgentMessage
@@ -213,7 +214,7 @@ def send_proactive_checkin(patient_id: str, milestone_id: int):
             if prefs.has_any_preferences:
                 first_name = prefs.preferred_name or first_name
                 preamble = _build_checkin_preamble(prefs, milestone.day)
-        except Exception:
+        except ObjectDoesNotExist:
             logger.debug("No patient preferences for check-in personalization")
 
         if preamble and questions:
