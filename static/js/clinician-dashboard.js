@@ -227,6 +227,8 @@ function clinicianDashboard() {
                     'Escalation Alert',
                     `${data.patient_name}: ${data.reason}`,
                 );
+                // Notify header bell component
+                window.dispatchEvent(new CustomEvent('escalation-alert'));
                 // Refresh patient list
                 htmx.ajax('GET', '/clinician/patients/', {
                     target: '#patient-list-panel',

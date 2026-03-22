@@ -48,22 +48,13 @@ function adminDashboard() {
         },
 
         refreshAll() {
-            // Trigger HTMX re-fetch on all KPI fragments
-            const fragments = this.$el.querySelectorAll('[hx-get]');
-            fragments.forEach(el => {
-                // Update hx-vals with current filters
-                const url = el.getAttribute('hx-get');
-                if (url) {
-                    htmx.ajax('GET', url, {
-                        target: el,
-                        swap: 'innerHTML',
-                        values: {
-                            hospital: this.hospitalFilter || '',
-                            days: this.daysFilter
-                        }
-                    });
-                }
-            });
+            // Reload the page with current filter values as query parameters.
+            // The server-rendered page passes filters to each HTMX fragment via :hx-vals.
+            const params = new URLSearchParams();
+            if (this.hospitalFilter) params.set('hospital', this.hospitalFilter);
+            if (this.daysFilter !== '30') params.set('days', this.daysFilter);
+            const qs = params.toString();
+            window.location.href = window.location.pathname + (qs ? '?' + qs : '');
         },
 
         toggleTheme() {

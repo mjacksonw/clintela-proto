@@ -25,7 +25,9 @@
     <!-- Right: Notifications + user menu -->
     <div class="flex items-center gap-2">
         <!-- Notification bell -->
-        <div x-data="{ bellOpen: false, unreadCount: 0 }" class="relative">
+        <div x-data="{ bellOpen: false, unreadCount: {{ pending_escalation_count|default:'0' }} }"
+             @escalation-alert.window="unreadCount++"
+             class="relative">
             <button @click="bellOpen = !bellOpen"
                     class="relative p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
                     aria-label="Notifications">
