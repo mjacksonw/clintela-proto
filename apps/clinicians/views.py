@@ -85,6 +85,13 @@ def dashboard_view(request):
     # Hospital ID for dashboard WebSocket connection
     hospital_id = clinician.hospitals.values_list("id", flat=True).first()
 
+    # Pending escalation count for notification bell
+    hospital_ids = clinician.hospitals.values_list("id", flat=True)
+    pending_escalation_count = Escalation.objects.filter(
+        status="pending",
+        patient__hospital_id__in=hospital_ids,
+    ).count()
+
     return render(
         request,
         "clinicians/dashboard.html",
@@ -94,6 +101,7 @@ def dashboard_view(request):
             "is_first_login": is_first_login,
             "next_appointment": next_appointment,
             "hospital_id": hospital_id,
+            "pending_escalation_count": pending_escalation_count,
         },
     )
 

@@ -1,3 +1,4 @@
+{% load patient_tags %}
 <!-- Patient chat panel (right side) -->
 <div id="chat-panel" class="flex flex-col h-full">
     {% if not conversation %}
@@ -34,7 +35,7 @@
                 </div>
                 {% elif msg.role == "assistant" and msg.agent_type %}
                 <div class="text-[10px] mb-0.5" style="color: var(--color-text-secondary);">
-                    {{ msg.agent_type|title }}
+                    {{ msg.agent_type|agent_display_name }}
                 </div>
                 {% endif %}
                 <div class="agent-message-content">{{ msg.content }}</div>

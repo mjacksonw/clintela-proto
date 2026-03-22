@@ -75,7 +75,7 @@
      class="px-4 py-2 flex gap-2 flex-wrap flex-shrink-0 border-t {% if not messages %}hidden{% endif %}"
      style="border-color: var(--color-border);">
     {% for chip in suggestion_chips %}
-    <button class="suggestion-chip px-3 py-2 text-sm rounded-full border transition-colors
+    <button class="suggestion-chip px-3 py-2.5 text-sm rounded-full border transition-colors
                    hover:bg-primary-50 hover:border-primary hover:text-primary
                    disabled:opacity-50 disabled:pointer-events-none"
             style="border-color: var(--color-border); color: var(--color-text-secondary);"
@@ -83,21 +83,21 @@
         {{ chip }}
     </button>
     {% empty %}
-    <button class="suggestion-chip px-3 py-2 text-sm rounded-full border transition-colors
+    <button class="suggestion-chip px-3 py-2.5 text-sm rounded-full border transition-colors
                    hover:bg-primary-50 hover:border-primary hover:text-primary
                    disabled:opacity-50 disabled:pointer-events-none"
             style="border-color: var(--color-border); color: var(--color-text-secondary);"
             onclick="clintelaChat.sendChip(this.textContent.trim())">
         Is this normal?
     </button>
-    <button class="suggestion-chip px-3 py-2 text-sm rounded-full border transition-colors
+    <button class="suggestion-chip px-3 py-2.5 text-sm rounded-full border transition-colors
                    hover:bg-primary-50 hover:border-primary hover:text-primary
                    disabled:opacity-50 disabled:pointer-events-none"
             style="border-color: var(--color-border); color: var(--color-text-secondary);"
             onclick="clintelaChat.sendChip(this.textContent.trim())">
         My medications
     </button>
-    <button class="suggestion-chip px-3 py-2 text-sm rounded-full border transition-colors
+    <button class="suggestion-chip px-3 py-2.5 text-sm rounded-full border transition-colors
                    hover:bg-primary-50 hover:border-primary hover:text-primary
                    disabled:opacity-50 disabled:pointer-events-none"
             style="border-color: var(--color-border); color: var(--color-text-secondary);"
