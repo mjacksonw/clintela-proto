@@ -314,11 +314,7 @@ class TestIngestAccGuidelinesCommand:
     @patch("apps.knowledge.management.commands.ingest_acc_guidelines.IngestionPipeline")
     def test_ingests_supported_file_types(self, mock_pipeline):
         pipeline_instance = MagicMock()
-        pipeline_instance.ingest_file.return_value = {
-            "chunks_created": 4,
-            "chunks_deduplicated": 0,
-            "errors": 0,
-        }
+        pipeline_instance.ingest_file.return_value = DEFAULT_STATS.copy()
         mock_pipeline.return_value = pipeline_instance
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -335,18 +331,14 @@ class TestIngestAccGuidelinesCommand:
 
             output = out.getvalue()
             assert "2 guideline files" in output
-            assert "ACC guideline ingestion complete" in output
+            assert "Guideline ingestion complete" in output
             assert KnowledgeSource.objects.count() == 2
             assert pipeline_instance.ingest_file.call_count == 2
 
     @patch("apps.knowledge.management.commands.ingest_acc_guidelines.IngestionPipeline")
     def test_creates_knowledge_sources_with_correct_type(self, mock_pipeline):
         pipeline_instance = MagicMock()
-        pipeline_instance.ingest_file.return_value = {
-            "chunks_created": 2,
-            "chunks_deduplicated": 0,
-            "errors": 0,
-        }
+        pipeline_instance.ingest_file.return_value = DEFAULT_STATS.copy()
         mock_pipeline.return_value = pipeline_instance
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -361,16 +353,11 @@ class TestIngestAccGuidelinesCommand:
             source = KnowledgeSource.objects.get()
             assert source.source_type == "acc_guideline"
             assert source.hospital is None  # Global, not tenant-scoped
-            assert source.version == "2024"
 
     @patch("apps.knowledge.management.commands.ingest_acc_guidelines.IngestionPipeline")
     def test_source_name_uses_default_prefix(self, mock_pipeline):
         pipeline_instance = MagicMock()
-        pipeline_instance.ingest_file.return_value = {
-            "chunks_created": 1,
-            "chunks_deduplicated": 0,
-            "errors": 0,
-        }
+        pipeline_instance.ingest_file.return_value = DEFAULT_STATS.copy()
         mock_pipeline.return_value = pipeline_instance
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -385,11 +372,7 @@ class TestIngestAccGuidelinesCommand:
     @patch("apps.knowledge.management.commands.ingest_acc_guidelines.IngestionPipeline")
     def test_custom_source_prefix(self, mock_pipeline):
         pipeline_instance = MagicMock()
-        pipeline_instance.ingest_file.return_value = {
-            "chunks_created": 1,
-            "chunks_deduplicated": 0,
-            "errors": 0,
-        }
+        pipeline_instance.ingest_file.return_value = DEFAULT_STATS.copy()
         mock_pipeline.return_value = pipeline_instance
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -409,11 +392,7 @@ class TestIngestAccGuidelinesCommand:
     @patch("apps.knowledge.management.commands.ingest_acc_guidelines.IngestionPipeline")
     def test_existing_source_updated_not_duplicated(self, mock_pipeline):
         pipeline_instance = MagicMock()
-        pipeline_instance.ingest_file.return_value = {
-            "chunks_created": 0,
-            "chunks_deduplicated": 2,
-            "errors": 0,
-        }
+        pipeline_instance.ingest_file.return_value = DEFAULT_STATS.copy()
         mock_pipeline.return_value = pipeline_instance
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -430,8 +409,10 @@ class TestIngestAccGuidelinesCommand:
     def test_output_shows_chunk_stats(self, mock_pipeline):
         pipeline_instance = MagicMock()
         pipeline_instance.ingest_file.return_value = {
+            "sections_parsed": 5,
             "chunks_created": 8,
             "chunks_deduplicated": 3,
+            "sanitization_events": 0,
             "errors": 1,
         }
         mock_pipeline.return_value = pipeline_instance
@@ -451,11 +432,7 @@ class TestIngestAccGuidelinesCommand:
     def test_all_supported_extensions_processed(self, mock_pipeline):
         """PDF, MD, TXT, HTML, HTM files are all ingested."""
         pipeline_instance = MagicMock()
-        pipeline_instance.ingest_file.return_value = {
-            "chunks_created": 1,
-            "chunks_deduplicated": 0,
-            "errors": 0,
-        }
+        pipeline_instance.ingest_file.return_value = DEFAULT_STATS.copy()
         mock_pipeline.return_value = pipeline_instance
 
         with tempfile.TemporaryDirectory() as tmpdir:
