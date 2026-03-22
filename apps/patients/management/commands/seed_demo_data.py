@@ -10,7 +10,9 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.agents.models import Escalation
 from apps.analytics.models import DailyMetrics
+from apps.pathways.models import ClinicalPathway, PatientMilestoneCheckin, PatientPathway
 from apps.patients.models import Hospital, Patient, PatientStatusTransition
 from apps.surveys.models import SurveyAssignment, SurveyInstance, SurveyInstrument
 
@@ -32,6 +34,9 @@ class Command(BaseCommand):
         self._create_margaret_torres(hospital, kccq)
         self._create_survey_histories(hospital, kccq)
         self._create_discharge_transitions(hospital)
+        self._enrich_escalation_responses(hospital)
+        self._enrich_milestone_checkins(hospital)
+        self._enrich_pathway_completions(hospital)
         self._create_daily_metrics(hospital)
 
         self.stdout.write(self.style.SUCCESS("\nDemo fixtures seeded successfully."))
@@ -432,7 +437,7 @@ class Command(BaseCommand):
     # Discharge/Readmission transitions for readmission rate hero card
     # -----------------------------------------------------------------------
 
-    def _create_discharge_transitions(self, hospital):
+    def _create_discharge_transitions(self, hospital):  # noqa: C901
         """Create discharge/readmission transitions across 120 days.
 
         The ReadmissionService.get_cohort_rate() queries PatientStatusTransition for
@@ -547,6 +552,48 @@ class Command(BaseCommand):
                 continue
 
             historical_created += 1
+
+            # Assign a pathway and create completed check-ins for historical patients
+            pathway = ClinicalPathway.objects.filter(surgery_type=surgery, is_active=True).first()
+            if pathway:
+                pp, pp_created = PatientPathway.objects.get_or_create(
+                    patient=patient,
+                    pathway=pathway,
+                    defaults={"status": "completed" if not readmitted else "active"},
+                )
+                if pp_created:
+                    # Fix started_at (auto_now_add sets it to today)
+                    started_dt = timezone.make_aware(
+                        timezone.datetime.combine(surgery_date, timezone.datetime.min.time())
+                    )
+                    update_fields = ["started_at"]
+                    if pp.status == "completed":
+                        pp.completed_at = timezone.make_aware(
+                            timezone.datetime.combine(discharge_date + timedelta(days=30), timezone.datetime.min.time())
+                        )
+                        update_fields.append("completed_at")
+                    PatientPathway.objects.filter(pk=pp.pk).update(
+                        started_at=started_dt,
+                        **({"completed_at": pp.completed_at} if "completed_at" in update_fields else {}),
+                    )
+
+                # Create milestone check-ins (all completed for historical patients)
+                for milestone in pathway.milestones.all():
+                    milestone_date = surgery_date + timedelta(days=milestone.day)
+                    sent_dt = timezone.make_aware(
+                        timezone.datetime.combine(milestone_date, timezone.datetime.min.time())
+                    ) + timedelta(hours=9)
+                    completed_dt = sent_dt + timedelta(hours=4)
+
+                    PatientMilestoneCheckin.objects.get_or_create(
+                        patient=patient,
+                        milestone=milestone,
+                        defaults={
+                            "sent_at": sent_dt,
+                            "completed_at": completed_dt,
+                            "responses": {"status": "completed"},
+                        },
+                    )
 
             # Discharge transition
             discharge_dt = timezone.make_aware(
@@ -664,6 +711,156 @@ class Command(BaseCommand):
             f"  {historical_created} historical patients, "
             f"{existing_count} existing patient transitions, "
             f"{readmit_count} readmissions"
+        )
+
+    # -----------------------------------------------------------------------
+    # Escalation response times — make acknowledged escalations realistic
+    # -----------------------------------------------------------------------
+
+    def _enrich_escalation_responses(self, hospital):
+        """Set realistic acknowledged_at and response_deadline on existing escalations.
+
+        The create_cardiology_service command creates escalations but leaves them
+        with acknowledged_at=None or acknowledged_at≈created_at. We fix this to
+        give realistic response times (8-45 minutes) and SLA deadlines.
+        """
+        self.stdout.write("Enriching escalation response times...")
+
+        escalations = Escalation.objects.filter(patient__hospital=hospital)
+        updated = 0
+
+        for esc in escalations:
+            # Set a response deadline (SLA: critical=30min, urgent=2hr, routine=4hr)
+            if esc.severity == "critical":
+                deadline_minutes = 30
+            elif esc.severity == "urgent":
+                deadline_minutes = 120
+            else:
+                deadline_minutes = 240
+
+            esc.response_deadline = esc.created_at + timedelta(minutes=deadline_minutes)
+
+            if esc.status in ("acknowledged", "resolved"):
+                # Hand-crafted response times: 8-35 minutes, varies by severity
+                if esc.severity == "critical":
+                    response_minutes = 8 + (updated % 7)  # 8-14 min
+                elif esc.severity == "urgent":
+                    response_minutes = 12 + (updated % 15)  # 12-26 min
+                else:
+                    response_minutes = 18 + (updated % 20)  # 18-37 min
+
+                esc.acknowledged_at = esc.created_at + timedelta(minutes=response_minutes)
+
+                if esc.status == "resolved":
+                    # Resolved 15-60 min after acknowledgment
+                    resolve_minutes = 15 + (updated % 45)
+                    esc.resolved_at = esc.acknowledged_at + timedelta(minutes=resolve_minutes)
+
+            esc.save(update_fields=["response_deadline", "acknowledged_at", "resolved_at"])
+            updated += 1
+
+        self.stdout.write(f"  {updated} escalations enriched with response times")
+
+    # -----------------------------------------------------------------------
+    # Milestone check-in completions — drive follow-up completion rate
+    # -----------------------------------------------------------------------
+
+    def _enrich_milestone_checkins(self, hospital):
+        """Mark milestone check-ins as completed to drive follow-up completion rate.
+
+        The existing check-ins have sent_at but most lack completed_at.
+        We complete ~75% of them on-time (within ±2 days) and ~10% late.
+        Historical patients should have higher completion rates.
+        """
+        self.stdout.write("Enriching milestone check-in completions...")
+
+        checkins = PatientMilestoneCheckin.objects.filter(
+            patient__hospital=hospital,
+            sent_at__isnull=False,
+            completed_at__isnull=True,
+        ).select_related("milestone", "patient")
+
+        completed_on_time = 0
+        completed_late = 0
+        total = checkins.count()
+
+        for i, checkin in enumerate(checkins):
+            # Complete ~85% of check-ins (skip every ~7th one to simulate missed)
+            if i % 7 == 6:
+                continue
+
+            sent = checkin.sent_at
+
+            # Most complete within hours of receiving (on-time)
+            if i % 10 < 7:
+                # On-time: completed 2-8 hours after sent
+                hours_later = 2 + (i % 7)
+                checkin.completed_at = sent + timedelta(hours=hours_later)
+                checkin.responses = {"status": "completed", "feeling": "good"}
+                completed_on_time += 1
+            elif i % 10 < 9:
+                # Late: completed 2-3 days after sent
+                days_later = 2 + (i % 2)
+                checkin.completed_at = sent + timedelta(days=days_later)
+                checkin.responses = {"status": "completed", "feeling": "okay"}
+                completed_late += 1
+            # else: skip (missed)
+
+            checkin.save(update_fields=["completed_at", "responses"])
+
+        self.stdout.write(
+            f"  {completed_on_time} on-time, {completed_late} late, "
+            f"{total - completed_on_time - completed_late} missed (of {total})"
+        )
+
+    # -----------------------------------------------------------------------
+    # Pathway completions — drive pathway performance rate
+    # -----------------------------------------------------------------------
+
+    def _enrich_pathway_completions(self, hospital):
+        """Fix pathway started_at and mark completed pathways.
+
+        PatientPathway.started_at has auto_now_add=True, so all pathways think
+        they started today. We fix started_at to the patient's surgery_date so
+        the follow-up completion calculation (expected = started_at + milestone.day)
+        produces correct on-time rates. We also mark recovered patients' pathways
+        as completed for the pathway performance card.
+        """
+        self.stdout.write("Enriching pathway completions...")
+
+        # Fix started_at for ALL pathways (both historical and existing patients)
+        fixed_start = 0
+        all_pathways = PatientPathway.objects.filter(
+            patient__hospital=hospital,
+        ).select_related("patient")
+
+        for pp in all_pathways:
+            if pp.patient.surgery_date:
+                started_dt = timezone.make_aware(
+                    timezone.datetime.combine(pp.patient.surgery_date, timezone.datetime.min.time())
+                )
+                PatientPathway.objects.filter(pk=pp.pk).update(started_at=started_dt)
+                fixed_start += 1
+
+        # Mark recovered/readmitted patients' pathways as completed
+        completed = 0
+        completable = PatientPathway.objects.filter(
+            patient__hospital=hospital,
+            patient__lifecycle_status__in=["recovered", "readmitted"],
+            status="active",
+        ).select_related("patient")
+
+        for pp in completable:
+            pp.status = "completed"
+            pp.completed_at = timezone.now() - timedelta(days=5)
+            pp.save(update_fields=["status", "completed_at"])
+            completed += 1
+
+        active = PatientPathway.objects.filter(patient__hospital=hospital, status="active").count()
+        total = PatientPathway.objects.filter(patient__hospital=hospital).count()
+
+        self.stdout.write(
+            f"  {fixed_start} pathway start dates fixed, {completed} marked completed, {active} active, {total} total"
         )
 
     # -----------------------------------------------------------------------
