@@ -108,7 +108,7 @@ class EmbeddingClient:
             if len(embeddings) != len(texts):
                 raise EmbeddingError(f"Expected {len(texts)} embeddings, got {len(embeddings)}")
 
-            return embeddings
+            return self._truncate(embeddings)
 
         except httpx.TimeoutException as e:
             logger.error("Embedding request timed out")
@@ -148,7 +148,7 @@ class EmbeddingClient:
             if len(embeddings) != len(texts):
                 raise EmbeddingError(f"Expected {len(texts)} embeddings, got {len(embeddings)}")
 
-            return embeddings
+            return self._truncate(embeddings)
 
         except httpx.TimeoutException as e:
             logger.error("Embedding request timed out")
@@ -159,6 +159,18 @@ class EmbeddingClient:
         except httpx.RequestError as e:
             logger.error("Embedding request error: %s", e)
             raise EmbeddingError(f"Request failed: {e}") from e
+
+    def _truncate(self, embeddings: list[list[float]]) -> list[list[float]]:
+        """Truncate embeddings to configured dimensions via Matryoshka slicing.
+
+        Qwen3-Embedding-4B produces 2560-dimensional vectors natively, but
+        pgvector's HNSW index has a 2000-dimension limit. Matryoshka
+        Representation Learning packs the most important semantic information
+        into the earlier dimensions, so truncation retains retrieval quality.
+        """
+        if not embeddings or len(embeddings[0]) <= self.dimensions:
+            return embeddings
+        return [vec[: self.dimensions] for vec in embeddings]
 
     async def close(self):
         """Close the async HTTP client."""
