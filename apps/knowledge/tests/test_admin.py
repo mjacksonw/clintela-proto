@@ -58,7 +58,7 @@ class TestKnowledgeDashboardView:
             title="Post-Op Day 1-3",
             content="Recovery information",
             chunk_index=0,
-            embedding=[0.0] * 768,
+            embedding=[0.0] * 2000,
             token_count=50,
             content_hash="abc123",
             is_active=True,

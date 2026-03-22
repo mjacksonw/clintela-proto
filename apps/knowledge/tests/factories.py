@@ -35,7 +35,7 @@ class KnowledgeDocumentFactory(factory.django.DjangoModelFactory):
     content = factory.Faker("paragraph", nb_sentences=5)
     chunk_index = factory.Sequence(lambda n: n)
     chunk_metadata = factory.LazyFunction(lambda: {"section_path": "Test > Section"})
-    embedding = factory.LazyFunction(lambda: [0.0] * 768)
+    embedding = factory.LazyFunction(lambda: [0.0] * 2000)
     token_count = 256
     content_hash = factory.LazyFunction(lambda: uuid.uuid4().hex + uuid.uuid4().hex[:32])
     is_active = True

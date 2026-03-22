@@ -4,7 +4,8 @@ Provides both sync and async interfaces:
 - Sync methods (embed_sync, embed_batch_sync) for management commands
 - Async methods (embed, embed_batch) for compatibility with existing code
 
-Uses nomic-embed-text (768 dimensions, 2048 token context) by default.
+Uses Qwen3-Embedding-4B (2000 dimensions, 40K token context) by default.
+Supports instruction-aware embedding for improved retrieval accuracy.
 """
 
 import logging
@@ -28,6 +29,10 @@ class EmbeddingClient:
 
     Provides both sync and async interfaces. The sync interface uses fresh
     connections per request to avoid event loop issues in management commands.
+
+    Supports instruction-aware embedding: pass an `instruction` string to
+    prepend to each text before embedding. This improves retrieval accuracy
+    for Qwen3-Embedding models by ~1-5%.
     """
 
     _instance = None
@@ -43,8 +48,8 @@ class EmbeddingClient:
             return
 
         self.base_url = getattr(settings, "EMBEDDING_BASE_URL", "http://localhost:11434")
-        self.model = getattr(settings, "EMBEDDING_MODEL", "nomic-embed-text")
-        self.dimensions = getattr(settings, "EMBEDDING_DIMENSIONS", 768)
+        self.model = getattr(settings, "EMBEDDING_MODEL", "qwen3-embedding:4b")
+        self.dimensions = getattr(settings, "EMBEDDING_DIMENSIONS", 2000)
         self._client = None
         self._initialized = True
 
@@ -58,16 +63,26 @@ class EmbeddingClient:
             )
         return self._client
 
+    def _prepare_texts(self, texts: list[str], instruction: str | None = None) -> list[str]:
+        """Prepend instruction to texts if provided.
+
+        Ollama's /api/embed doesn't have a native instruction field,
+        so we prepend the instruction text to each input string.
+        """
+        if not instruction:
+            return texts
+        return [f"{instruction}{t}" for t in texts]
+
     # -------------------------------------------------------------------------
     # Sync interface (for management commands, avoids event loop issues)
     # -------------------------------------------------------------------------
 
-    def embed_sync(self, text: str) -> list[float]:
+    def embed_sync(self, text: str, instruction: str | None = None) -> list[float]:
         """Generate embedding for a single text (sync version)."""
-        result = self.embed_batch_sync([text])
+        result = self.embed_batch_sync([text], instruction=instruction)
         return result[0]
 
-    def embed_batch_sync(self, texts: list[str]) -> list[list[float]]:
+    def embed_batch_sync(self, texts: list[str], instruction: str | None = None) -> list[list[float]]:
         """Generate embeddings for a batch of texts (sync version).
 
         Uses a fresh httpx.Client per call to avoid event loop issues
@@ -76,13 +91,14 @@ class EmbeddingClient:
         if not texts:
             return []
 
+        prepared = self._prepare_texts(texts, instruction)
         url = f"{self.base_url.rstrip('/')}/api/embed"
 
         try:
             with httpx.Client(timeout=httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=10.0)) as sync_client:
                 response = sync_client.post(
                     url,
-                    json={"model": self.model, "input": texts},
+                    json={"model": self.model, "input": prepared},
                     headers={"Content-Type": "application/json"},
                 )
                 response.raise_for_status()
@@ -108,20 +124,22 @@ class EmbeddingClient:
     # Async interface (for compatibility with existing async code and tests)
     # -------------------------------------------------------------------------
 
-    async def embed(self, text: str) -> list[float]:
+    async def embed(self, text: str, instruction: str | None = None) -> list[float]:
         """Generate embedding for a single text (async version)."""
-        result = await self.embed_batch([text])
+        result = await self.embed_batch([text], instruction=instruction)
         return result[0]
 
-    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
+    async def embed_batch(self, texts: list[str], instruction: str | None = None) -> list[list[float]]:
         """Generate embeddings for a batch of texts (async version)."""
         if not texts:
             return []
 
+        prepared = self._prepare_texts(texts, instruction)
+
         try:
             response = await self.client.post(
                 "api/embed",
-                json={"model": self.model, "input": texts},
+                json={"model": self.model, "input": prepared},
             )
             response.raise_for_status()
             data = response.json()
@@ -157,12 +175,12 @@ class EmbeddingClient:
 class MockEmbeddingClient:
     """Mock embedding client for testing.
 
-    Returns deterministic 768-dimensional vectors based on text hash.
+    Returns deterministic 2000-dimensional vectors based on text hash.
     Provides both sync and async interfaces for compatibility.
     """
 
     def __init__(self, dimensions: int | None = None):
-        self.dimensions = dimensions or getattr(settings, "EMBEDDING_DIMENSIONS", 768)
+        self.dimensions = dimensions or getattr(settings, "EMBEDDING_DIMENSIONS", 2000)
         self.call_count = 0
         self.last_texts: list[str] = []
 
@@ -180,20 +198,20 @@ class MockEmbeddingClient:
         return vector
 
     # Sync interface (used by ingestion pipeline)
-    def embed_sync(self, text: str) -> list[float]:
-        return self.embed_batch_sync([text])[0]
+    def embed_sync(self, text: str, instruction: str | None = None) -> list[float]:
+        return self.embed_batch_sync([text], instruction=instruction)[0]
 
-    def embed_batch_sync(self, texts: list[str]) -> list[list[float]]:
+    def embed_batch_sync(self, texts: list[str], instruction: str | None = None) -> list[list[float]]:
         self.call_count += 1
         self.last_texts = texts
         return [self._deterministic_vector(t) for t in texts]
 
     # Async interface (for compatibility with async code and tests)
-    async def embed(self, text: str) -> list[float]:
-        result = await self.embed_batch([text])
+    async def embed(self, text: str, instruction: str | None = None) -> list[float]:
+        result = await self.embed_batch([text], instruction=instruction)
         return result[0]
 
-    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
+    async def embed_batch(self, texts: list[str], instruction: str | None = None) -> list[list[float]]:
         self.call_count += 1
         self.last_texts = texts
         return [self._deterministic_vector(t) for t in texts]

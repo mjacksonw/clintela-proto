@@ -33,6 +33,11 @@ class Command(BaseCommand):
         parser.add_argument("--hospital", help="Hospital code (for tenant-scoped documents)")
         parser.add_argument("--doc-version", default="", help="Document version")
         parser.add_argument("--url", default="", help="Source URL")
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Delete existing documents for this source before re-ingesting",
+        )
 
     def handle(self, *args, **options):
         file_path = options["file"]
@@ -59,6 +64,13 @@ class Command(BaseCommand):
 
         action = "Created" if created else "Using existing"
         self.stdout.write(f"{action} source: {source}")
+
+        # Force re-ingestion: delete existing documents for this source
+        if options["force"] and not created:
+            from apps.knowledge.models import KnowledgeDocument
+
+            deleted_count, _ = KnowledgeDocument.objects.filter(source=source).delete()
+            self.stdout.write(self.style.WARNING(f"Force mode: deleted {deleted_count} existing documents"))
 
         # Run ingestion
         pipeline = IngestionPipeline(source)
