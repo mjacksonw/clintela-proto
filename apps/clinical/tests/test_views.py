@@ -20,16 +20,20 @@ def hospital(db):
 
 
 @pytest.fixture
-def clinician_user(db):
+def clinician_user(db, hospital):
     from apps.accounts.models import User
+    from apps.clinicians.models import Clinician
 
-    return User.objects.create_user(
+    user = User.objects.create_user(
         username=f"clinician_{uuid.uuid4().hex[:8]}",
         password="testpass123",
         first_name="Dr.",
         last_name="View",
         role="clinician",
     )
+    clinician = Clinician.objects.create(user=user, specialty="Cardiology")
+    clinician.hospitals.add(hospital)
+    return user
 
 
 @pytest.fixture

@@ -136,7 +136,7 @@ def _inject_clinical_data(patient_context: dict, patient) -> None:
             "vital_signs": snapshot.vital_signs,
         }
     except Exception:
-        logger.debug("No clinical snapshot available for patient %s", patient.id)
+        logger.warning("Clinical snapshot unavailable for patient %s", patient.id)
 
 
 def process_patient_message(patient, content, channel="chat", audio_url=None):

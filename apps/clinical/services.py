@@ -112,7 +112,13 @@ class ClinicalDataService:
 
     @staticmethod
     def _create_or_update_alert(patient, rule_result):
-        """Create a new alert or update existing active alert (deduplication)."""
+        """Create a new alert or update existing active alert (deduplication).
+
+        Handles concurrent creation race via IntegrityError catch
+        (UniqueConstraint on patient+rule_name WHERE active).
+        """
+        from django.db import IntegrityError
+
         existing = ClinicalAlert.objects.filter(
             patient=patient,
             rule_name=rule_result.rule_name,
@@ -124,16 +130,27 @@ class ClinicalDataService:
             existing.save(update_fields=["trigger_data"])
             return existing
 
-        alert = ClinicalAlert.objects.create(
-            patient=patient,
-            alert_type=rule_result.alert_type,
-            severity=rule_result.severity,
-            rule_name=rule_result.rule_name,
-            title=rule_result.title,
-            description=rule_result.description,
-            rule_rationale=rule_result.rule_rationale,
-            trigger_data=rule_result.trigger_data,
-        )
+        try:
+            alert = ClinicalAlert.objects.create(
+                patient=patient,
+                alert_type=rule_result.alert_type,
+                severity=rule_result.severity,
+                rule_name=rule_result.rule_name,
+                title=rule_result.title,
+                description=rule_result.description,
+                rule_rationale=rule_result.rule_rationale,
+                trigger_data=rule_result.trigger_data,
+            )
+        except IntegrityError:
+            # Concurrent creation — another process created the alert first
+            logger.info("Concurrent alert creation for %s/%s — updating existing", patient.pk, rule_result.rule_name)
+            existing = ClinicalAlert.objects.filter(
+                patient=patient, rule_name=rule_result.rule_name, status=ALERT_STATUS_ACTIVE
+            ).first()
+            if existing:
+                existing.trigger_data = rule_result.trigger_data
+                existing.save(update_fields=["trigger_data"])
+            return existing
 
         # Escalation for RED/ORANGE alerts
         if rule_result.severity in (SEVERITY_RED, SEVERITY_ORANGE):
@@ -367,11 +384,13 @@ class ClinicalDataService:
 
         Used after bulk ingestion (seed command) — call once per patient
         after all observations are inserted with skip_processing=True.
+        Wrapped in transaction.atomic() for consistency.
         """
         from apps.clinical.rules import check_all_rules
 
-        results = check_all_rules(patient)
-        for result in results:
-            ClinicalDataService._create_or_update_alert(patient, result)
-        ClinicalDataService.update_triage_color(patient)
-        ClinicalDataService.compute_snapshot(patient)
+        with transaction.atomic():
+            results = check_all_rules(patient)
+            for result in results:
+                ClinicalDataService._create_or_update_alert(patient, result)
+            ClinicalDataService.update_triage_color(patient)
+            ClinicalDataService.compute_snapshot(patient)

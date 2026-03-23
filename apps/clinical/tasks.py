@@ -17,7 +17,7 @@ def compute_all_snapshots():
     from apps.clinical.services import ClinicalDataService
     from apps.patients.models import Patient
 
-    patients = Patient.objects.filter(is_active=True, clinical_observations__isnull=False).distinct()
+    patients = Patient.objects.filter(is_active=True, clinical_observations__isnull=False).distinct().iterator()
     count = 0
     for patient in patients:
         try:

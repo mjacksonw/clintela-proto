@@ -2,6 +2,7 @@
 
 import json
 import logging
+from functools import wraps
 
 from django.conf import settings
 from django.http import HttpResponse
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 def _require_clinical_enabled(view_func):
     """Return empty response if clinical data feature flag is off."""
 
+    @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if not getattr(settings, "ENABLE_CLINICAL_DATA", False):
             return HttpResponse("")
@@ -51,7 +53,13 @@ def vitals_tab_fragment(request, patient_id):
     if not request.user.is_authenticated:
         return HttpResponse("", status=403)
 
+    # IDOR protection: verify the user is a clinician with access to this patient's hospital
+    if not hasattr(request.user, "clinician_profile"):
+        return HttpResponse("", status=403)
+    clinician = request.user.clinician_profile
     patient = get_object_or_404(Patient, pk=patient_id)
+    if patient.hospital_id and patient.hospital_id not in clinician.hospitals.values_list("id", flat=True):
+        return HttpResponse("", status=403)
 
     # Get snapshot (may not exist yet)
     try:
@@ -111,6 +119,9 @@ def vitals_tab_fragment(request, patient_id):
                 }
             )
 
+    # Compute display percentage (model stores 0.0-1.0)
+    data_completeness_pct = int(float(snapshot.data_completeness) * 100) if snapshot else 0
+
     context = {
         "patient": patient,
         "snapshot": snapshot,
@@ -118,6 +129,7 @@ def vitals_tab_fragment(request, patient_id):
         "chart_data": chart_data,  # Dict — json_script template tag handles serialization
         "lab_results": lab_results,
         "has_data": bool(chart_data),
+        "data_completeness_pct": data_completeness_pct,
     }
     return render(request, "clinical/vitals_tab.html", context)
 
@@ -129,10 +141,13 @@ def health_card_fragment(request):
 
     Shows warmly, never alarms (per design review decision).
     """
-    if not request.user.is_authenticated or not hasattr(request.user, "patient_profile"):
+    if not request.user.is_authenticated:
         return HttpResponse("")
 
-    patient = request.user.patient_profile
+    try:
+        patient = request.user.patient_profile
+    except Exception:
+        return HttpResponse("")  # Not a patient user
 
     try:
         snapshot = patient.clinical_snapshot
