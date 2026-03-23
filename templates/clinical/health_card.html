@@ -20,18 +20,7 @@
 
     {# Sparklines — 2x2 grid, each 120x40 #}
     {{ sparkline_data_json|json_script:"sparkline-data" }}
-    <div class="grid grid-cols-2 gap-4 mb-4" id="sparkline-container">
-        <template x-data x-for="(name, data) in JSON.parse(document.getElementById('sparkline-data').textContent)" :key="name">
-            <div class="text-center">
-                <canvas :id="'spark-' + name.replace(/\s+/g, '-').toLowerCase()"
-                        :aria-label="name + ': ' + data.current + ' ' + data.unit"
-                        role="img"
-                        width="120" height="40"
-                        class="mx-auto"></canvas>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1" x-text="name"></p>
-            </div>
-        </template>
-    </div>
+    <div class="grid grid-cols-2 gap-4 mb-4" id="sparkline-grid"></div>
 
     {# Trajectory summary — warm language #}
     {% if trajectory_msg %}
@@ -49,13 +38,23 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const data = JSON.parse(document.getElementById('sparkline-data').textContent);
+(function() {
+    if (typeof Chart === 'undefined') return;
+    const el = document.getElementById('sparkline-data');
+    if (!el) return;
+    const data = JSON.parse(el.textContent);
+    const grid = document.getElementById('sparkline-grid');
+    if (!grid) return;
     const tealColor = '#0D9488';
 
     for (const [name, sparkData] of Object.entries(data)) {
-        const canvasId = 'spark-' + name.replace(/\s+/g, '-').toLowerCase();
-        const canvas = document.getElementById(canvasId);
+        const slug = name.replace(/\s+/g, '-').toLowerCase();
+        const wrapper = document.createElement('div');
+        wrapper.className = 'text-center';
+        wrapper.innerHTML = '<canvas id="spark-' + slug + '" aria-label="' + name + ': ' + sparkData.current + ' ' + sparkData.unit + '" role="img" width="120" height="40" class="mx-auto"></canvas><p class="text-sm text-gray-500 dark:text-gray-400 mt-1">' + name + '</p>';
+        grid.appendChild(wrapper);
+
+        const canvas = document.getElementById('spark-' + slug);
         if (!canvas) continue;
 
         new Chart(canvas, {
@@ -82,6 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
             },
         });
     }
-});
+})();
 </script>
 {% endif %}
