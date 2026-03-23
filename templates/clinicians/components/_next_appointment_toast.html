@@ -1,5 +1,6 @@
-<!-- Footer toast: next appointment -->
-<div class="fixed bottom-0 inset-x-0 lg:bottom-0 h-10 flex items-center justify-center text-xs border-t z-20"
+<!-- Footer toast: next appointment — flex item (not fixed) so it doesn't overlap chat input.
+     On mobile, hidden behind the fixed bottom nav; on desktop, visible as last flex row. -->
+<div class="hidden lg:flex h-10 items-center justify-center text-xs border-t flex-shrink-0"
      style="background-color: var(--color-surface); border-color: var(--color-border); color: var(--color-text-secondary);">
     <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1.5"></i>
     Next: <span class="font-medium ml-1" style="color: var(--color-text);">{{ next_appointment.get_appointment_type_display }}</span>

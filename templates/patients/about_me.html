@@ -21,18 +21,6 @@
     </p>
 </div>
 
-{% if messages %}
-<div class="mb-6 animate-in">
-    {% for msg in messages %}
-    <div class="px-4 py-3 rounded-xl text-sm flex items-center gap-2 mb-2"
-         style="{% if msg.tags == 'success' %}background-color: #D1FAE5; color: #065F46;{% else %}background-color: #FEE2E2; color: #991B1B;{% endif %}">
-        <i data-lucide="{% if msg.tags == 'success' %}check-circle{% else %}alert-circle{% endif %}" class="w-4 h-4 flex-shrink-0"></i>
-        {{ msg }}
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
-
 <form method="post" action="{% url 'patients:about_me' %}">
     {% csrf_token %}
 

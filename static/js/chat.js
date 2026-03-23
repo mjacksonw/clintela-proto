@@ -30,34 +30,13 @@ const clintelaChat = (() => {
         }
     }
 
-    function escapeHtml(text) {
-        const d = document.createElement('div');
+    // Markdown rendering delegated to shared markdown-render.js (clintelaMarkdown)
+    function renderMarkdown(text) {
+        if (window.clintelaMarkdown) return window.clintelaMarkdown.render(text);
+        // Fallback if shared lib not loaded yet
+        var d = document.createElement('div');
         d.textContent = text;
         return d.innerHTML;
-    }
-
-    function dedent(text) {
-        // Strip common leading whitespace that comes from Django template indentation.
-        // Without this, marked.js treats indented lines as code blocks.
-        var lines = text.split('\n');
-        // Find minimum indentation (ignoring empty lines)
-        var minIndent = Infinity;
-        for (var i = 0; i < lines.length; i++) {
-            if (lines[i].trim().length === 0) continue;
-            var indent = lines[i].match(/^(\s*)/)[1].length;
-            if (indent < minIndent) minIndent = indent;
-        }
-        if (minIndent > 0 && minIndent < Infinity) {
-            lines = lines.map(function(line) { return line.slice(minIndent); });
-        }
-        return lines.join('\n').trim();
-    }
-
-    function renderMarkdown(text) {
-        if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-            return DOMPurify.sanitize(marked.parse(dedent(text)));
-        }
-        return escapeHtml(text);
     }
 
     // --- Typing indicator ---
@@ -208,13 +187,17 @@ const clintelaChat = (() => {
     }
 
     // --- Markdown in agent messages ---
+    // Delegates to shared clintelaMarkdown.renderAgentMessages() with local fallback
     function renderAgentMessages(root) {
-        const agentBubbles = (root || document).querySelectorAll('.agent-message-content');
-        agentBubbles.forEach(el => {
+        if (window.clintelaMarkdown) {
+            window.clintelaMarkdown.renderAgentMessages(root);
+            return;
+        }
+        // Fallback: inline rendering if shared lib not loaded
+        var els = (root || document).querySelectorAll('.agent-message-content');
+        els.forEach(function (el) {
             if (el.dataset.rendered) return;
-            // Prefer data-raw-content (preserves newlines from Django template)
-            // Fall back to textContent for dynamically created elements
-            const raw = el.dataset.rawContent || el.textContent;
+            var raw = el.dataset.rawContent || el.textContent;
             if (raw && raw.trim()) {
                 el.innerHTML = renderMarkdown(raw);
             }

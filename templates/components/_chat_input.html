@@ -24,7 +24,7 @@
                   maxlength="2000"
                   rows="1"
                   :disabled="inflight"
-                  class="flex-1 resize-none rounded-xl px-4 py-2.5 text-base leading-relaxed
+                  class="flex-1 resize-none rounded-xl px-3 py-2 text-sm leading-normal
                          border transition-colors focus:border-primary focus:ring-0 focus:outline-none
                          disabled:opacity-50"
                   style="background-color: var(--color-bg);
@@ -79,7 +79,7 @@
             <i data-lucide="circle-stop" class="w-5 h-5"></i>
         </button>
 
-        <!-- Send button with micro-states -->
+        <!-- Send button with micro-states (x-show, not x-if, to avoid Lucide icon duplication) -->
         <button type="submit"
                 x-show="!recording"
                 :disabled="!message.trim() || inflight"
@@ -92,12 +92,8 @@
                         ? 'bg-primary/50 text-white cursor-wait'
                         : 'bg-warm-300 text-warm-500 cursor-not-allowed'"
                 aria-label="{% trans "Send message" %}">
-            <template x-if="!inflight">
-                <i data-lucide="arrow-up" class="w-5 h-5"></i>
-            </template>
-            <template x-if="inflight">
-                <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
-            </template>
+            <i data-lucide="arrow-up" class="w-5 h-5" x-show="!inflight"></i>
+            <i data-lucide="loader-2" class="w-5 h-5 animate-spin" x-show="inflight" x-cloak></i>
         </button>
     </div>
 </form>

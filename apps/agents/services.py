@@ -349,11 +349,12 @@ class ConversationService:
         Returns:
             AgentConversation instance
         """
-        # Look for active conversation with lock
+        # Look for active or escalated conversation with lock
+        # (single-conversation-per-patient model: only "completed" triggers a fresh start)
         conversation = (
             AgentConversation.objects.filter(
                 patient=patient,
-                status="active",
+                status__in=("active", "escalated"),
                 clinician__isnull=True,
             )
             .select_for_update()
@@ -451,18 +452,17 @@ class ConversationService:
     def update_conversation_status(
         conversation: AgentConversation,
         status: str,
-        escalation_reason: str = "",
+        escalation_reason: str = "",  # kept for API compat; value is ignored
     ) -> None:
         """Update conversation status.
 
         Args:
             conversation: AgentConversation instance
             status: New status
-            escalation_reason: Reason for escalation (if applicable)
+            escalation_reason: Deprecated — escalation reasons live on
+                AgentMessage and Escalation records, not conversations.
         """
         conversation.status = status
-        if escalation_reason:
-            conversation.escalation_reason = escalation_reason
         conversation.save()
 
     @staticmethod
@@ -749,8 +749,7 @@ class EscalationService:
         # Update conversation status if provided
         if conversation:
             conversation.status = "escalated"
-            conversation.escalation_reason = reason
-            conversation.save()
+            conversation.save(update_fields=["status", "updated_at"])
 
         logger.info(f"Created escalation {escalation.id} for patient {patient.id}")
 
@@ -809,10 +808,19 @@ class EscalationService:
             escalation.resolved_at = timezone.now()
             escalation.save()
 
-            # Update patient status if needed
-            if escalation.conversation:
-                escalation.conversation.status = "completed"
-                escalation.conversation.save()
+            # Restore conversation to active if no other pending escalations remain
+            if escalation.conversation and escalation.conversation.status == "escalated":
+                remaining = (
+                    Escalation.objects.filter(
+                        conversation=escalation.conversation,
+                        status="pending",
+                    )
+                    .exclude(pk=escalation.pk)
+                    .exists()
+                )
+                if not remaining:
+                    escalation.conversation.status = "active"
+                    escalation.conversation.save(update_fields=["status", "updated_at"])
 
             logger.info(f"Escalation {escalation_id} resolved")
             return True
