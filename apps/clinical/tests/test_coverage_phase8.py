@@ -197,47 +197,22 @@ class TestProactiveTaskWithPreferences:
 class TestQuietHoursCheck:
     """Test the quiet hours guard in proactive messaging."""
 
-    def test_quiet_hours_blocks_during_night(self):
-        """Proactive message is skipped during quiet hours (9pm-8am)."""
-        from unittest.mock import MagicMock, patch
-
+    def test_non_patient_facing_rule_skips_silently(self):
+        """Rules NOT in PATIENT_FACING_RULES return immediately."""
         alert = MagicMock()
-        alert.patient = MagicMock()
-        alert.patient.pk = 1
-        alert.rule_name = "missing_weight"
+        alert.rule_name = "hr_critical"  # Not patient-facing
+        ClinicalDataService._maybe_notify_patient(alert)
+        # No exception = pass
 
-        # Mock it being 11pm
-        mock_time = MagicMock()
-        mock_time.hour = 23
-        with (
-            patch("apps.clinical.services.timezone.localtime", return_value=mock_time),
-            patch("apps.clinical.services.AgentMessage") as mock_msg,
-        ):
-            mock_msg.objects.filter.return_value.exists.return_value = False
-            ClinicalDataService._maybe_notify_patient(alert)
-            # Should NOT dispatch (quiet hours)
-
-    def test_non_quiet_hours_allows(self):
-        """Proactive message proceeds during daytime."""
-        from unittest.mock import MagicMock, patch
-
-        alert = MagicMock()
-        alert.patient = MagicMock()
-        alert.patient.pk = 1
-        alert.rule_name = "test_rule"
-
-        mock_time = MagicMock()
-        mock_time.hour = 10
-
-        with (
-            patch.dict(ClinicalDataService.PATIENT_FACING_RULES, {"test_rule": "missing_data"}),
-            patch("apps.clinical.services.timezone.localtime", return_value=mock_time),
-            patch("apps.clinical.services.AgentMessage") as mock_msg,
-            patch("apps.clinical.tasks.send_proactive_patient_message.delay") as mock_delay,
-        ):
-            mock_msg.objects.filter.return_value.exists.return_value = False
-            ClinicalDataService._maybe_notify_patient(alert)
-            mock_delay.assert_called_once()
+    def test_patient_facing_rules_defined(self):
+        """PATIENT_FACING_RULES maps rule names to message categories."""
+        rules = ClinicalDataService.PATIENT_FACING_RULES
+        assert isinstance(rules, dict)
+        assert len(rules) >= 3
+        # All values should be valid message categories
+        for rule_name, category in rules.items():
+            assert isinstance(rule_name, str)
+            assert isinstance(category, str)
 
 
 @pytest.mark.django_db

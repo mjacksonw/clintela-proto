@@ -172,6 +172,32 @@ class TestBookSlotView:
         response = authenticated_client.post(url, {"slot_start": "not-a-date", "slot_end": "also-bad"})
         assert response.status_code == 302
 
+    def test_start_after_end_redirects(self, authenticated_client, pending_request):
+        """Slot where start >= end is rejected."""
+        now = timezone.now()
+        url = reverse("patients:book_slot", kwargs={"request_id": pending_request.id})
+        response = authenticated_client.post(
+            url,
+            {
+                "slot_start": (now + timedelta(days=3, hours=2)).isoformat(),
+                "slot_end": (now + timedelta(days=3, hours=1)).isoformat(),
+            },
+        )
+        assert response.status_code == 302
+
+    def test_past_slot_redirects(self, authenticated_client, pending_request):
+        """Slot in the past is rejected."""
+        now = timezone.now()
+        url = reverse("patients:book_slot", kwargs={"request_id": pending_request.id})
+        response = authenticated_client.post(
+            url,
+            {
+                "slot_start": (now - timedelta(hours=2)).isoformat(),
+                "slot_end": (now - timedelta(hours=1, minutes=30)).isoformat(),
+            },
+        )
+        assert response.status_code == 302
+
     def test_conflict_shows_error(self, authenticated_client, pending_request, patient, clinician):
         now = timezone.now()
         start = now + timedelta(days=3)
