@@ -194,6 +194,53 @@ class TestProactiveTaskWithPreferences:
 
 
 @pytest.mark.django_db
+class TestQuietHoursCheck:
+    """Test the quiet hours guard in proactive messaging."""
+
+    def test_quiet_hours_blocks_during_night(self):
+        """Proactive message is skipped during quiet hours (9pm-8am)."""
+        from unittest.mock import MagicMock, patch
+
+        alert = MagicMock()
+        alert.patient = MagicMock()
+        alert.patient.pk = 1
+        alert.rule_name = "missing_weight"
+
+        # Mock it being 11pm
+        mock_time = MagicMock()
+        mock_time.hour = 23
+        with (
+            patch("apps.clinical.services.timezone.localtime", return_value=mock_time),
+            patch("apps.clinical.services.AgentMessage") as mock_msg,
+        ):
+            mock_msg.objects.filter.return_value.exists.return_value = False
+            ClinicalDataService._maybe_notify_patient(alert)
+            # Should NOT dispatch (quiet hours)
+
+    def test_non_quiet_hours_allows(self):
+        """Proactive message proceeds during daytime."""
+        from unittest.mock import MagicMock, patch
+
+        alert = MagicMock()
+        alert.patient = MagicMock()
+        alert.patient.pk = 1
+        alert.rule_name = "test_rule"
+
+        mock_time = MagicMock()
+        mock_time.hour = 10
+
+        with (
+            patch.dict(ClinicalDataService.PATIENT_FACING_RULES, {"test_rule": "missing_data"}),
+            patch("apps.clinical.services.timezone.localtime", return_value=mock_time),
+            patch("apps.clinical.services.AgentMessage") as mock_msg,
+            patch("apps.clinical.tasks.send_proactive_patient_message.delay") as mock_delay,
+        ):
+            mock_msg.objects.filter.return_value.exists.return_value = False
+            ClinicalDataService._maybe_notify_patient(alert)
+            mock_delay.assert_called_once()
+
+
+@pytest.mark.django_db
 class TestClinicianTasksCoverage:
     """Cover clinicians/tasks.py edge cases."""
 

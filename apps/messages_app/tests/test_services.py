@@ -117,7 +117,7 @@ class TestHandleInboundSms:
         assert "unsubscribed" in result["response"].lower()
         # Check preferences were created
         prefs = NotificationPreference.objects.filter(patient=patient, channel="sms", enabled=False)
-        assert prefs.count() == 4  # All 4 notification types
+        assert prefs.count() == 5  # All 5 notification types (incl. celebration)
 
     def test_start_keyword_opts_in(self, settings):
         settings.SMS_BACKEND = "apps.messages_app.backends.LocMemSMSBackend"
