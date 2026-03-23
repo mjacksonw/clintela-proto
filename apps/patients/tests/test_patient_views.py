@@ -516,6 +516,42 @@ class TestDevActionsView:
 
 
 @pytest.mark.django_db
+class TestSuggestionChipsLayout:
+    """Verify chips only appear in empty-chat state, not pinned in the sidebar."""
+
+    def setup_method(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="chiplayout", password="testpass")
+        self.hospital = Hospital.objects.create(name="ChipLayout Hospital", code="CHL01")
+        self.patient = Patient.objects.create(
+            user=self.user,
+            hospital=self.hospital,
+            date_of_birth="1990-01-15",
+            leaflet_code="CHL123",
+        )
+        session = self.client.session
+        session["patient_id"] = str(self.patient.id)
+        session["authenticated"] = True
+        session.save()
+
+    def test_no_persistent_chips_bar_on_dashboard(self):
+        """The #suggestion-chips persistent bar should not exist in the sidebar."""
+        response = self.client.get(reverse("patients:dashboard"))
+        content = response.content.decode()
+        # The persistent chips div (id="suggestion-chips") should not be present
+        assert 'id="suggestion-chips"' not in content
+
+    def test_empty_state_chips_still_present(self):
+        """Empty-chat state still shows suggestion chips for conversation starters."""
+        response = self.client.get(reverse("patients:dashboard"))
+        content = response.content.decode()
+        # Empty chat welcome state should have suggestion chips
+        assert "suggestion-chip" in content
+        # The empty chat welcome message should be present
+        assert "here to help with your recovery" in content
+
+
+@pytest.mark.django_db
 class TestSuggestionChips:
     """Test _get_suggestion_chips fallback behavior."""
 
