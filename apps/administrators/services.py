@@ -645,3 +645,54 @@ class OperationalAlertService:
             logger.exception("OperationalAlertService.get_all_alerts failed")
 
         return alerts[:5]  # Cap at 5 alerts
+
+
+class ClinicalAlertService:
+    """Clinical alert metrics for admin KPI dashboard."""
+
+    @staticmethod
+    def get_alert_summary(hospital_id=None, days=30):
+        """Get clinical alert metrics: by severity, response time, top triggers.
+
+        Returns aggregate data only — no PHI.
+        """
+        from apps.clinical.models import ClinicalAlert
+
+        cutoff = timezone.now() - timedelta(days=days)
+        qs = ClinicalAlert.objects.filter(created_at__gte=cutoff)
+        qs = _apply_hospital_filter(qs, hospital_id, "patient__hospital_id")
+
+        try:
+            # Count by severity
+            severity_counts = dict(qs.values("severity").annotate(count=Count("id")).values_list("severity", "count"))
+
+            # Mean acknowledgment time (for acknowledged alerts)
+            from django.db.models import Avg, DurationField, ExpressionWrapper
+
+            acked = qs.filter(acknowledged_at__isnull=False)
+            avg_ack = acked.annotate(
+                ack_duration=ExpressionWrapper(
+                    F("acknowledged_at") - F("created_at"),
+                    output_field=DurationField(),
+                )
+            ).aggregate(avg=Avg("ack_duration"))
+            avg_ack_minutes = None
+            if avg_ack["avg"]:
+                avg_ack_minutes = round(avg_ack["avg"].total_seconds() / 60, 1)
+
+            # Top 5 triggering rules
+            top_rules = list(qs.values("rule_name").annotate(count=Count("id")).order_by("-count")[:5])
+
+            total = sum(severity_counts.values())
+            return {
+                "total": total,
+                "red": severity_counts.get("red", 0),
+                "orange": severity_counts.get("orange", 0),
+                "yellow": severity_counts.get("yellow", 0),
+                "info": severity_counts.get("info", 0),
+                "avg_ack_minutes": avg_ack_minutes,
+                "top_rules": top_rules,
+            }
+        except OperationalError:
+            logger.exception("ClinicalAlertService.get_alert_summary failed")
+            return {"error": "Could not load clinical alert data."}

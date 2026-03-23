@@ -1,8 +1,8 @@
 # Implementation Session Handoff
 
-**Date:** 2026-03-21
-**Branch:** claude/vibrant-hopper (Phase 6), claude/brave-goldwasser (Phase 5), feature/phase4-clinical-knowledge-rag (Phase 4)
-**Status:** Phase 6 COMPLETE - Administrator KPI Dashboard with 9 metric cards, operational alerts, pathway administration, DailyMetrics pipeline
+**Date:** 2026-03-23
+**Branch:** claude/cool-archimedes (Phase 7), claude/vibrant-hopper (Phase 6), claude/brave-goldwasser (Phase 5), feature/phase4-clinical-knowledge-rag (Phase 4)
+**Status:** Phase 7 COMPLETE (core) - Clinical Intelligence Layer with three-layer architecture, 16-rule deterministic engine, OMOP bridge, clinician Vitals tab, patient My Health card. Proactive patient messaging deferred.
 
 ---
 
@@ -195,93 +195,175 @@ python manage.py shell
 - [x] Management commands: `ingest_document`, `ingest_acc_guidelines`
 - [x] Test coverage ≥ 90%
 
-### Phase 5: Clinician Dashboard UI ✅ COMPLETE (2026-03-20)
+### Phase 5: Clinician Dashboard UI - COMPLETE (2026-03-20)
 
-✅ **Three-Panel Dashboard**
+**Three-Panel Dashboard**
 - Patient list (280px left) with severity sort, search, triage color dots, unread badges
 - Patient detail (center flex-1) with 4 tabs: Details, Care Plan, Research, Tools
 - Patient chat (360px right) with message history and clinician message injection
 - Responsive: desktop three-panel, tablet two-panel + chat drawer, mobile single-panel + bottom nav
 - Dark mode across all views
 
-✅ **Detail Tabs**
+**Detail Tabs**
 - Details: patient timeline (collapsed by day), escalation list with acknowledge/resolve/bulk, clinician notes, export handoff
 - Care Plan: pathway milestones with check-in status
 - Research: private clinician LLM chat with specialist routing dropdown
 - Tools: lifecycle transitions, send auth text, consent status, caregiver management, patient info
 
-✅ **Take-Control Mode**
+**Take-Control Mode**
 - Clinician takes over patient chat thread — AI pauses, patient sees "Dr. Smith"
 - Race-safe locking with `select_for_update()` / atomic UPDATE WHERE
 - Three release mechanisms: explicit button, WebSocket disconnect, 30-min inactivity timeout (JS + Celery)
 - Other clinicians see lock indicator with clinician name
 
-✅ **Scheduling UI**
+**Scheduling UI**
 - Weekly calendar grid with Mon-Fri headers, 7am-7pm clinical shift hours
 - Availability management (recurring weekly hours)
 - Appointment CRUD with conflict validation
 - Next appointment toast on dashboard
 
-✅ **Shift Handoff Summary**
+**Shift Handoff Summary**
 - Changes since last login: new/resolved escalations, status changes, missed check-ins
 - First login: "Welcome" card
 - Dismissible card above patient list
 
-✅ **Keyboard Shortcuts & Notifications**
+**Keyboard Shortcuts and Notifications**
 - j/k navigate patient list, 1-4 switch tabs, e acknowledge escalation, / search, ? help modal
 - Desktop notifications + audio for critical escalations (Web Notification API + Web Audio)
 - Shortcuts suppressed when typing in input fields
 
-✅ **Security Hardening**
+**Security Hardening**
 - `@clinician_required` decorator with IDOR prevention (patient must belong to clinician's hospitals)
 - WebSocket consumer auth: verify authenticated clinician with hospital access
 - Session-based API auth replacing hacky clinician_id-from-body pattern
 - Structured audit logging for HIPAA compliance
 
-✅ **Testing**
+**Testing**
 - 6 test files covering models, auth, views, services, management command, coverage gaps
 - 90%+ test coverage (pre-push hook enforced)
-- QA: 3 issues found and fixed, health score 64 → 100
+- QA: 3 issues found and fixed, health score 64 to 100
 
-### Phase 6: Administrator KPI Dashboard ✅ COMPLETE (2026-03-21)
+### Phase 6: Administrator KPI Dashboard - COMPLETE (2026-03-21)
 
-✅ **KPI Scorecard Dashboard**
+**KPI Scorecard Dashboard**
 - Hero metric: CMS cohort-based readmission rate with period tabs (7/30/60/90/120d) and Chart.js sparkline trend
 - 9 metric cards in 3-column grid: Outcomes (discharge to community, follow-up completion, functional improvement), Engagement (program engagement 7/14/30/90d, message volume, check-in completion), Operations (escalation response time, census + triage distribution, pathway performance)
 - Operational alerts bar: SLA breaches, stale escalations (>24h), inactive patients (>7d)
 - HTMX lazy-loaded card fragments with per-card graceful degradation on DB errors
 
-✅ **Global Filters & Export**
+**Global Filters and Export**
 - Hospital filter dropdown scoping all KPI cards
 - Time range filter (30/60/90/120 days)
-- CSV export with StreamingHttpResponse and formula injection protection (`=`, `-`, `+`, `@` prefixed with tab)
+- CSV export with StreamingHttpResponse and formula injection protection
 - Print-friendly CSS stylesheet (force light mode, 2-column grid, hide nav)
 
-✅ **Pathway Administration**
+**Pathway Administration**
 - Pathway list with effectiveness stats (completion rate, patient count)
 - Pathway detail with milestones, per-milestone check-in rates
 - Inline edit for pathway metadata (name, description, duration)
 - Active/inactive toggle
 
-✅ **DailyMetrics Pipeline**
+**DailyMetrics Pipeline**
 - Hospital-scoped pre-aggregation: per-hospital rows + NULL-hospital aggregate
 - `DailyMetricsService.compute_for_date()` computing 13 metric fields
 - Celery Beat nightly task (2:07 AM daily) with retry logic
 - `compute_daily_metrics` management command with `--date` and `--backfill N` flags
 - `unique_together = [("date", "hospital")]` constraint on DailyMetrics
 
-✅ **Admin Auth & Security**
+**Admin Auth and Security**
 - `@admin_required` decorator (mirrors `@clinician_required` pattern)
 - `create_test_admin` management command
 - No PHI — services return aggregate dicts only, templates never render individual patient data
 - `json_script` template tag for XSS-safe JSON rendering
 
-✅ **Testing**
+**Testing**
 - 117 new tests: auth (7), services (30+), views (20+), coverage gaps (40+)
 - 91%+ test coverage (pre-push hook enforced)
 - N+1 query elimination via pre-fetched lookup dict pattern
 
-### Phase 7: Polish & Testing
+### Phase 7: Clinical Intelligence Layer - COMPLETE (core) (2026-03-23)
+
+The clinical data backbone — Clintela knows how to talk to patients (Phases 1-6) but Phase 7 gives it the ability to know what is happening to them medically. Three-layer architecture: time-series observations, computed patient snapshots, and rules-based alerts. Designed for the demo to a top-tier AMC cardiology practice and ACC leadership.
+
+**Data Models (apps/clinical/)**
+- `ClinicalObservation` — time-series vitals and labs with OMOP CDM concept IDs, source attribution (wearable, EHR, patient-reported, manual), quality flags, and flexible JSONField metadata. Indexed on (patient, concept_id, observed_at) for efficient time-range queries. CheckConstraint ensures value_numeric or value_text is non-empty.
+- `PatientClinicalSnapshot` — OneToOne computed summary of patient's current clinical state. Includes trajectory (improving/stable/concerning/deteriorating), risk score (0-100 composite formula), vital_signs JSONField with latest values, data_completeness ratio, and active_alerts_count. Recomputed on every observation ingest and nightly via Celery.
+- `ClinicalAlert` — rules-based alerts with severity (info/yellow/orange/red), alert type (threshold/trend/missing_data/combination), rule_rationale for FDA 2026 CDS transparency compliance, trigger_data preserving the observations that fired the rule. UniqueConstraint on (patient, rule_name) WHERE status='active' prevents duplicate alert spam. IntegrityError catch handles race conditions on concurrent ingestion.
+
+**OMOP Concept ID Mapping**
+- 12 cardiac-relevant concepts: heart rate (3027018), systolic BP (3004249), diastolic BP (3012888), body weight (3025315), SpO2 (3016502), temperature (3020891), respiratory rate (3024171), blood glucose (3004501), BNP (3022217), troponin (3019550), daily steps (40762499), sleep duration (40762503)
+- Normal ranges defined per concept for chart range bands and rule thresholds
+- OMOP concept IDs serve as the bridge to the team's Epic-to-OMOP pipeline (being built separately) — when that pipeline delivers data, it maps directly to ClinicalObservation with matching concept vocabulary
+
+**Deterministic Rules Engine (rules.py)**
+- Registry pattern with `@register_rule(name)` decorator and `RULE_REGISTRY: dict[str, RuleFunction]`
+- 16 registered rules across four categories:
+  - Threshold rules (7): hr_critical, hr_warning, bp_critical, spo2_critical, spo2_warning, temp_critical, temp_warning
+  - Trend rules (5): weight_gain_3day, hr_trend_3day, bp_trend_3day, steps_declining_7day (with manual linear regression, no numpy dependency)
+  - Missing data rules (2): missing_weight (48h), missing_hr (24h)
+  - Combination rules (3): chf_decompensation (weight + HR + steps), infection_signal (temp + HR), epro_activity_correlation (PHQ-2 + steps)
+- Each rule returns a RuleResult dataclass with rule_rationale string for FDA compliance — every alert can explain why it fired in plain language
+- `check_all_rules(patient)` iterates the registry with per-rule exception isolation — one broken rule does not block others
+
+**Clinical Data Service (services.py)**
+- `ingest_observation()` — validates concept_id against known mappings, stores observation, triggers post-processing via `transaction.on_commit()` so the observation persists even if rules engine fails
+- `_process_observation(patient)` — atomic block: runs all rules, creates/updates alerts with dedup, escalates RED/ORANGE alerts via existing Escalation model, updates patient triage color, recomputes clinical snapshot
+- `update_triage_color(patient)` — maps worst active alert severity to existing Patient.status field (red/orange/yellow/green), wiring clinical intelligence into the existing triage system
+- `compute_snapshot(patient)` — update_or_create with vital_signs dict, trajectory via 7-day slope calculation (worst-wins precedence), risk score formula (+20 RED, +10 ORANGE, +5 YELLOW, +15 deteriorating, +10 concerning, +10 low completeness, cap 100), data completeness ratio
+- `process_patient_batch(patient)` — wrapped in transaction.atomic() for seed command bulk use
+
+**Clinician UI — Vitals Tab**
+- 6th tab on clinician patient detail panel, accessible via keyboard shortcut `6`
+- Snapshot summary bar: trajectory badge (teal/gray/orange/coral), risk score, data completeness percentage, active alert count
+- Active alerts list with severity-colored left border (4px solid), expandable via Alpine.js x-data/x-collapse to reveal rule_rationale
+- Chart.js vital sign charts in 2-column grid: Heart Rate, Systolic BP, Diastolic BP, Body Weight, SpO2, Temperature. Each chart shows normal range bands (teal shading with dashed borders), responsive canvas in position:relative div with 160px fixed height. Chart styling: borderWidth 1.5, pointRadius 0 (hover only), tension 0.4, dark background Satoshi font tooltips.
+- Lab results table with tabular-nums, abnormal values highlighted in orange, EHR/OMOP source badge
+- IDOR protection: verifies clinician_profile exists and has hospital-level access to the patient
+- Empty state for patients without clinical data: teal chart icon with warm messaging
+
+**Patient UI — My Health Card**
+- HTMX-loaded card on patient dashboard (feature-flagged)
+- 4 sparkline charts in 2x2 grid (Heart Rate, Body Weight, Systolic BP, SpO2): 120x40px, teal line, no axes, vanilla JS canvas creation
+- Trajectory messages in warm, non-clinical language: improving = "Your recovery is looking great! Your readings are trending in the right direction." Stable = "Your readings are holding steady — that is a good sign." Concerning/deteriorating use gentle language that informs without alarming.
+- Connects to PatientPreferences.recovery_goals when available
+- Chart.js CDN loaded in base_patient.html (feature-flagged)
+
+**Integration Points**
+- Agent context: `_inject_clinical_data()` in ContextService injects snapshot trajectory, risk_score, active_alerts_count, data_completeness, and vital_signs into the Care Coordinator's context so it can reference clinical data in conversations
+- Admin dashboard: `ClinicalAlertService.get_alert_summary()` provides severity counts, average acknowledgment time, and top 5 triggering rules for the KPI dashboard
+- Clinician handoff: `HandoffService.get_handoff_summary()` includes active clinical alerts in shift handoff context
+- Patient list: trajectory Subquery annotation from PatientClinicalSnapshot adds trajectory arrows to patient list items
+- Escalation: RED/ORANGE alerts auto-create Escalation records (type="clinical") which flow into the existing clinician notification and WebSocket system
+
+**Feature Flag**
+- `ENABLE_CLINICAL_DATA = env.bool("ENABLE_CLINICAL_DATA", default=False)` in settings
+- Context processor `clinical_data_flags` makes the flag available in all templates
+- All clinical UI gated in 6 template locations: base_clinician.html (Chart.js CDN + Vitals tab button), _patient_detail.html (Vitals tab), _patient_list_item.html (trajectory arrows), patients/dashboard.html (My Health card), base_patient.html (Chart.js CDN)
+- Views use `@_require_clinical_enabled` decorator returning 404 when flag is off
+
+**Demo Data Seeding**
+- `seed_clinical_data` management command generates 30 days of realistic data for 5 patients across 4 scenarios: progressing well, CHF decompensation (weight gain + HR elevation starting day 12), post-op infection (temperature spike + HR around day 5), declining activity (step count drops suggesting depression or pain)
+- Circadian HR variation via sine wave, natural post-surgical recovery curves
+- Lab values (BNP, troponin) seeded as EHR-sourced observations
+- Production guard: `settings.DEBUG` check prevents accidental seeding
+- `skip_processing=True` for bulk insert performance (10K+ observations in seconds), then `process_patient_batch()` once per patient at end
+
+**Celery Tasks**
+- `compute_all_snapshots()` — nightly recomputation for all active patients using `.iterator()` for memory efficiency
+- `check_missing_data()` — every 6 hours, runs missing_weight and missing_hr rules only
+
+**Testing**
+- 118 tests across 7 test files: test_models.py, test_rules.py (one test per rule), test_services.py (ingest, snapshot, triage, trend, alerts, risk score, batch), test_views.py (feature flag, empty states, chart data, auth, trajectory messages), test_commands.py (all 4 scenarios, production guard, invalid patient), test_tasks.py (snapshot recomputation, missing data checks), test_coverage_gaps.py (process_observation pipeline, dedup, escalation, IDOR, labs)
+- 1534 total tests passing, 90.10% overall coverage (meets 90% threshold)
+- QA: 2 bugs found and fixed (patient sparkline rendering, data double-serialization), health score 82 to 95
+
+**Deferred to Phase 7.5 (proactive patient messaging)**
+- Missing weight data auto-message to patient ("Hey [name], we haven't seen a weight reading in a couple days...")
+- Declining activity auto-message ("We noticed you've been a bit less active lately...")
+- Weight gain trend auto-message + auto-escalate ("Your weight has been creeping up a bit...")
+- The rules engine fires the alerts and the escalation system notifies clinicians, but the system does not yet send proactive chat messages directly to patients. The plumbing exists (missing data rules, existing `process_patient_message()` in agents) — what is missing is wiring alert creation to patient-facing message dispatch.
+
+### Phase 8: Polish and Testing
 - [ ] Multilingual support (i18n)
 - [ ] Visual recovery timeline
 - [ ] Smart scheduling
@@ -310,6 +392,17 @@ clintela/
 │   ├── patients/              # Patient, Hospital, voice views
 │   ├── caregivers/            # Caregiver relationships
 │   ├── clinicians/            # Provider profiles + dashboard views/services/auth
+│   ├── clinical/              # Clinical intelligence layer (Phase 7)
+│   │   ├── models.py         # ClinicalObservation, PatientClinicalSnapshot, ClinicalAlert
+│   │   ├── rules.py          # 16-rule deterministic engine with registry pattern
+│   │   ├── services.py       # ClinicalDataService (ingest, snapshot, triage, alerts)
+│   │   ├── constants.py      # OMOP concept ID mappings, normal ranges
+│   │   ├── views.py          # HTMX fragment views (Vitals tab, My Health card)
+│   │   ├── tasks.py          # Celery: nightly snapshot, 6-hourly missing data
+│   │   ├── context_processors.py  # ENABLE_CLINICAL_DATA template flag
+│   │   └── management/commands/
+│   │       ├── seed_clinical_data.py          # Demo data (4 cardiac scenarios)
+│   │       └── compute_clinical_snapshots.py  # Manual snapshot recompute
 │   ├── agents/                # AI multi-agent system
 │   │   ├── agents.py         # Agent implementations
 │   │   ├── workflow.py       # LangGraph workflow
@@ -356,6 +449,9 @@ clintela/
 │   ├── base_patient.html      # Patient layout with notification bell
 │   ├── base_clinician.html    # Clinician three-panel layout shell
 │   ├── base_admin.html        # Admin layout shell (max-w-1200px, Chart.js, print CSS)
+│   ├── clinical/              # Clinical intelligence HTMX fragments
+│   │   ├── vitals_tab.html   # Clinician Vitals tab (charts, alerts, labs)
+│   │   └── health_card.html  # Patient My Health card (sparklines, trajectory)
 │   ├── administrators/        # Admin KPI dashboard + pathway admin templates
 │   │   ├── dashboard.html     # KPI scorecard with HTMX lazy-loaded cards
 │   │   ├── login.html         # Admin login page
@@ -437,6 +533,9 @@ RAG_TOP_K=5                                   # Documents returned per query
 RAG_SIMILARITY_THRESHOLD=0.7                  # Minimum cosine similarity to include
 RAG_VECTOR_WEIGHT=0.7                         # Weight for vector similarity score
 RAG_TEXT_WEIGHT=0.3                           # Weight for full-text search score
+
+# Clinical Intelligence Layer (Phase 7)
+ENABLE_CLINICAL_DATA=False                    # Set True to activate clinical data UI and rules engine
 ```
 
 ---
@@ -497,6 +596,30 @@ RAG_TEXT_WEIGHT=0.3                           # Weight for full-text search scor
 - `templates/administrators/components/` - 11 HTMX card fragment templates + alerts bar + pathway list table
 - `static/js/admin-dashboard.js` - Alpine.js component for filters, Chart.js config, dark mode
 
+### Phase 7: Clinical Intelligence Layer
+- `apps/clinical/models.py` - ClinicalObservation, PatientClinicalSnapshot, ClinicalAlert with OMOP concept IDs
+- `apps/clinical/rules.py` - 16-rule deterministic engine with registry pattern and FDA-compliant rationale
+- `apps/clinical/services.py` - ClinicalDataService (ingest, snapshot, triage, trend, alerts, batch processing)
+- `apps/clinical/constants.py` - OMOP concept ID mappings, normal ranges, severity/trajectory choices
+- `apps/clinical/views.py` - HTMX fragment views for Vitals tab and My Health card with IDOR protection
+- `apps/clinical/tasks.py` - Celery tasks for nightly snapshot recomputation and missing data checks
+- `apps/clinical/context_processors.py` - Template context processor for ENABLE_CLINICAL_DATA flag
+- `apps/clinical/management/commands/seed_clinical_data.py` - Demo data seeder with 4 cardiac scenarios
+- `apps/clinical/management/commands/compute_clinical_snapshots.py` - Manual snapshot recomputation
+- `apps/agents/services.py` - Added `_inject_clinical_data()` for agent context assembly
+- `apps/clinicians/services.py` - Added trajectory Subquery annotation and clinical alert handoff context
+- `apps/clinicians/views.py` - Added trajectory to patient list data
+- `apps/administrators/services.py` - Added ClinicalAlertService for admin KPI dashboard
+- `templates/clinical/vitals_tab.html` - Clinician Vitals tab with charts, alerts, labs
+- `templates/clinical/health_card.html` - Patient My Health card with sparklines
+- `templates/base_clinician.html` - Added Chart.js CDN and Vitals tab button (feature-flagged)
+- `templates/base_patient.html` - Added Chart.js CDN (feature-flagged)
+- `templates/clinicians/components/_patient_detail.html` - Added Vitals tab button
+- `templates/clinicians/components/_patient_list_item.html` - Added trajectory arrows
+- `templates/patients/dashboard.html` - Added My Health card div (feature-flagged)
+- `static/js/clinician-dashboard.js` - Added Vitals tab URL and keyboard shortcut `6`
+- `config/settings/base.py` - Added ENABLE_CLINICAL_DATA flag and apps.clinical to INSTALLED_APPS
+
 ### Phase 3: Communication & Multi-modality
 - `config/celery.py` - Celery app configuration with Redis broker
 - `apps/messages_app/backends.py` - SMS backend abstraction (Twilio/Console/LocMem)
@@ -519,11 +642,12 @@ RAG_TEXT_WEIGHT=0.3                           # Weight for full-text search scor
 ### Full Test Suite
 ```bash
 POSTGRES_PORT=5434 pytest
-# 1222 tests, ≥91% coverage
+# 1534 tests, ≥90% coverage
 ```
 
 ### Test Coverage by App
-- `apps/administrators/` - Auth decorator, 7 service classes, views (20+ endpoints), management command, 117 tests
+- `apps/clinical/` - Models, rules (1 per rule), services, views, commands, tasks, coverage gaps — 118 tests
+- `apps/administrators/` - Auth decorator, 7 service classes, views (20+ endpoints), management command — 117 tests
 - `apps/analytics/` - DailyMetrics pipeline, services, Celery task, backfill management command
 - `apps/clinicians/` - Models, auth decorator, views (25+ endpoints), services, management command, coverage tests
 - `apps/knowledge/` - Embeddings, parsers, ingestion, retrieval, sanitizer, admin, management commands
@@ -552,25 +676,32 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 
 ## Open Questions for Next Session
 
-1. **Phase 7 Polish:**
+1. **Phase 7.5 — Proactive Patient Messaging (deferred from Phase 7):**
+   - Wire alert creation to patient-facing chat messages via existing `process_patient_message()`
+   - Missing weight data → warm outreach message
+   - Declining activity → gentle check-in message
+   - Weight gain trend → informative message + auto-escalate
+   - The rules engine and alert system are complete — this is a wiring task, not new architecture
+
+2. **Phase 8 Polish:**
    - Multilingual support (i18n) for patient-facing content
    - Visual recovery timeline component
    - Smart scheduling (pathway-suggested appointments)
    - Recovery milestone celebrations
 
-2. **Admin Dashboard Enhancements:**
+3. **Admin Dashboard Enhancements:**
    - Anomaly detection / automated weekly digest emails (see TODO-017)
    - Multi-site anonymized benchmarking (see TODO-018)
    - Extend `create_cardiology_service` with LLM-produced seed data for admin dashboard demo
    - Design review on live admin dashboard
 
-3. **Infrastructure:**
+4. **Infrastructure:**
    - Server-side pagination for patient list (see TODO-015)
    - Migrate async wrappers to Django 5.1 native async ORM (see TODO-016)
    - Load testing and performance benchmarks (see TODO-010)
    - Production LLM migration (see TODO-008)
 
-4. **Deferred improvements:**
+5. **Deferred improvements:**
    - Embedding cache (Redis, TTL-based) — see TODO-012
    - OCR for scanned PDFs — see TODO-011
    - Caregiver read-only dashboard — see TODO-013
@@ -579,16 +710,14 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 
 ## What to Do in Next Session
 
-1. **Test admin dashboard:** `python manage.py create_test_admin` → log in at `/admin-dashboard/` as admin_test / testpass123
-2. **Explore KPI cards:** Verify hero readmission rate, period tabs, hospital filter, time range filter
-3. **Test pathway admin:** Navigate to Pathways page, edit a pathway, toggle active/inactive
-4. **Test CSV export:** Click Export CSV, verify formula injection protection
-5. **Run design review:** `/design-review` on the live admin dashboard at `http://localhost:8000/admin-dashboard/`
-6. **Test clinician dashboard:** `python manage.py create_test_clinician` → three-panel layout, 4 tabs, take-control
-7. **Test patient UI:** `python manage.py create_test_patient` → auth URL → DOB `06/15/1985` → chat + citations
-8. **Focus on:** Phase 7 — Polish, i18n, visual recovery timeline, load testing, security audit
-9. **Run tests:** `POSTGRES_PORT=5434 pytest` for full suite, `pytest tests/e2e/ -p no:xdist` for E2E
-10. **Verify:** Pre-commit hooks passing, coverage ≥91%
+1. **Seed clinical data:** `ENABLE_CLINICAL_DATA=True python manage.py seed_clinical_data` — creates 5 patients with 4 cardiac scenarios
+2. **Test clinician Vitals tab:** Log in as clinician → select Gordon Bryant → Vitals tab (or press `6`) → verify charts, alerts, labs
+3. **Test patient My Health card:** Log in as patient with clinical data → scroll to My Health card → verify sparklines and trajectory
+4. **Practice demo narrative:** "Patient discharged 12 days ago. Day 10, weight started trending up. Day 12, Clintela detected the pattern and escalated to the care team. In the old world, this wouldn't be caught until the 4-week follow-up."
+5. **Verify feature flag:** `ENABLE_CLINICAL_DATA=False` hides all clinical UI cleanly
+6. **Consider implementing proactive patient messaging** (Phase 7.5) — wire alert creation to patient-facing chat messages for missing data, declining activity, and weight gain trends
+7. **Run tests:** `POSTGRES_PORT=5434 pytest` for full suite (1534 tests, 90%+ coverage)
+8. **Focus on:** Phase 8 — Polish, i18n, visual recovery timeline, load testing, security audit
 
 ---
 
@@ -615,7 +744,8 @@ See `docs/AGENT_SYSTEM_ACCEPTANCE.md` for agent testing and `docs/ACCEPTANCE-TES
 - **Phase 4 RAG** (2026-03-20) - pgvector, knowledge models, ingestion pipeline, specialists, lifecycle, caregiver flow, consent, admin dashboard
 - **Phase 5 clinician dashboard** (2026-03-20) - Models, auth, views, services, templates, JS, scheduling, take-control, tests, QA fixes
 - **Phase 6 admin dashboard** (2026-03-21) - KPI scorecard, 7 service classes, DailyMetrics pipeline, pathway admin, 117 tests
+- **Phase 7 clinical intelligence** (2026-03-23) - Three-layer clinical architecture, 16-rule deterministic engine, OMOP bridge, clinician Vitals tab, patient My Health card, 118 tests, QA health score 95
 
 ---
 
-*Phase 6 Complete (v0.2.10.0) — Administrator KPI Dashboard: 9 metric cards, operational alerts, pathway administration, DailyMetrics pipeline, CSV export, global hospital/time filters, print-friendly CSS, and ≥91% test coverage (1222 tests). Ready for Phase 7: Polish & Testing.*
+*Phase 7 Complete (v0.2.11.0) — Clinical Intelligence Layer: three-layer architecture (observations, snapshots, alerts), 16-rule deterministic engine with FDA-compliant rationale, OMOP concept ID bridge, clinician Vitals tab with Chart.js charts, patient My Health card with sparklines, 4 demo scenarios, feature-flagged. 1534 tests at 90%+ coverage. Proactive patient messaging deferred to Phase 7.5. Ready for Phase 8: Polish and Testing.*

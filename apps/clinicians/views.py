@@ -133,6 +133,7 @@ def patient_list_fragment(request):
                 "patient": p,
                 "status_line": PatientListService.get_status_line(p),
                 "days_post_op": p.days_post_op(),
+                "trajectory": getattr(p, "_clinical_trajectory", None),
             }
         )
 

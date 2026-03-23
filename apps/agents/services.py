@@ -119,6 +119,26 @@ def _inject_preferences(patient_context: dict, patient) -> None:
         logger.debug("No patient preferences available for patient %s", patient.id)
 
 
+def _inject_clinical_data(patient_context: dict, patient) -> None:
+    """Inject clinical snapshot data into context when feature flag is on."""
+    from django.conf import settings
+
+    if not getattr(settings, "ENABLE_CLINICAL_DATA", False):
+        return
+
+    try:
+        snapshot = patient.clinical_snapshot
+        patient_context["clinical"] = {
+            "trajectory": snapshot.trajectory,
+            "risk_score": float(snapshot.risk_score),
+            "active_alerts_count": snapshot.active_alerts_count,
+            "data_completeness": float(snapshot.data_completeness),
+            "vital_signs": snapshot.vital_signs,
+        }
+    except Exception:
+        logger.warning("Clinical snapshot unavailable for patient %s", patient.id)
+
+
 def process_patient_message(patient, content, channel="chat", audio_url=None):
     """Shared helper for processing a patient message through the AI workflow.
 
@@ -489,6 +509,9 @@ class ContextService:
 
         # Include patient preferences for personalized interactions
         _inject_preferences(context, patient)
+
+        # Include clinical data when available (feature-flagged)
+        _inject_clinical_data(context, patient)
 
         return context
 
