@@ -554,6 +554,46 @@ def recovery_timeline_fragment(request):
     )
 
 
+def upcoming_appointment_fragment(request):
+    """HTMX fragment: upcoming appointment card on patient dashboard."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return HttpResponse("")
+
+    from django.utils import timezone
+
+    from apps.clinicians.models import Appointment
+
+    now = timezone.now()
+    appointment = (
+        Appointment.objects.filter(
+            patient=patient,
+            scheduled_start__gte=now,
+            status__in=["scheduled", "confirmed"],
+        )
+        .select_related("clinician__user")
+        .order_by("scheduled_start")
+        .first()
+    )
+
+    if not appointment:
+        return HttpResponse("")
+
+    # Show join button if appointment is within 15 minutes
+    from datetime import timedelta
+
+    show_join = appointment.scheduled_start <= now + timedelta(minutes=15)
+
+    return render(
+        request,
+        "patients/components/_upcoming_appointment.html",
+        {
+            "appointment": appointment,
+            "show_join_button": show_join,
+        },
+    )
+
+
 # ---------------------------------------------------------------------------
 # Appointment Booking
 # ---------------------------------------------------------------------------

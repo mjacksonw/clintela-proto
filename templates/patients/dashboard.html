@@ -227,8 +227,16 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 {% endif %}
 
-<!-- Recovery Timeline -->
+<!-- Upcoming Appointment -->
 <div class="animate-in animate-in-delay-1 mb-6"
+     hx-get="{% url 'patients:upcoming_appointment' %}"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+    <!-- Loaded via HTMX -->
+</div>
+
+<!-- Recovery Timeline -->
+<div class="animate-in animate-in-delay-2 mb-6"
      hx-get="{% url 'patients:timeline' %}"
      hx-trigger="load"
      hx-swap="innerHTML">

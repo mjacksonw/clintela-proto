@@ -19,6 +19,12 @@ urlpatterns = [
     path("caregivers/revoke/", views.patient_caregiver_revoke_view, name="caregiver_revoke"),
     # Recovery timeline
     path("timeline/", views.recovery_timeline_fragment, name="timeline"),
+    # Upcoming appointment
+    path(
+        "upcoming-appointment/",
+        views.upcoming_appointment_fragment,
+        name="upcoming_appointment",
+    ),
     # Appointment booking
     path("book/<uuid:request_id>/", views.booking_page, name="booking_page"),
     path("book/<uuid:request_id>/confirm/", views.book_slot, name="book_slot"),
