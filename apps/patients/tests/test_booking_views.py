@@ -253,3 +253,26 @@ class TestDownloadIcalView:
         )
         response = authenticated_client.get(url)
         assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestUpcomingAppointmentFragment:
+    def test_shows_upcoming_appointment(self, authenticated_client, booked_appointment):
+        url = reverse("patients:upcoming_appointment")
+        response = authenticated_client.get(url)
+        assert response.status_code == 200
+        assert b"Upcoming Appointment" in response.content
+        assert b"Alice Booker" in response.content
+
+    def test_empty_when_no_appointment(self, authenticated_client):
+        url = reverse("patients:upcoming_appointment")
+        response = authenticated_client.get(url)
+        assert response.status_code == 200
+        assert response.content == b""
+
+    def test_unauthenticated_returns_empty(self):
+        client = Client()
+        url = reverse("patients:upcoming_appointment")
+        response = client.get(url)
+        assert response.status_code == 200
+        assert response.content == b""
