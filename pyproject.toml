@@ -30,7 +30,9 @@ dependencies = [
     # AI/LLM
     "langchain>=0.2.0",
     "langchain-core>=0.2.0",
+    "langchain-ollama>=0.3.0",
     "langgraph>=0.0.50",
+    "langsmith>=0.2.0",
     # Communications
     "twilio>=9.0",
     # HTTP/API

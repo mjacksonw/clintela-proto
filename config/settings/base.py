@@ -350,6 +350,11 @@ OLLAMA_MODEL = env("OLLAMA_MODEL", default="llama3.2")
 OLLAMA_TIMEOUT = env.int("OLLAMA_TIMEOUT", default=90)
 OLLAMA_MAX_RETRIES = env.int("OLLAMA_MAX_RETRIES", default=3)
 
+# LangSmith (opt-in tracing — set env vars to enable)
+LANGSMITH_TRACING = env.bool("LANGSMITH_TRACING", default=False)
+LANGSMITH_API_KEY = env("LANGSMITH_API_KEY", default=None)
+LANGSMITH_PROJECT = env("LANGSMITH_PROJECT", default="clintela")
+
 # =============================================================================
 # NOTIFICATION BACKENDS
 # =============================================================================

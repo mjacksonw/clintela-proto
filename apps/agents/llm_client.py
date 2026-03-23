@@ -1,11 +1,14 @@
-"""LLM Client abstraction for Ollama Cloud integration."""
+"""LLM Client abstraction for Ollama Cloud integration via LangChain."""
 
+import asyncio
 import json
 import logging
 from typing import Any
 
 import httpx
 from django.conf import settings
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_ollama import ChatOllama
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +38,11 @@ class LLMResponseError(LLMError):
 
 
 class LLMClient:
-    """Client for Ollama Cloud LLM API with retry logic and error handling."""
+    """Client for Ollama Cloud LLM API using LangChain ChatOllama.
+
+    Provides retry logic, error handling, and automatic LangSmith tracing
+    when LANGSMITH_TRACING=true is set in the environment.
+    """
 
     _instance = None
 
@@ -57,33 +64,67 @@ class LLMClient:
         self.timeout = getattr(settings, "OLLAMA_TIMEOUT", 30)
         self.max_retries = getattr(settings, "OLLAMA_MAX_RETRIES", 3)
 
-        self._client = None
         self._initialized = True
 
-    @property
-    def client(self) -> httpx.AsyncClient:
-        """Get or create HTTP client."""
-        if self._client is None:
-            # Ensure trailing slash for proper URL path joining
-            base_url = self.base_url.rstrip("/") + "/"
-            # Use explicit timeout config for cloud LLMs which can be slow
-            timeout_config = httpx.Timeout(
-                connect=10.0,
-                read=float(self.timeout),  # Main timeout for LLM response
-                write=10.0,
-                pool=10.0,
-            )
-            self._client = httpx.AsyncClient(
-                base_url=base_url,
-                timeout=timeout_config,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-            )
-        return self._client
+    def _make_model(self, temperature: float = 0.7, json_mode: bool = False) -> ChatOllama:
+        """Create a ChatOllama instance with the given parameters.
 
-    async def generate(  # noqa: C901
+        A fresh instance is created per call to support per-call temperature.
+        ChatOllama construction is lightweight (no connection pooling).
+        """
+        # ChatOllama appends /api/chat itself, so we need the server root.
+        # Strip trailing path components like /v1 or /api that were used by
+        # the old httpx client.
+        base = self.base_url.rstrip("/")
+        for suffix in ("/v1", "/api"):
+            if base.endswith(suffix):
+                base = base[: -len(suffix)]
+
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "base_url": base,
+            "temperature": temperature,
+            "client_kwargs": {
+                "headers": {"Authorization": f"Bearer {self.api_key}"},
+                "timeout": float(self.timeout),
+            },
+        }
+        if json_mode:
+            kwargs["format"] = "json"
+        return ChatOllama(**kwargs)
+
+    @staticmethod
+    def _convert_messages(
+        messages: list[dict[str, str]],
+    ) -> list[SystemMessage | HumanMessage | AIMessage]:
+        """Convert list of dicts to LangChain message objects."""
+        result: list[SystemMessage | HumanMessage | AIMessage] = []
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            if role == "system":
+                result.append(SystemMessage(content=content))
+            elif role == "assistant":
+                result.append(AIMessage(content=content))
+            else:
+                result.append(HumanMessage(content=content))
+        return result
+
+    @staticmethod
+    def _parse_response(response: AIMessage) -> dict[str, Any]:
+        """Extract content, usage, model, and finish_reason from AIMessage."""
+        meta = response.response_metadata or {}
+        return {
+            "content": response.content,
+            "usage": {
+                "prompt_tokens": meta.get("prompt_eval_count", 0),
+                "completion_tokens": meta.get("eval_count", 0),
+            },
+            "model": meta.get("model", ""),
+            "finish_reason": "stop" if meta.get("done") else meta.get("done_reason"),
+        }
+
+    async def generate(
         self,
         messages: list[dict[str, str]],
         temperature: float = 0.7,
@@ -99,7 +140,7 @@ class LLMClient:
             response_format: Optional JSON schema for structured output
 
         Returns:
-            Dict containing 'content', 'usage', and 'model' keys
+            Dict containing 'content', 'usage', 'model', and 'finish_reason' keys
 
         Raises:
             LLMTimeoutError: If request times out after retries
@@ -109,91 +150,29 @@ class LLMClient:
         if not self.api_key:
             raise LLMError("OLLAMA_API_KEY not configured")
 
-        # Determine endpoint based on base URL
-        base_url_normalized = self.base_url.rstrip("/")
+        json_mode = response_format is not None
+        model = self._make_model(temperature=temperature, json_mode=json_mode)
+        lc_messages = self._convert_messages(messages)
 
-        # Check if this is Ollama Cloud (ollama.com/api) vs OpenAI-compatible
-        is_ollama_cloud = "ollama.com" in base_url_normalized or (
-            "/api" in base_url_normalized and not base_url_normalized.endswith("/v1")
-        )
-        if is_ollama_cloud:
-            # Use relative path (no leading slash) since base_url includes /api
-            endpoint = "chat" if base_url_normalized.endswith("/api") else "api/chat"
-            # Ollama format doesn't use response_format in payload
-            ollama_payload = {
-                "model": self.model,
-                "messages": messages,
-                "stream": False,
-            }
-            if response_format:
-                ollama_payload["format"] = "json"
-            payload = ollama_payload
-        else:
-            # OpenAI-compatible format
-            endpoint = "chat/completions"
-            payload = {
-                "model": self.model,
-                "messages": messages,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-                "stream": False,
-            }
-            if response_format:
-                payload["response_format"] = response_format
-
-        # Retry logic
         last_error = None
         for attempt in range(self.max_retries):
             try:
-                response = await self.client.post(endpoint, json=payload)
-                response.raise_for_status()
-
-                # Parse response
-                try:
-                    data = response.json()
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse LLM response: {e}")
-                    raise LLMResponseError("Invalid JSON response") from e
-
-                # Parse response based on API format
-                if "choices" in data:
-                    # OpenAI-compatible format
-                    if not data["choices"]:
-                        logger.error(f"Invalid LLM response structure: {data}")
-                        raise LLMResponseError("Invalid response structure")
-                    return {
-                        "content": data["choices"][0]["message"]["content"],
-                        "usage": data.get("usage", {}),
-                        "model": data.get("model", self.model),
-                        "finish_reason": data["choices"][0].get("finish_reason"),
-                    }
-                elif "message" in data:
-                    # Ollama native format
-                    return {
-                        "content": data["message"]["content"],
-                        "usage": data.get("prompt_eval_count") or data.get("usage", {}),
-                        "model": data.get("model", self.model),
-                        "finish_reason": "stop" if data.get("done") else None,
-                    }
-                else:
-                    logger.error(f"Invalid LLM response structure: {data}")
-                    raise LLMResponseError("Invalid response structure")
+                response = await model.ainvoke(lc_messages)
+                return self._parse_response(response)
 
             except httpx.TimeoutException:
                 last_error = LLMTimeoutError(f"Request timed out after {self.timeout}s")
-                logger.warning(f"LLM request timed out (attempt {attempt + 1}/{self.max_retries})")
+                logger.warning(
+                    f"LLM request timed out (attempt {attempt + 1}/{self.max_retries}, limit={self.timeout}s)"
+                )
                 if attempt < self.max_retries - 1:
-                    import asyncio
-
-                    await asyncio.sleep(min(2 * (2**attempt), 10))  # Exponential backoff
+                    await asyncio.sleep(min(2 * (2**attempt), 10))
                 continue
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 429:
                     last_error = LLMRateLimitError("Rate limit exceeded")
                     logger.warning(f"LLM rate limit hit (attempt {attempt + 1}/{self.max_retries})")
                     if attempt < self.max_retries - 1:
-                        import asyncio
-
                         await asyncio.sleep(min(2 * (2**attempt), 10))
                     continue
                 logger.error(f"LLM HTTP error: {e.response.status_code} - {e.response.text}")
@@ -228,11 +207,12 @@ class LLMClient:
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
+            response_format={"type": "json_object"},
         )
 
         content = response["content"].strip()
 
-        # Try to extract JSON from markdown code blocks
+        # Try to extract JSON from markdown code blocks (safety net)
         if content.startswith("```json"):
             content = content[7:]
             if content.endswith("```"):
@@ -251,10 +231,8 @@ class LLMClient:
             raise LLMResponseError(f"Invalid JSON: {e}") from e
 
     async def close(self):
-        """Close the HTTP client."""
-        if self._client:
-            await self._client.aclose()
-            self._client = None
+        """No-op — ChatOllama manages its own connections."""
+        pass
 
 
 class MockLLMClient:
