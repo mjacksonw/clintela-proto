@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.12.1] - 2026-03-23
+
+### Fixed
+- Dev toolbar patient switcher now shows all patients sorted by last name (was limited to 20 most recent)
+
 ## [0.2.12.0] - 2026-03-23
 
 ### Added
