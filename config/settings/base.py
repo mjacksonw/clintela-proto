@@ -351,9 +351,16 @@ OLLAMA_TIMEOUT = env.int("OLLAMA_TIMEOUT", default=90)
 OLLAMA_MAX_RETRIES = env.int("OLLAMA_MAX_RETRIES", default=3)
 
 # LangSmith (opt-in tracing — set env vars to enable)
+# LangSmith checks os.environ for the literal string "true" (lowercase),
+# so we normalize the value after django-environ reads it.
 LANGSMITH_TRACING = env.bool("LANGSMITH_TRACING", default=False)
 LANGSMITH_API_KEY = env("LANGSMITH_API_KEY", default=None)
 LANGSMITH_PROJECT = env("LANGSMITH_PROJECT", default="clintela")
+
+if LANGSMITH_TRACING:
+    import os
+
+    os.environ["LANGSMITH_TRACING"] = "true"
 
 # =============================================================================
 # NOTIFICATION BACKENDS
