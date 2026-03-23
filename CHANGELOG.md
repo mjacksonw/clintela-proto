@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.11.0] - 2026-03-23
+
+### Added
+- Clinical Intelligence Layer — three-layer architecture: ClinicalObservation → PatientClinicalSnapshot → ClinicalAlert
+- OMOP CDM concept ID mapping for 12 cardiac-relevant vitals and labs (heart rate, blood pressure, SpO2, body weight, temperature, step count, BNP, troponin, etc.)
+- Deterministic rules engine with 16 registered rules: threshold rules, trend rules, missing data detection, and combination rules (CHF decompensation, infection signal, ePRO-activity correlation)
+- FDA 2026 CDS-compliant rule_rationale on every alert — auditable, transparent, deterministic
+- Clinician Vitals tab (6th tab, keyboard shortcut `6`) with snapshot summary bar, expandable alerts, Chart.js vital sign charts with normal range bands, and lab results table with EHR/OMOP source badges
+- Patient My Health card with sparkline charts (2×2 grid) and warm trajectory messaging
+- Trajectory arrows (↗/→/↘/⬇) on patient list items with color-coded severity
+- Clinical alerts auto-wire to existing triage color system (update_triage_color)
+- Clinical data injection into AI agent context (trajectory, risk score, vital signs, active alerts)
+- Clinical alert summary in administrator KPI dashboard (severity counts, avg acknowledgment time, top 5 triggering rules)
+- Clinical alert context in clinician handoff summaries
+- Feature flag `ENABLE_CLINICAL_DATA` (follows existing ENABLE_RAG, ENABLE_SMS pattern) — all UI gated
+- Dark mode support for all clinical UI components
+- Seed command (`seed_clinical_data`) with 4 clinical scenarios: progressing, CHF decompensation, infection, declining activity
+- Management command (`compute_clinical_snapshots`) for nightly snapshot recomputation
+- Celery tasks for nightly snapshot computation and 6-hourly missing data checks
+- 118 clinical tests across 7 test files (models, rules, services, views, commands, tasks, coverage gaps)
+
+### Fixed
+- IDOR vulnerability in vitals tab — added clinician role + hospital access verification
+- Race condition in alert deduplication — IntegrityError catch on UniqueConstraint
+- Chart.js infinite height bug — canvas in position:relative div with fixed 160px height
+- Chart visual density — pointRadius:0 (hover only), borderWidth:1.5, tension:0.4
+- data_completeness display — stored as 0-1 decimal, now correctly displayed as percentage
+- Patient sparklines not rendering — Chart.js CDN added to patient base template + vanilla JS canvas creation
+- Sparkline data double-serialized — pass dict directly to json_script (not json.dumps)
+
 ## [0.2.10.0] - 2026-03-21
 
 ### Added
