@@ -1,7 +1,8 @@
 {% extends "base_patient.html" %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Privacy & Consent — Clintela{% endblock %}
+{% block title %}{% trans "Privacy & Consent" %} — Clintela{% endblock %}
 
 {% block dashboard_content %}
 
@@ -10,11 +11,11 @@
     <a href="{% url 'patients:dashboard' %}" class="inline-flex items-center gap-1.5 text-sm font-medium mb-4 py-2"
        style="color: var(--color-primary); min-height: 44px;">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
-        Back to Dashboard
+        {% trans "Back to Dashboard" %}
     </a>
-    <h1 class="text-2xl font-semibold" style="letter-spacing: -0.02em;">Privacy & Consent</h1>
+    <h1 class="text-2xl font-semibold" style="letter-spacing: -0.02em;">{% trans "Privacy & Consent" %}</h1>
     <p class="mt-1 text-base" style="color: var(--color-text-secondary);">
-        Control how your information is used and shared. Changes take effect immediately.
+        {% trans "Control how your information is used and shared. Changes take effect immediately." %}
     </p>
 </div>
 
@@ -53,7 +54,7 @@
                         style="background-color: {% if item.granted %}#059669{% else %}var(--color-border){% endif %}; min-height: 44px; min-width: 44px;"
                         role="switch"
                         aria-checked="{{ item.granted|yesno:'true,false' }}"
-                        aria-label="Toggle {{ item.label }}">
+                        aria-label="{% blocktrans with label=item.label %}Toggle {{ label }}{% endblocktrans %}">
                     <span class="block w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-200"
                           style="transform: translateX({% if item.granted %}26px{% else %}2px{% endif %}); margin-top: 1px;"></span>
                 </button>
@@ -61,7 +62,7 @@
         </div>
         {% if item.last_changed %}
         <p class="text-xs mt-2" style="color: var(--color-text-secondary);">
-            Last updated {{ item.last_changed|timesince }} ago
+            {% blocktrans with time=item.last_changed|timesince %}Last updated {{ time }} ago{% endblocktrans %}
         </p>
         {% endif %}
     </div>
@@ -73,11 +74,9 @@
     <div class="flex items-start gap-2">
         <i data-lucide="shield-check" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color: #0D9488;"></i>
         <div style="color: var(--color-text-secondary);">
-            <p class="font-medium" style="color: var(--color-text);">Your privacy matters</p>
+            <p class="font-medium" style="color: var(--color-text);">{% trans "Your privacy matters" %}</p>
             <p class="mt-1">
-                All consent changes are logged for your protection. Your care team can see
-                what you've agreed to, but cannot change your preferences.
-                You can update these settings at any time.
+                {% trans "All consent changes are logged for your protection. Your care team can see what you've agreed to, but cannot change your preferences. You can update these settings at any time." %}
             </p>
         </div>
     </div>

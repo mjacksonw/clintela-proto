@@ -1,0 +1,827 @@
+# Clintela — Spanish translations
+# Copyright (C) 2026 Clintela
+# This file is distributed under the same license as the Clintela package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Clintela 0.2.11.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-03-23 13:00+0000\n"
+"PO-Revision-Date: 2026-03-23 13:00+0000\n"
+"Last-Translator: Clintela Team\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#, python-brace-format
+msgid ""
+"Hey {preferred_name}, we haven't seen a reading from you in a couple of "
+"days. When you get a chance, could you check in? No rush — just helps us "
+"keep an eye on how you're doing.{goal_reference}"
+msgstr ""
+"Hola {preferred_name}, no hemos recibido una lectura tuya en un par de "
+"días. Cuando puedas, ¿podrías registrarte? Sin prisa — solo nos ayuda "
+"a estar al tanto de cómo te va.{goal_reference}"
+
+#, python-brace-format
+msgid ""
+"Hey {preferred_name}, your weight has been creeping up a bit over the last "
+"few days. Have you noticed any swelling in your ankles or feet? It might be "
+"nothing, but we'd rather check in than miss something.{goal_reference}"
+msgstr ""
+"Hola {preferred_name}, tu peso ha subido un poco en los últimos días. "
+"¿Has notado alguna hinchazón en los tobillos o los pies? Puede que no sea "
+"nada, pero preferimos preguntar antes que pasar algo por alto.{goal_reference}"
+
+#, python-brace-format
+msgid ""
+"We noticed you've been a bit less active lately, {preferred_name}. How are "
+"you feeling? Sometimes a slow day is just a slow day — but if something's "
+"bothering you, we're right here.{goal_reference}"
+msgstr ""
+"Hemos notado que has estado un poco menos activo/a últimamente, "
+"{preferred_name}. ¿Cómo te sientes? A veces un día tranquilo es solo eso "
+"— pero si algo te preocupa, aquí estamos.{goal_reference}"
+
+msgid ""
+" We want to make sure nothing slows down your recovery so you can get back "
+"to what matters to you."
+msgstr ""
+" Queremos asegurarnos de que nada retrase tu recuperación para que puedas "
+"volver a lo que más te importa."
+
+#, python-format
+msgid "Day %(day)d milestone reached!"
+msgstr "¡Hito del día %(day)d alcanzado!"
+
+msgid "You made it through your first day home. That takes courage."
+msgstr "Superaste tu primer día en casa. Eso requiere valentía."
+
+msgid "Three days in — the hardest part is often behind you now. Keep going."
+msgstr "Tres días ya — la parte más difícil suele haber quedado atrás. Sigue adelante."
+
+msgid ""
+"A whole week! Your body is healing and you're taking great care of yourself."
+msgstr ""
+"¡Una semana entera! Tu cuerpo se está recuperando y te estás cuidando muy bien."
+
+msgid "Two weeks of recovery. You should be proud of how far you've come."
+msgstr "Dos semanas de recuperación. Deberías estar orgulloso/a de lo lejos que has llegado."
+
+msgid ""
+"One month! This is a major milestone. You've shown real dedication to your "
+"recovery."
+msgstr ""
+"¡Un mes! Este es un hito importante. Has demostrado una verdadera dedicación "
+"a tu recuperación."
+
+msgid "You've completed another milestone. Keep up the great work!"
+msgstr "¡Has completado otro hito. Sigue así!"
+
+msgid "Every step brings you closer to what matters most to you."
+msgstr "Cada paso te acerca más a lo que más te importa."
+
+msgid "Welcome home. Your recovery journey begins."
+msgstr "Bienvenido/a a casa. Tu camino de recuperación comienza."
+
+msgid "The first few days are the hardest. You're doing great."
+msgstr "Los primeros días son los más difíciles. Lo estás haciendo muy bien."
+
+msgid "One week! You're building great momentum."
+msgstr "¡Una semana! Estás ganando buen impulso."
+
+msgid "Two weeks in. Every day counts."
+msgstr "Dos semanas ya. Cada día cuenta."
+
+msgid "One month! Look how far you've come."
+msgstr "¡Un mes! Mira lo lejos que has llegado."
+
+msgid "Important update"
+msgstr "Actualización importante"
+
+msgid "Something to watch"
+msgstr "Algo a tener en cuenta"
+
+msgid "Good to know"
+msgstr "Bueno saberlo"
+
+msgid "Update"
+msgstr "Actualización"
+
+msgid "Verify Your Identity"
+msgstr "Verifica tu identidad"
+
+msgid "Welcome to Clintela"
+msgstr "Bienvenido/a a Clintela"
+
+#, python-format
+msgid "Code verified: %(code)s"
+msgstr "Código verificado: %(code)s"
+
+msgid "Please enter your date of birth"
+msgstr "Por favor, ingresa tu fecha de nacimiento"
+
+msgid "Continue"
+msgstr "Continuar"
+
+msgid "Code doesn't match your leaflet?"
+msgstr "¿El código no coincide con tu folleto?"
+
+msgid "Try again"
+msgstr "Intentar de nuevo"
+
+msgid "Too Many Attempts"
+msgstr "Demasiados intentos"
+
+msgid "You've made too many attempts. Please try again in an hour."
+msgstr "Has hecho demasiados intentos. Por favor, inténtalo de nuevo en una hora."
+
+msgid ""
+"If you need immediate assistance, contact your care team directly using the "
+"number on your discharge leaflet."
+msgstr ""
+"Si necesitas ayuda inmediata, contacta a tu equipo de cuidado directamente "
+"usando el número en tu folleto de alta."
+
+msgid "Link Expired"
+msgstr "Enlace expirado"
+
+msgid ""
+"This link has expired for security reasons. You can request a new one or "
+"sign in manually."
+msgstr ""
+"Este enlace ha expirado por razones de seguridad. Puedes solicitar uno nuevo "
+"o iniciar sesión manualmente."
+
+msgid "Send a new link to your phone"
+msgstr "Enviar un nuevo enlace a tu teléfono"
+
+msgid "Send New Link"
+msgstr "Enviar nuevo enlace"
+
+msgid "Or sign in with your leaflet code"
+msgstr "O inicia sesión con el código de tu folleto"
+
+msgid "Sign In"
+msgstr "Iniciar sesión"
+
+msgid "Chat with your care team"
+msgstr "Chatea con tu equipo de cuidado"
+
+msgid "Open chat sidebar"
+msgstr "Abrir panel de chat"
+
+msgid "Chat"
+msgstr "Chat"
+
+msgid "Close chat"
+msgstr "Cerrar chat"
+
+msgid "Recovery dashboard"
+msgstr "Panel de recuperación"
+
+msgid "Open chat"
+msgstr "Abrir chat"
+
+msgid "Collapse chat sidebar"
+msgstr "Cerrar panel de chat"
+
+msgid "My Health"
+msgstr "Mi Salud"
+
+msgid "Once we start tracking your health data, you'll see your progress here."
+msgstr "Cuando empecemos a monitorear tus datos de salud, verás tu progreso aquí."
+
+msgid ""
+"In the meantime, your care team is still right here if you need anything."
+msgstr ""
+"Mientras tanto, tu equipo de cuidado sigue aquí si necesitas algo."
+
+msgid "Translated"
+msgstr "Traducido"
+
+msgid "Hide original"
+msgstr "Ocultar original"
+
+msgid "View original"
+msgstr "Ver original"
+
+msgid "Visit requested"
+msgstr "Visita solicitada"
+
+msgid "Request a virtual visit with this patient"
+msgstr "Solicitar una visita virtual con este paciente"
+
+msgid "Request Visit"
+msgstr "Solicitar visita"
+
+msgid "Ask me anything about your recovery"
+msgstr "Pregúntame lo que quieras sobre tu recuperación"
+
+msgid "Ask me anything about your recovery..."
+msgstr "Pregúntame lo que quieras sobre tu recuperación..."
+
+msgid "Cancel recording"
+msgstr "Cancelar grabación"
+
+msgid "Record voice message"
+msgstr "Grabar mensaje de voz"
+
+msgid "Stop recording and send"
+msgstr "Detener grabación y enviar"
+
+msgid "Send message"
+msgstr "Enviar mensaje"
+
+msgid "You're offline — messages can't be sent right now"
+msgstr "Estás sin conexión — los mensajes no se pueden enviar ahora"
+
+msgid "Your care team has been notified and will follow up shortly."
+msgstr "Tu equipo de cuidado ha sido notificado y te contactará pronto."
+
+msgid "Dismiss"
+msgstr "Cerrar"
+
+msgid "Chat messages"
+msgstr "Mensajes del chat"
+
+msgid "Is this normal?"
+msgstr "¿Es esto normal?"
+
+msgid "My medications"
+msgstr "Mis medicamentos"
+
+msgid "Talk to my care team"
+msgstr "Hablar con mi equipo de cuidado"
+
+#, python-format
+msgid "Hi %(name)s!"
+msgstr "¡Hola %(name)s!"
+
+msgid "I'm here to help with your recovery. Ask me anything."
+msgstr "Estoy aquí para ayudarte con tu recuperación. Pregúntame lo que quieras."
+
+msgid "Your conversations are private and shared only with your care team."
+msgstr "Tus conversaciones son privadas y solo se comparten con tu equipo de cuidado."
+
+msgid "Notifications"
+msgstr "Notificaciones"
+
+msgid "Mark all read"
+msgstr "Marcar todo como leído"
+
+msgid "All caught up!"
+msgstr "¡Todo al día!"
+
+msgid "Close notifications"
+msgstr "Cerrar notificaciones"
+
+msgid "Change language"
+msgstr "Cambiar idioma"
+
+msgid "Toggle dark mode"
+msgstr "Cambiar modo oscuro"
+
+msgid "Voice recording has expired"
+msgstr "La grabación de voz ha expirado"
+
+msgid "Recording expired"
+msgstr "Grabación expirada"
+
+#, python-format
+msgid "%(name)s completed"
+msgstr "%(name)s completado"
+
+msgid "Score:"
+msgstr "Puntuación:"
+
+msgid "View Details"
+msgstr "Ver detalles"
+
+#, python-format
+msgid "Based on %(count)s clinical source"
+msgid_plural "Based on %(count)s clinical sources"
+msgstr[0] "Basado en %(count)s fuente clínica"
+msgstr[1] "Basado en %(count)s fuentes clínicas"
+
+msgid ""
+"I may not have the best answer for this — consider reaching out to your care "
+"team."
+msgstr ""
+"Puede que no tenga la mejor respuesta para esto — considera contactar a tu "
+"equipo de cuidado."
+
+msgid "Sent"
+msgstr "Enviado"
+
+msgid "Delivered"
+msgstr "Entregado"
+
+msgid "Failed to send"
+msgstr "Error al enviar"
+
+msgid "Clintela — Your Recovery Companion"
+msgstr "Clintela — Tu Compañero de Recuperación"
+
+msgid "Your recovery companion — available 24/7"
+msgstr "Tu compañero de recuperación — disponible 24/7"
+
+msgid "Secure, private, and connected to your care team."
+msgstr "Seguro, privado y conectado con tu equipo de cuidado."
+
+msgid "I have an access code"
+msgstr "Tengo un código de acceso"
+
+msgid "Your access code is on the leaflet from your care team."
+msgstr "Tu código de acceso está en el folleto de tu equipo de cuidado."
+
+msgid "About Me"
+msgstr "Sobre Mí"
+
+msgid "Back to Dashboard"
+msgstr "Volver al Panel"
+
+#, python-format
+msgid "Help Us Know You, %(name)s"
+msgstr "Ayúdanos a conocerte, %(name)s"
+
+msgid ""
+"Recovery is personal. The more we know about your life — not just your "
+"surgery — the better we can be there for you. Everything here is optional. "
+"Share what feels right, skip what doesn't. You can always come back."
+msgstr ""
+"La recuperación es personal. Cuanto más sepamos de tu vida — no solo de tu "
+"cirugía — mejor podremos acompañarte. Todo aquí es opcional. Comparte lo "
+"que te parezca bien, sáltate lo que no. Siempre puedes volver."
+
+msgid "Who you are"
+msgstr "Quién eres"
+
+msgid "What should we call you?"
+msgstr "¿Cómo te gustaría que te llamemos?"
+
+msgid ""
+"A nickname, your first name, whatever feels like you. We'll use this when we "
+"check in."
+msgstr ""
+"Un apodo, tu nombre, lo que sientas que eres tú. Lo usaremos cuando te "
+"escribamos."
+
+msgid "e.g. Eddie, Mrs. Alexander, Edna..."
+msgstr "ej. Eddie, Sra. Alexander, Edna..."
+
+msgid "Tell us about yourself"
+msgstr "Cuéntanos sobre ti"
+
+msgid ""
+"There's no right answer. Just anything that helps us understand you as a "
+"person, not just a patient."
+msgstr ""
+"No hay una respuesta correcta. Solo lo que nos ayude a entenderte como "
+"persona, no solo como paciente."
+
+msgid ""
+"Some people write things like \"Retired teacher, love my book club, live in "
+"a second-floor walk-up\" or \"Dad of three, work from home, my dog is my "
+"best nurse.\""
+msgstr ""
+"Algunas personas escriben cosas como \"Maestra jubilada, me encanta mi club "
+"de lectura, vivo en un segundo piso sin elevador\" o \"Papá de tres, trabajo "
+"desde casa, mi perro es mi mejor enfermero.\""
+
+msgid "Who's in your corner?"
+msgstr "¿Quién te acompaña?"
+
+msgid ""
+"The people who are helping you through this — family, friends, neighbors. "
+"Knowing who's around you helps us help all of you."
+msgstr ""
+"Las personas que te están ayudando — familia, amigos, vecinos. "
+"Saber quién está a tu lado nos ayuda a ayudarles a todos."
+
+msgid ""
+"e.g. \"My daughter Sarah checks on me daily,\" \"Neighbor walks my dog while "
+"I recover\""
+msgstr ""
+"ej. \"Mi hija Sara me visita todos los días,\" \"Mi vecino pasea a mi perro "
+"mientras me recupero\""
+
+msgid "Your daily life"
+msgstr "Tu vida diaria"
+
+msgid "Your living situation"
+msgstr "Tu situación de vivienda"
+
+msgid ""
+"This helps us understand your day-to-day — things like stairs, having help "
+"at home, or being on your own."
+msgstr ""
+"Esto nos ayuda a entender tu día a día — cosas como escaleras, tener ayuda "
+"en casa o estar solo/a."
+
+msgid "e.g. Live with my husband, one-story house, cat named Whiskers"
+msgstr "ej. Vivo con mi esposo, casa de un piso, gato llamado Bigotes"
+
+msgid "Your daily routines"
+msgstr "Tus rutinas diarias"
+
+msgid ""
+"Helps us time check-ins around your day — not at 6 AM if you're a night owl, "
+"not during your favorite show."
+msgstr ""
+"Nos ayuda a programar los mensajes según tu día — no a las 6 AM si eres "
+"noctámbulo/a, ni durante tu programa favorito."
+
+msgid ""
+"e.g. \"Morning person — up by 6:30. Tea and crossword before anything else.\""
+msgstr ""
+"ej. \"Madrugador/a — despierto/a a las 6:30. Té y crucigrama antes que nada.\""
+
+msgid "Your recovery"
+msgstr "Tu recuperación"
+
+msgid "What are you looking forward to?"
+msgstr "¿Qué te ilusiona?"
+
+msgid ""
+"What do you want to get back to? A goal gives your recovery direction — and "
+"gives us something to cheer you toward."
+msgstr ""
+"¿A qué quieres volver? Una meta le da dirección a tu recuperación — y nos "
+"da algo por lo que animarte."
+
+msgid ""
+"e.g. \"Getting back to my garden,\" \"Walking my daughter down the aisle in "
+"June\""
+msgstr ""
+"ej. \"Volver a mi jardín,\" \"Llevar a mi hija al altar en junio\""
+
+msgid "Is anything on your mind?"
+msgstr "¿Hay algo que te preocupe?"
+
+msgid ""
+"Worries are completely normal after surgery. Naming them helps us keep an "
+"eye on the things that matter to you."
+msgstr ""
+"Las preocupaciones son completamente normales después de una cirugía. "
+"Nombrarlas nos ayuda a estar atentos a lo que te importa."
+
+msgid ""
+"e.g. \"Stairs at home,\" \"Managing all these medications,\" \"Being alone "
+"at night\""
+msgstr ""
+"ej. \"Las escaleras en casa,\" \"Manejar todos estos medicamentos,\" \"Estar "
+"solo/a de noche\""
+
+msgid "What matters most to you?"
+msgstr "¿Qué es lo que más te importa?"
+
+msgid ""
+"Everyone's different. Some people value independence above all. Others want "
+"to understand everything. Some just want to feel safe. What's yours?"
+msgstr ""
+"Cada persona es diferente. Algunos valoran la independencia por encima de "
+"todo. Otros quieren entenderlo todo. Algunos solo quieren sentirse seguros. "
+"¿Cuál es el tuyo?"
+
+msgid "How we connect"
+msgstr "Cómo nos comunicamos"
+
+msgid "How do you like to hear things?"
+msgstr "¿Cómo te gusta recibir información?"
+
+msgid ""
+"Some people like a chatty, warm tone. Others prefer we get to the point. "
+"We'll match your style."
+msgstr ""
+"A algunas personas les gusta un tono cálido y conversacional. Otras "
+"prefieren ir al grano. Nos adaptaremos a tu estilo."
+
+msgid "No preference — surprise me"
+msgstr "Sin preferencia — sorpréndeme"
+
+msgid "Chatty and warm — like talking to a friend"
+msgstr "Cálido y conversacional — como hablar con un amigo"
+
+msgid "Straight to the point — just the facts"
+msgstr "Directo al grano — solo los hechos"
+
+msgid "Explain everything — I like to understand the why"
+msgstr "Explícamelo todo — me gusta entender el porqué"
+
+msgid "When's a good time to check in?"
+msgstr "¿Cuándo es buen momento para escribirte?"
+
+msgid ""
+"We'll try to reach out when it's convenient — not when you're resting or "
+"busy."
+msgstr ""
+"Intentaremos escribirte cuando te convenga — no cuando estés descansando o "
+"ocupado/a."
+
+msgid "e.g. Mornings are best, not after 8 PM"
+msgstr "ej. Las mañanas son mejor, no después de las 8 PM"
+
+msgid "Language or cultural preferences"
+msgstr "Preferencias de idioma o culturales"
+
+msgid ""
+"Anything we should know to make you feel more at home — a language you "
+"prefer, cultural or religious considerations, dietary needs we should keep "
+"in mind."
+msgstr ""
+"Cualquier cosa que debamos saber para que te sientas más cómodo/a — un "
+"idioma que prefieras, consideraciones culturales o religiosas, necesidades "
+"dietéticas que debamos tener en cuenta."
+
+msgid "e.g. Spanish-speaking family, prefer English for medical topics"
+msgstr "ej. Familia hispanohablante, prefiero inglés para temas médicos"
+
+msgid "Save — we'll remember"
+msgstr "Guardar — lo recordaremos"
+
+msgid "You can update any of this anytime. Nothing is set in stone."
+msgstr "Puedes actualizar cualquier cosa en cualquier momento. Nada está escrito en piedra."
+
+msgid "Book Your Appointment"
+msgstr "Reserva tu cita"
+
+msgid "with"
+msgstr "con"
+
+msgid "No slots"
+msgstr "Sin horarios"
+
+msgid "No available times on this day."
+msgstr "No hay horarios disponibles este día."
+
+msgid "Appointment Confirmed"
+msgstr "Cita confirmada"
+
+msgid "You're all set!"
+msgstr "¡Todo listo!"
+
+msgid "Your appointment has been confirmed."
+msgstr "Tu cita ha sido confirmada."
+
+msgid "Date & Time"
+msgstr "Fecha y hora"
+
+msgid "Clinician"
+msgstr "Profesional"
+
+msgid "Type"
+msgstr "Tipo"
+
+msgid "Virtual Visit Link"
+msgstr "Enlace de visita virtual"
+
+msgid "Join Video Call"
+msgstr "Unirse a videollamada"
+
+msgid "Add to Calendar"
+msgstr "Agregar al calendario"
+
+msgid "My Caregivers"
+msgstr "Mis cuidadores"
+
+msgid ""
+"Invite family members to follow your recovery. They'll get read-only access "
+"to your status."
+msgstr ""
+"Invita a familiares a seguir tu recuperación. Tendrán acceso de solo lectura "
+"a tu estado."
+
+msgid "Active Caregivers"
+msgstr "Cuidadores activos"
+
+#, python-format
+msgid "Joined %(time)s"
+msgstr "Se unió %(time)s"
+
+msgid "Remove"
+msgstr "Eliminar"
+
+msgid "Pending Invitations"
+msgstr "Invitaciones pendientes"
+
+#, python-format
+msgid "Sent %(time)s"
+msgstr "Enviada %(time)s"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Invite a Caregiver"
+msgstr "Invitar a un cuidador"
+
+msgid "Full Name"
+msgstr "Nombre completo"
+
+msgid "Relationship"
+msgstr "Parentesco"
+
+msgid "Select relationship"
+msgstr "Seleccionar parentesco"
+
+msgid "Email"
+msgstr "Correo electrónico"
+
+msgid "Phone Number"
+msgstr "Número de teléfono"
+
+msgid ""
+"At least one of email or phone is required. We'll send them a link to accept "
+"the invitation."
+msgstr ""
+"Se requiere al menos un correo o teléfono. Les enviaremos un enlace para "
+"aceptar la invitación."
+
+msgid "Send Invitation"
+msgstr "Enviar invitación"
+
+msgid "How it works"
+msgstr "Cómo funciona"
+
+msgid "You send an invitation with their name and contact"
+msgstr "Envías una invitación con su nombre y contacto"
+
+msgid "They receive a link and verify using your access code"
+msgstr "Reciben un enlace y verifican usando tu código de acceso"
+
+msgid "Once verified, they can see your recovery status"
+msgstr "Una vez verificados, pueden ver tu estado de recuperación"
+
+msgid "You can remove their access at any time"
+msgstr "Puedes eliminar su acceso en cualquier momento"
+
+msgid "Milestone reached!"
+msgstr "¡Hito alcanzado!"
+
+msgid "Dismiss celebration"
+msgstr "Cerrar celebración"
+
+msgid "Your Recovery Journey"
+msgstr "Tu camino de recuperación"
+
+msgid "Your recovery timeline will appear here once your care plan is set up."
+msgstr "Tu línea de tiempo de recuperación aparecerá aquí cuando se configure tu plan de cuidado."
+
+msgid "Recovery timeline"
+msgstr "Línea de tiempo de recuperación"
+
+msgid "Completed"
+msgstr "Completado"
+
+msgid "Current milestone"
+msgstr "Hito actual"
+
+msgid "Upcoming — Day"
+msgstr "Próximo — Día"
+
+msgid "Day"
+msgstr "Día"
+
+msgid "You are here"
+msgstr "Estás aquí"
+
+msgid "Upcoming Appointment"
+msgstr "Próxima cita"
+
+msgid "at"
+msgstr "a las"
+
+msgid "Join Now"
+msgstr "Unirse ahora"
+
+msgid "Privacy & Consent"
+msgstr "Privacidad y consentimiento"
+
+msgid ""
+"Control how your information is used and shared. Changes take effect "
+"immediately."
+msgstr ""
+"Controla cómo se usa y comparte tu información. Los cambios toman efecto "
+"inmediatamente."
+
+#, python-format
+msgid "Toggle %(label)s"
+msgstr "Activar/desactivar %(label)s"
+
+#, python-format
+msgid "Last updated %(time)s ago"
+msgstr "Última actualización hace %(time)s"
+
+msgid "Your privacy matters"
+msgstr "Tu privacidad importa"
+
+msgid ""
+"All consent changes are logged for your protection. Your care team can see "
+"what you've agreed to, but cannot change your preferences. You can update "
+"these settings at any time."
+msgstr ""
+"Todos los cambios de consentimiento se registran para tu protección. Tu "
+"equipo de cuidado puede ver a qué has accedido, pero no puede cambiar tus "
+"preferencias. Puedes actualizar estas configuraciones en cualquier momento."
+
+msgid "Recovery Dashboard"
+msgstr "Panel de Recuperación"
+
+msgid "Recovery Progress"
+msgstr "Progreso de recuperación"
+
+#, python-format
+msgid "Day %(day)s"
+msgstr "Día %(day)s"
+
+msgid "Surgery"
+msgstr "Cirugía"
+
+msgid "Your care team is setting up your recovery plan"
+msgstr "Tu equipo de cuidado está preparando tu plan de recuperación"
+
+msgid "On Track"
+msgstr "En camino"
+
+msgid "Needs Attention"
+msgstr "Necesita atención"
+
+msgid "Escalated"
+msgstr "Escalado"
+
+msgid "Critical"
+msgstr "Crítico"
+
+msgid "What to Expect"
+msgstr "Qué esperar"
+
+msgid ""
+"The first few days home are often the hardest — and that's completely "
+"normal. Rest when you need to, and don't hesitate to reach out if anything "
+"doesn't feel right."
+msgstr ""
+"Los primeros días en casa suelen ser los más difíciles — y eso es "
+"completamente normal. Descansa cuando lo necesites, y no dudes en "
+"comunicarte si algo no se siente bien."
+
+msgid ""
+"Most people start feeling a little stronger around this time. Every recovery "
+"is different, though — your pace is your pace. Light activity is usually "
+"encouraged — ask me if you're unsure what's safe."
+msgstr ""
+"La mayoría de las personas empiezan a sentirse un poco más fuertes en esta "
+"etapa. Cada recuperación es diferente — tu ritmo es tu ritmo. La actividad "
+"ligera suele ser recomendable — pregúntame si no estás seguro/a de qué es "
+"seguro."
+
+msgid ""
+"You're making real progress. Most of the hard part is behind you. Keep "
+"following your care plan — and let me know if anything comes up."
+msgstr ""
+"Estás progresando de verdad. La parte más difícil ya quedó atrás. Sigue "
+"tu plan de cuidado — y avísame si surge algo."
+
+msgid ""
+"You've come a long way. Most of the healing is behind you. Keep up the great "
+"work — I'm still here if you need anything."
+msgstr ""
+"Has recorrido un largo camino. La mayor parte de la recuperación quedó "
+"atrás. Sigue así — sigo aquí si necesitas algo."
+
+msgid "Your Care Team"
+msgstr "Tu Equipo de Cuidado"
+
+#, python-format
+msgid ""
+"Hi %(name)s — your team at <strong>%(hospital)s</strong> is here for you. "
+"Use the chat anytime to ask questions about your recovery."
+msgstr ""
+"Hola %(name)s — tu equipo en <strong>%(hospital)s</strong> está aquí para "
+"ti. Usa el chat en cualquier momento para hacer preguntas sobre tu "
+"recuperación."
+
+#, python-format
+msgid ""
+"Hi %(name)s — your care team is here for you. Use the chat anytime to ask "
+"questions about your recovery."
+msgstr ""
+"Hola %(name)s — tu equipo de cuidado está aquí para ti. Usa el chat en "
+"cualquier momento para hacer preguntas sobre tu recuperación."
+
+msgid "Tell us who you are"
+msgstr "Cuéntanos quién eres"
+
+msgid "Caregivers"
+msgstr "Cuidadores"
+
+msgid "Invite family"
+msgstr "Invitar familia"
+
+msgid "Privacy"
+msgstr "Privacidad"
+
+msgid "Manage consent"
+msgstr "Gestionar consentimiento"

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Verify Your Identity — Clintela{% endblock %}
+{% block title %}{% trans "Verify Your Identity" %} — Clintela{% endblock %}
 
 {% block body %}
 <div class="min-h-screen flex flex-col items-center justify-center px-4"
@@ -12,7 +13,7 @@
              style="background-color: var(--color-surface); border-color: var(--color-border);">
 
             <h1 class="text-xl font-semibold mb-1" style="color: var(--color-text);">
-                Welcome to Clintela
+                {% trans "Welcome to Clintela" %}
             </h1>
 
             <!-- Verified code badge -->
@@ -21,7 +22,7 @@
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                    Code verified: {{ code }}
+                    {% blocktrans with code=code %}Code verified: {{ code }}{% endblocktrans %}
                 </span>
             </div>
 
@@ -35,7 +36,7 @@
                 {% csrf_token %}
 
                 <label for="dob" class="block text-sm font-medium mb-2" style="color: var(--color-text);">
-                    Please enter your date of birth
+                    {% trans "Please enter your date of birth" %}
                 </label>
 
                 <input type="text"
@@ -55,15 +56,15 @@
                         class="w-full mt-4 px-4 py-3 rounded-lg text-white font-medium text-base
                                transition-colors hover:opacity-90"
                         style="background-color: var(--color-primary); height: 48px;">
-                    Continue
+                    {% trans "Continue" %}
                 </button>
             </form>
         </div>
 
         <p class="text-center text-sm mt-4" style="color: var(--color-text-secondary);">
-            Code doesn't match your leaflet?
+            {% trans "Code doesn't match your leaflet?" %}
             <a href="{% url 'accounts:start' %}" class="underline hover:no-underline" style="color: var(--color-primary);">
-                Try again
+                {% trans "Try again" %}
             </a>
         </p>
     </div>

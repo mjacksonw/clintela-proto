@@ -56,12 +56,12 @@
                 <!-- Header -->
                 <div class="px-4 py-3 border-b flex items-center justify-between"
                      style="border-color: var(--color-border);">
-                    <span class="text-sm font-semibold" style="color: var(--color-text);">Notifications</span>
+                    <span class="text-sm font-semibold" style="color: var(--color-text);">{% trans "Notifications" %}</span>
                     <button x-show="unreadCount > 0"
                             @click="markAllRead()"
                             class="text-xs font-medium"
                             style="color: var(--color-primary);">
-                        Mark all read
+                        {% trans "Mark all read" %}
                     </button>
                 </div>
                 <!-- List -->
@@ -69,7 +69,7 @@
                     <template x-if="notifications.length === 0">
                         <div class="px-4 py-8 text-center">
                             <i data-lucide="bell-off" class="w-6 h-6 mx-auto mb-2" style="color: var(--color-text-secondary);"></i>
-                            <p class="text-sm" style="color: var(--color-text-secondary);">All caught up!</p>
+                            <p class="text-sm" style="color: var(--color-text-secondary);">{% trans "All caught up!" %}</p>
                         </div>
                     </template>
                     <template x-for="n in notifications" :key="n.id">
@@ -103,15 +103,15 @@
                          style="background-color: var(--color-surface);">
                         <div class="px-4 py-3 border-b flex items-center justify-between"
                              style="border-color: var(--color-border);">
-                            <span class="text-sm font-semibold" style="color: var(--color-text);">Notifications</span>
-                            <button @click="open = false" class="p-2" aria-label="Close notifications">
+                            <span class="text-sm font-semibold" style="color: var(--color-text);">{% trans "Notifications" %}</span>
+                            <button @click="open = false" class="p-2" aria-label="{% trans "Close notifications" %}">
                                 <i data-lucide="x" class="w-4 h-4" style="color: var(--color-text-secondary);"></i>
                             </button>
                         </div>
                         <template x-if="notifications.length === 0">
                             <div class="px-4 py-8 text-center">
                                 <i data-lucide="bell-off" class="w-6 h-6 mx-auto mb-2" style="color: var(--color-text-secondary);"></i>
-                                <p class="text-sm" style="color: var(--color-text-secondary);">All caught up!</p>
+                                <p class="text-sm" style="color: var(--color-text-secondary);">{% trans "All caught up!" %}</p>
                             </div>
                         </template>
                         <template x-for="n in notifications" :key="n.id">
@@ -187,8 +187,8 @@
         <!-- Dark mode toggle -->
         <button @click="window.clintelaTheme.toggle(); $nextTick(() => { if (window.lucide) lucide.createIcons(); })"
                 class="p-3 rounded-lg transition-colors hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
-                aria-label="Toggle dark mode"
-                title="Toggle dark mode">
+                aria-label="{% trans "Toggle dark mode" %}"
+                title="{% trans "Toggle dark mode" %}">
             <i data-lucide="sun" class="w-5 h-5 hidden [data-theme='dark']:block" style="color: var(--color-text-secondary);"></i>
             <i data-lucide="moon" class="w-5 h-5 block [data-theme='dark']:hidden" style="color: var(--color-text-secondary);"></i>
         </button>

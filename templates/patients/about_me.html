@@ -1,7 +1,8 @@
 {% extends "base_patient.html" %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}About Me — Clintela{% endblock %}
+{% block title %}{% trans "About Me" %} — Clintela{% endblock %}
 
 {% block dashboard_content %}
 
@@ -10,15 +11,13 @@
     <a href="{% url 'patients:dashboard' %}" class="inline-flex items-center gap-1.5 text-sm font-medium mb-4 py-2"
        style="color: var(--color-primary); min-height: 44px;">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
-        Back to Dashboard
+        {% trans "Back to Dashboard" %}
     </a>
     <h1 class="text-2xl font-semibold" style="letter-spacing: -0.02em;">
-        Help Us Know You, {{ patient.user.first_name }}
+        {% blocktrans with name=patient.user.first_name %}Help Us Know You, {{ name }}{% endblocktrans %}
     </h1>
     <p class="mt-2 text-base" style="color: var(--color-text-secondary); line-height: 1.6; max-width: 540px;">
-        Recovery is personal. The more we know about your life — not just your surgery —
-        the better we can be there for you. Everything here is optional. Share what feels right,
-        skip what doesn't. You can always come back.
+        {% trans "Recovery is personal. The more we know about your life — not just your surgery — the better we can be there for you. Everything here is optional. Share what feels right, skip what doesn't. You can always come back." %}
     </p>
 </div>
 
@@ -42,20 +41,20 @@
     <!-- ═══════════════════════════════════════════ -->
     <div class="mb-8 animate-in animate-in-delay-1">
         <h2 class="text-xs font-semibold uppercase mb-4" style="color: var(--color-text-secondary); letter-spacing: 0.05em;">
-            Who you are
+            {% trans "Who you are" %}
         </h2>
 
         <!-- What should we call you? -->
         <div class="card mb-4">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="smile" class="w-5 h-5" style="color: var(--color-primary);"></i>
-                <h3 class="text-lg font-semibold">What should we call you?</h3>
+                <h3 class="text-lg font-semibold">{% trans "What should we call you?" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                A nickname, your first name, whatever feels like you. We'll use this when we check in.
+                {% trans "A nickname, your first name, whatever feels like you. We'll use this when we check in." %}
             </p>
             <input type="text" name="preferred_name" value="{{ preferences.preferred_name }}"
-                   placeholder="e.g. Eddie, Mrs. Alexander, Edna..."
+                   placeholder="{% trans "e.g. Eddie, Mrs. Alexander, Edna..." %}"
                    class="w-full px-4 py-3 rounded-xl border text-base"
                    style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text); min-height: 44px;">
         </div>
@@ -64,18 +63,16 @@
         <div class="card mb-4">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="heart" class="w-5 h-5" style="color: #EA580C;"></i>
-                <h3 class="text-lg font-semibold">Tell us about yourself</h3>
+                <h3 class="text-lg font-semibold">{% trans "Tell us about yourself" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                There's no right answer. Just anything that helps us understand you as a person,
-                not just a patient.
+                {% trans "There's no right answer. Just anything that helps us understand you as a person, not just a patient." %}
             </p>
             <textarea name="about_me" rows="3"
                       class="w-full px-4 py-3 rounded-xl border text-base resize-none"
                       style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">{{ preferences.about_me }}</textarea>
             <p class="text-xs mt-2" style="color: var(--color-text-secondary); font-style: italic;">
-                Some people write things like "Retired teacher, love my book club, live in a second-floor walk-up"
-                or "Dad of three, work from home, my dog is my best nurse."
+                {% trans 'Some people write things like "Retired teacher, love my book club, live in a second-floor walk-up" or "Dad of three, work from home, my dog is my best nurse."' %}
             </p>
         </div>
 
@@ -83,17 +80,16 @@
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="users" class="w-5 h-5" style="color: #7C3AED;"></i>
-                <h3 class="text-lg font-semibold">Who's in your corner?</h3>
+                <h3 class="text-lg font-semibold">{% trans "Who's in your corner?" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                The people who are helping you through this — family, friends, neighbors.
-                Knowing who's around you helps us help all of you.
+                {% trans "The people who are helping you through this — family, friends, neighbors. Knowing who's around you helps us help all of you." %}
             </p>
             <textarea name="support_network" rows="2"
                       class="w-full px-4 py-3 rounded-xl border text-base resize-none"
                       style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">{{ preferences.support_network }}</textarea>
             <p class="text-xs mt-2" style="color: var(--color-text-secondary); font-style: italic;">
-                e.g. "My daughter Sarah checks on me daily," "Neighbor walks my dog while I recover"
+                {% trans 'e.g. "My daughter Sarah checks on me daily," "Neighbor walks my dog while I recover"' %}
             </p>
         </div>
     </div>
@@ -103,21 +99,20 @@
     <!-- ═══════════════════════════════════════════ -->
     <div class="mb-8 animate-in animate-in-delay-2">
         <h2 class="text-xs font-semibold uppercase mb-4" style="color: var(--color-text-secondary); letter-spacing: 0.05em;">
-            Your daily life
+            {% trans "Your daily life" %}
         </h2>
 
         <!-- Where you live -->
         <div class="card mb-4">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="home" class="w-5 h-5" style="color: #0D9488;"></i>
-                <h3 class="text-lg font-semibold">Your living situation</h3>
+                <h3 class="text-lg font-semibold">{% trans "Your living situation" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                This helps us understand your day-to-day — things like stairs, having help at home,
-                or being on your own.
+                {% trans "This helps us understand your day-to-day — things like stairs, having help at home, or being on your own." %}
             </p>
             <input type="text" name="living_situation" value="{{ preferences.living_situation }}"
-                   placeholder="e.g. Live with my husband, one-story house, cat named Whiskers"
+                   placeholder="{% trans "e.g. Live with my husband, one-story house, cat named Whiskers" %}"
                    class="w-full px-4 py-3 rounded-xl border text-base"
                    style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text); min-height: 44px;">
         </div>
@@ -126,17 +121,16 @@
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="clock" class="w-5 h-5" style="color: #0D9488;"></i>
-                <h3 class="text-lg font-semibold">Your daily routines</h3>
+                <h3 class="text-lg font-semibold">{% trans "Your daily routines" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                Helps us time check-ins around your day — not at 6 AM if you're a night owl,
-                not during your favorite show.
+                {% trans "Helps us time check-ins around your day — not at 6 AM if you're a night owl, not during your favorite show." %}
             </p>
             <textarea name="daily_routines" rows="2"
                       class="w-full px-4 py-3 rounded-xl border text-base resize-none"
                       style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">{{ preferences.daily_routines }}</textarea>
             <p class="text-xs mt-2" style="color: var(--color-text-secondary); font-style: italic;">
-                e.g. "Morning person — up by 6:30. Tea and crossword before anything else."
+                {% trans 'e.g. "Morning person — up by 6:30. Tea and crossword before anything else."' %}
             </p>
         </div>
     </div>
@@ -146,24 +140,23 @@
     <!-- ═══════════════════════════════════════════ -->
     <div class="mb-8 animate-in animate-in-delay-2">
         <h2 class="text-xs font-semibold uppercase mb-4" style="color: var(--color-text-secondary); letter-spacing: 0.05em;">
-            Your recovery
+            {% trans "Your recovery" %}
         </h2>
 
         <!-- What are you looking forward to? -->
         <div class="card mb-4">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="sun" class="w-5 h-5" style="color: #D97706;"></i>
-                <h3 class="text-lg font-semibold">What are you looking forward to?</h3>
+                <h3 class="text-lg font-semibold">{% trans "What are you looking forward to?" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                What do you want to get back to? A goal gives your recovery direction —
-                and gives us something to cheer you toward.
+                {% trans "What do you want to get back to? A goal gives your recovery direction — and gives us something to cheer you toward." %}
             </p>
             <textarea name="recovery_goals" rows="2"
                       class="w-full px-4 py-3 rounded-xl border text-base resize-none"
                       style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">{{ preferences.recovery_goals }}</textarea>
             <p class="text-xs mt-2" style="color: var(--color-text-secondary); font-style: italic;">
-                e.g. "Getting back to my garden," "Walking my daughter down the aisle in June"
+                {% trans 'e.g. "Getting back to my garden," "Walking my daughter down the aisle in June"' %}
             </p>
         </div>
 
@@ -171,17 +164,16 @@
         <div class="card mb-4">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="cloud" class="w-5 h-5" style="color: #78716C;"></i>
-                <h3 class="text-lg font-semibold">Is anything on your mind?</h3>
+                <h3 class="text-lg font-semibold">{% trans "Is anything on your mind?" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                Worries are completely normal after surgery. Naming them helps us
-                keep an eye on the things that matter to you.
+                {% trans "Worries are completely normal after surgery. Naming them helps us keep an eye on the things that matter to you." %}
             </p>
             <textarea name="concerns" rows="2"
                       class="w-full px-4 py-3 rounded-xl border text-base resize-none"
                       style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">{{ preferences.concerns }}</textarea>
             <p class="text-xs mt-2" style="color: var(--color-text-secondary); font-style: italic;">
-                e.g. "Stairs at home," "Managing all these medications," "Being alone at night"
+                {% trans 'e.g. "Stairs at home," "Managing all these medications," "Being alone at night"' %}
             </p>
         </div>
 
@@ -189,12 +181,10 @@
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="compass" class="w-5 h-5" style="color: #D97706;"></i>
-                <h3 class="text-lg font-semibold">What matters most to you?</h3>
+                <h3 class="text-lg font-semibold">{% trans "What matters most to you?" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                Everyone's different. Some people value independence above all.
-                Others want to understand everything. Some just want to feel safe.
-                What's yours?
+                {% trans "Everyone's different. Some people value independence above all. Others want to understand everything. Some just want to feel safe. What's yours?" %}
             </p>
             <textarea name="values" rows="2"
                       class="w-full px-4 py-3 rounded-xl border text-base resize-none"
@@ -207,25 +197,25 @@
     <!-- ═══════════════════════════════════════════ -->
     <div class="mb-8 animate-in animate-in-delay-3">
         <h2 class="text-xs font-semibold uppercase mb-4" style="color: var(--color-text-secondary); letter-spacing: 0.05em;">
-            How we connect
+            {% trans "How we connect" %}
         </h2>
 
         <!-- Communication style -->
         <div class="card mb-4">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="message-circle" class="w-5 h-5" style="color: var(--color-primary);"></i>
-                <h3 class="text-lg font-semibold">How do you like to hear things?</h3>
+                <h3 class="text-lg font-semibold">{% trans "How do you like to hear things?" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                Some people like a chatty, warm tone. Others prefer we get to the point. We'll match your style.
+                {% trans "Some people like a chatty, warm tone. Others prefer we get to the point. We'll match your style." %}
             </p>
             <select name="communication_style"
                     class="w-full px-4 py-3 rounded-xl border text-base"
                     style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text); min-height: 44px;">
-                <option value="">No preference — surprise me</option>
-                <option value="conversational" {% if preferences.communication_style == "conversational" %}selected{% endif %}>Chatty and warm — like talking to a friend</option>
-                <option value="direct" {% if preferences.communication_style == "direct" %}selected{% endif %}>Straight to the point — just the facts</option>
-                <option value="detailed" {% if preferences.communication_style == "detailed" %}selected{% endif %}>Explain everything — I like to understand the why</option>
+                <option value="">{% trans "No preference — surprise me" %}</option>
+                <option value="conversational" {% if preferences.communication_style == "conversational" %}selected{% endif %}>{% trans "Chatty and warm — like talking to a friend" %}</option>
+                <option value="direct" {% if preferences.communication_style == "direct" %}selected{% endif %}>{% trans "Straight to the point — just the facts" %}</option>
+                <option value="detailed" {% if preferences.communication_style == "detailed" %}selected{% endif %}>{% trans "Explain everything — I like to understand the why" %}</option>
             </select>
         </div>
 
@@ -233,13 +223,13 @@
         <div class="card mb-4">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="bell" class="w-5 h-5" style="color: #0D9488;"></i>
-                <h3 class="text-lg font-semibold">When's a good time to check in?</h3>
+                <h3 class="text-lg font-semibold">{% trans "When's a good time to check in?" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                We'll try to reach out when it's convenient — not when you're resting or busy.
+                {% trans "We'll try to reach out when it's convenient — not when you're resting or busy." %}
             </p>
             <input type="text" name="preferred_contact_time" value="{{ preferences.preferred_contact_time }}"
-                   placeholder="e.g. Mornings are best, not after 8 PM"
+                   placeholder="{% trans "e.g. Mornings are best, not after 8 PM" %}"
                    class="w-full px-4 py-3 rounded-xl border text-base"
                    style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text); min-height: 44px;">
         </div>
@@ -248,14 +238,13 @@
         <div class="card">
             <div class="flex items-center gap-2 mb-2">
                 <i data-lucide="globe" class="w-5 h-5" style="color: #7C3AED;"></i>
-                <h3 class="text-lg font-semibold">Language or cultural preferences</h3>
+                <h3 class="text-lg font-semibold">{% trans "Language or cultural preferences" %}</h3>
             </div>
             <p class="text-sm mb-3" style="color: var(--color-text-secondary); line-height: 1.5;">
-                Anything we should know to make you feel more at home — a language you prefer,
-                cultural or religious considerations, dietary needs we should keep in mind.
+                {% trans "Anything we should know to make you feel more at home — a language you prefer, cultural or religious considerations, dietary needs we should keep in mind." %}
             </p>
             <input type="text" name="language_preferences" value="{{ preferences.language_preferences }}"
-                   placeholder="e.g. Spanish-speaking family, prefer English for medical topics"
+                   placeholder="{% trans "e.g. Spanish-speaking family, prefer English for medical topics" %}"
                    class="w-full px-4 py-3 rounded-xl border text-base"
                    style="background-color: var(--color-bg); border-color: var(--color-border); color: var(--color-text); min-height: 44px;">
         </div>
@@ -267,10 +256,10 @@
                 class="w-full py-3.5 rounded-xl font-semibold text-base text-white transition-colors"
                 style="background-color: var(--color-primary); min-height: 44px;"
                 onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-            Save — we'll remember
+            {% trans "Save — we'll remember" %}
         </button>
         <p class="text-center text-xs mt-3" style="color: var(--color-text-secondary);">
-            You can update any of this anytime. Nothing is set in stone.
+            {% trans "You can update any of this anytime. Nothing is set in stone." %}
         </p>
     </div>
 </form>
