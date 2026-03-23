@@ -1,0 +1,120 @@
+{% load i18n %}
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'css/celebrations.css' %}">
+
+<div x-data="celebrationToast()"
+     x-show="visible"
+     x-init="checkForCelebrations()"
+     x-cloak>
+
+    <!-- Confetti overlay -->
+    <template x-if="showConfetti">
+        <div class="confetti-container" aria-hidden="true">
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+            <div class="confetti-piece"></div>
+        </div>
+    </template>
+
+    <!-- Toast banner -->
+    <div class="celebration-toast"
+         x-show="visible"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 -translate-y-full"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 -translate-y-full"
+         role="status"
+         aria-live="polite">
+
+        <div class="celebration-toast-inner">
+            <div class="celebration-toast-icon" aria-hidden="true">
+                &#127881;
+            </div>
+            <div class="celebration-toast-content">
+                <div class="celebration-toast-title" x-text="title">
+                    {% trans "Milestone reached!" %}
+                </div>
+                <div class="celebration-toast-message" x-text="message">
+                </div>
+            </div>
+            <button class="celebration-toast-close"
+                    @click="dismiss()"
+                    aria-label="{% trans 'Dismiss celebration' %}">
+                &times;
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function celebrationToast() {
+    return {
+        visible: false,
+        showConfetti: false,
+        title: '',
+        message: '',
+        _timer: null,
+
+        checkForCelebrations() {
+            // Listen for celebration events dispatched by HTMX or other components
+            var self = this;
+            document.addEventListener('celebration', function(e) {
+                self.show(e.detail.title || '', e.detail.message || '');
+            });
+        },
+
+        show(title, message) {
+            var self = this;
+            self.title = title;
+            self.message = message;
+            self.visible = true;
+
+            // Check reduced-motion preference
+            var prefersReducedMotion = window.matchMedia(
+                '(prefers-reduced-motion: reduce)'
+            ).matches;
+            self.showConfetti = !prefersReducedMotion;
+
+            // Auto-dismiss after 6 seconds
+            if (self._timer) clearTimeout(self._timer);
+            self._timer = setTimeout(function() {
+                self.dismiss();
+            }, 6000);
+        },
+
+        dismiss() {
+            var self = this;
+            self.visible = false;
+            self.showConfetti = false;
+            if (self._timer) {
+                clearTimeout(self._timer);
+                self._timer = null;
+            }
+        },
+    };
+}
+</script>

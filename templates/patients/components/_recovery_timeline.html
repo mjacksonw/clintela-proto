@@ -1,0 +1,136 @@
+{% load i18n %}
+
+{% if not timeline %}
+<div class="card">
+    <div class="flex items-center gap-2 mb-3">
+        <i data-lucide="route" class="w-5 h-5" style="color: var(--color-primary);"></i>
+        <h2 class="text-lg font-semibold">{% trans "Your Recovery Journey" %}</h2>
+    </div>
+    <p class="text-base leading-relaxed" style="color: var(--color-text-secondary);">
+        {% trans "Your recovery timeline will appear here once your care plan is set up." %}
+    </p>
+</div>
+{% else %}
+<div class="card">
+    <div class="flex items-center gap-2 mb-4">
+        <i data-lucide="route" class="w-5 h-5" style="color: var(--color-primary);"></i>
+        <h2 class="text-lg font-semibold">{% trans "Your Recovery Journey" %}</h2>
+    </div>
+
+    <div role="list" aria-label="{% trans 'Recovery timeline' %}" class="timeline-container">
+        {% for event in timeline %}
+        <div role="listitem" class="timeline-item flex gap-4 relative"
+             style="padding-bottom: {% if forloop.last %}0{% else %}24px{% endif %};">
+
+            {# Vertical connector line #}
+            {% if not forloop.last %}
+            <div class="timeline-line" aria-hidden="true"
+                 style="position: absolute; left: 15px; top: 32px; bottom: 0; width: 2px;
+                        background-color: var(--color-border);"></div>
+            {% endif %}
+
+            {# Node #}
+            <div class="flex-shrink-0 relative z-10" style="width: 32px;">
+                {% if event.type == "milestone" %}
+                    {% if event.status == "completed" %}
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center"
+                         style="background-color: #0D9488; color: white;"
+                         aria-label="{% trans 'Completed' %}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                             stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    {% elif event.status == "current" %}
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center timeline-pulse"
+                         style="background-color: transparent; border: 3px solid #0D9488;"
+                         aria-label="{% trans 'Current milestone' %}">
+                        <div class="w-3 h-3 rounded-full" style="background-color: #0D9488;"></div>
+                    </div>
+                    {% else %}
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold"
+                         style="background-color: #E5E7EB; color: #6B7280;"
+                         aria-label="{% trans 'Upcoming — Day' %} {{ event.day }}">
+                        {{ event.day }}
+                    </div>
+                    {% endif %}
+                {% elif event.type == "alert" %}
+                    <div class="w-5 h-5 rounded-full flex items-center justify-center"
+                         style="margin-top: 6px; margin-left: 6px;
+                                {% if event.severity == 'critical' %}background-color: #FCA5A5;
+                                {% elif event.severity == 'warning' %}background-color: #FCD34D;
+                                {% else %}background-color: #93C5FD;{% endif %}"
+                         aria-label="{{ event.warm_severity }}">
+                    </div>
+                {% endif %}
+            </div>
+
+            {# Content #}
+            <div class="flex-1 min-w-0 pt-1">
+                {% if event.type == "milestone" %}
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <p class="text-sm font-semibold" style="color: var(--color-text);">
+                                {% trans "Day" %} {{ event.day }}: {{ event.title }}
+                            </p>
+                            {% if event.status == "current" %}
+                            <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                                  style="background-color: #CCFBF1; color: #0F766E;">
+                                {% trans "You are here" %}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% if event.status == "completed" and event.completed_at %}
+                        <span class="text-xs flex-shrink-0" style="color: var(--color-text-secondary);">
+                            {{ event.completed_at|date:"M j" }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    {% if event.description %}
+                    <p class="text-sm mt-1 leading-relaxed" style="color: var(--color-text-secondary);">
+                        {{ event.description }}
+                    </p>
+                    {% endif %}
+
+                    {% if event.warm_message and event.status != "upcoming" %}
+                    <p class="text-sm mt-1.5 italic" style="color: #0D9488;">
+                        {{ event.warm_message }}
+                    </p>
+                    {% endif %}
+
+                {% elif event.type == "alert" %}
+                    <p class="text-xs font-medium" style="color: var(--color-text-secondary);">
+                        {{ event.warm_severity }}
+                    </p>
+                    <p class="text-sm" style="color: var(--color-text);">
+                        {{ event.title }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    @keyframes timelinePulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(13, 148, 136, 0); }
+    }
+    .timeline-pulse {
+        animation: timelinePulse 2s ease-in-out infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .timeline-pulse {
+            animation: none;
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.2);
+        }
+    }
+</style>
+{% endif %}
+
+<script>
+    if (window.lucide) lucide.createIcons();
+</script>

@@ -112,6 +112,12 @@ urlpatterns = [
         views.cancel_appointment_view,
         name="cancel_appointment",
     ),
+    # Request virtual visit
+    path(
+        "patients/<int:patient_id>/request-visit/",
+        views.request_virtual_visit_view,
+        name="request_virtual_visit",
+    ),
     # Handoff export
     path(
         "patients/<int:patient_id>/export-handoff/",

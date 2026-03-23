@@ -1,0 +1,24 @@
+{% load i18n %}
+
+{% if request_sent %}
+<div class="flex items-center gap-2 px-4 py-2 rounded-lg"
+     style="background-color: rgba(13,148,136,0.1); color: var(--color-primary);">
+    <i data-lucide="check" class="w-4 h-4"></i>
+    <span class="text-sm font-medium">{% trans "Visit requested" %}</span>
+</div>
+{% else %}
+<form hx-post="{% url 'clinicians:request_virtual_visit' patient_id=patient.id %}"
+      hx-swap="outerHTML"
+      hx-target="closest div">
+    {% csrf_token %}
+    <input type="hidden" name="reason"
+           value="Your care team would like to check in with you via video.">
+    <button type="submit"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all"
+            style="background-color: #7C3AED; color: white; min-height: 44px;"
+            title="{% trans 'Request a virtual visit with this patient' %}">
+        <i data-lucide="video" class="w-4 h-4"></i>
+        {% trans "Request Visit" %}
+    </button>
+</form>
+{% endif %}

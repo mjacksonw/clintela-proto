@@ -6,6 +6,9 @@
 
 {% block dashboard_content %}
 
+<!-- Celebration Toast -->
+{% include "patients/components/_celebration_toast.html" %}
+
 <!-- Recovery Status Hero -->
 <div class="card animate-in mb-6">
     <div class="flex items-start justify-between">
@@ -227,6 +230,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </p>
 </div>
 {% endif %}
+
+<!-- Recovery Timeline -->
+<div class="animate-in animate-in-delay-1 mb-6"
+     hx-get="{% url 'patients:timeline' %}"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+    <!-- Loaded via HTMX -->
+</div>
 
 <!-- My Health Card (feature-flagged) -->
 {% if ENABLE_CLINICAL_DATA %}

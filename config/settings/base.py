@@ -404,6 +404,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.analytics.tasks.compute_daily_metrics",
         "schedule": crontab(hour=2, minute=7),  # 2:07 AM daily
     },
+    "send-appointment-reminders": {
+        "task": "apps.clinicians.tasks.send_appointment_reminders",
+        "schedule": 900,  # every 15 minutes
+    },
+    "expire-appointment-requests": {
+        "task": "apps.clinicians.tasks.expire_appointment_requests",
+        "schedule": crontab(hour=3, minute=17),  # daily at 3:17 AM
+    },
+    "notify-upcoming-appointments": {
+        "task": "apps.clinicians.tasks.notify_upcoming_appointments",
+        "schedule": crontab(hour=8, minute=3),  # daily at 8:03 AM
+    },
 }
 
 # =============================================================================

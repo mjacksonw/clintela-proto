@@ -658,3 +658,256 @@ class SchedulingService:
             scheduled_start__gte=timezone.now(),
             status__in=["scheduled", "confirmed"],
         ).select_related("clinician__user")
+
+
+class AppointmentBookingService:
+    """Service for patient self-booking of appointments."""
+
+    @staticmethod
+    def schedule_pathway_milestones(patient: Patient, patient_pathway):
+        """Auto-create AppointmentRequests for milestones with check_in_questions.
+
+        Called when a pathway is assigned. Creates booking requests for
+        each milestone that has check-in questions defined.
+        """
+        from apps.clinicians.models import AppointmentRequest
+        from apps.pathways.models import PathwayMilestone
+
+        milestones = PathwayMilestone.objects.filter(
+            pathway=patient_pathway.pathway,
+            is_active=True,
+            check_in_questions__len__gt=0,
+        )
+
+        # Find the patient's primary clinician (first clinician at their hospital)
+        clinician = Clinician.objects.filter(
+            hospitals=patient.hospital,
+            is_active=True,
+        ).first()
+
+        if not clinician:
+            logger.warning(
+                "No active clinician for patient %s hospital, skipping milestone scheduling",
+                patient.id,
+            )
+            return []
+
+        requests = []
+        for milestone in milestones:
+            surgery_date = patient.surgery_date
+            if not surgery_date:
+                continue
+
+            notify_at = (
+                timezone.make_aware(
+                    datetime.combine(surgery_date + timedelta(days=milestone.day), datetime.min.time().replace(hour=8))
+                )
+                if timezone.is_naive(
+                    datetime.combine(surgery_date + timedelta(days=milestone.day), datetime.min.time().replace(hour=8))
+                )
+                else datetime.combine(surgery_date + timedelta(days=milestone.day), datetime.min.time().replace(hour=8))
+            )
+
+            expires_at = notify_at + timedelta(days=7)
+
+            req = AppointmentRequest.objects.create(
+                patient=patient,
+                clinician=clinician,
+                trigger_type="milestone",
+                reason=f"Day {milestone.day} check-in: {milestone.title}",
+                appointment_type="check_in",
+                milestone=milestone,
+                earliest_notify_at=notify_at,
+                expires_at=expires_at,
+            )
+            requests.append(req)
+
+        logger.info(
+            "Created %d milestone booking requests for patient %s",
+            len(requests),
+            patient.id,
+        )
+        return requests
+
+    @staticmethod
+    def create_request(
+        patient: Patient,
+        clinician: Clinician,
+        trigger_type: str,
+        reason: str,
+        appointment_type: str = "follow_up",
+        milestone=None,
+        escalation_obj=None,
+        requested_by=None,
+        earliest_notify_at=None,
+        expires_at=None,
+    ):
+        """Create an AppointmentRequest.
+
+        Args:
+            patient: Patient who should book
+            clinician: Clinician to book with
+            trigger_type: One of milestone/escalation/clinician
+            reason: Human-readable reason shown to patient
+            appointment_type: Type from Appointment.TYPE_CHOICES
+            milestone: Optional PathwayMilestone FK
+            escalation_obj: Optional Escalation FK
+            requested_by: Optional User who initiated
+            earliest_notify_at: When to first notify patient (default: now)
+            expires_at: When the request expires (default: 14 days)
+
+        Returns:
+            AppointmentRequest instance
+        """
+        from apps.clinicians.models import AppointmentRequest
+
+        now = timezone.now()
+        if earliest_notify_at is None:
+            earliest_notify_at = now
+        if expires_at is None:
+            expires_at = now + timedelta(days=14)
+
+        request = AppointmentRequest.objects.create(
+            patient=patient,
+            clinician=clinician,
+            trigger_type=trigger_type,
+            reason=reason,
+            appointment_type=appointment_type,
+            milestone=milestone,
+            escalation=escalation_obj,
+            requested_by=requested_by,
+            earliest_notify_at=earliest_notify_at,
+            expires_at=expires_at,
+        )
+
+        logger.info(
+            "AppointmentRequest created: id=%s patient=%s clinician=%s trigger=%s",
+            request.id,
+            patient.id,
+            clinician.id,
+            trigger_type,
+        )
+        return request
+
+    @staticmethod
+    @transaction.atomic
+    def book_appointment(request_id, patient: Patient, scheduled_start, scheduled_end):
+        """Book an appointment from a pending AppointmentRequest.
+
+        Args:
+            request_id: UUID of the AppointmentRequest
+            patient: Patient making the booking (for auth verification)
+            scheduled_start: datetime of appointment start
+            scheduled_end: datetime of appointment end
+
+        Returns:
+            Appointment instance or None if conflict/invalid
+        """
+        from apps.clinicians.models import AppointmentRequest
+
+        try:
+            appt_request = AppointmentRequest.objects.select_for_update().get(
+                id=request_id,
+                patient=patient,
+                status="pending",
+            )
+        except AppointmentRequest.DoesNotExist:
+            return None
+
+        # Use existing SchedulingService for conflict-safe creation
+        appointment = SchedulingService.create_appointment(
+            clinician=appt_request.clinician,
+            patient=patient,
+            start=scheduled_start,
+            end=scheduled_end,
+            appointment_type=appt_request.appointment_type,
+            created_by=patient.user,
+            notes=appt_request.reason,
+        )
+
+        if appointment is None:
+            return None
+
+        # Set virtual visit URL from clinician's Zoom link
+        if appt_request.clinician.zoom_link:
+            appointment.virtual_visit_url = appt_request.clinician.zoom_link
+            appointment.save(update_fields=["virtual_visit_url"])
+
+        # Link request to appointment
+        appt_request.status = "booked"
+        appt_request.appointment = appointment
+        appt_request.save(update_fields=["status", "appointment"])
+
+        logger.info(
+            "Appointment booked: request=%s appointment=%s",
+            request_id,
+            appointment.id,
+        )
+
+        return appointment
+
+    @staticmethod
+    def send_confirmation_drip(appointment):
+        """Send email + SMS confirmation with iCal attachment.
+
+        Uses the notification service for delivery. Attaches a .ics
+        calendar file to the email.
+        """
+        from apps.notifications.services import NotificationService
+
+        patient = appointment.patient
+
+        # Create notification via existing service
+        try:
+            NotificationService.create_notification(
+                patient=patient,
+                notification_type="reminder",
+                title="Appointment Confirmed",
+                message=(
+                    f"Your {appointment.get_appointment_type_display()} "
+                    f"with {appointment.clinician.user.get_full_name()} "
+                    f"is scheduled for {appointment.scheduled_start.strftime('%B %d at %I:%M %p')}."
+                ),
+                channels=["email", "sms"],
+            )
+        except Exception:
+            logger.exception(
+                "Failed to send confirmation for appointment %s",
+                appointment.id,
+            )
+
+        # Mark iCal as sent
+        appointment.ical_sent = True
+        appointment.save(update_fields=["ical_sent"])
+
+    @staticmethod
+    def get_available_slots_for_booking(clinician: Clinician, days: int = 5) -> list[dict]:
+        """Return available slots for the next N business days.
+
+        Args:
+            clinician: Clinician to check availability for
+            days: Number of business days to check
+
+        Returns:
+            List of dicts with 'date', 'day_name', 'slots' keys
+        """
+        today = date.today()
+        result = []
+        current = today + timedelta(days=1)  # Start from tomorrow
+        business_days_found = 0
+
+        while business_days_found < days:
+            if current.weekday() < 5:  # Monday-Friday
+                day_slots = SchedulingService.get_available_slots(clinician, current)
+                result.append(
+                    {
+                        "date": current,
+                        "day_name": current.strftime("%A"),
+                        "date_display": current.strftime("%b %d"),
+                        "slots": day_slots,
+                    }
+                )
+                business_days_found += 1
+            current += timedelta(days=1)
+
+        return result

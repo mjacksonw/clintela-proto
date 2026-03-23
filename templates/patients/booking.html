@@ -1,0 +1,166 @@
+{% extends "base_patient.html" %}
+{% load i18n %}
+{% load humanize %}
+
+{% block title %}{% trans "Book Your Appointment" %} — Clintela{% endblock %}
+
+{% block extra_head %}
+<style>
+    .slot-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        border: 1px solid var(--color-border);
+        background-color: var(--color-surface);
+        color: var(--color-text);
+        width: 100%;
+        text-align: center;
+    }
+    .slot-btn:hover {
+        background-color: var(--color-primary);
+        color: white;
+        border-color: var(--color-primary);
+    }
+    .slot-btn:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+    .day-column {
+        min-width: 140px;
+    }
+    .day-header {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--color-text-secondary);
+        text-align: center;
+        padding-bottom: 4px;
+    }
+    .day-date {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--color-text);
+        text-align: center;
+    }
+
+    /* Mobile: date tabs + slot list */
+    @media (max-width: 767px) {
+        .desktop-grid { display: none; }
+        .mobile-booking { display: block; }
+    }
+    @media (min-width: 768px) {
+        .desktop-grid { display: grid; }
+        .mobile-booking { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+
+<div class="max-w-4xl mx-auto px-4 py-6">
+
+    <!-- Header -->
+    <div class="card animate-in mb-6">
+        <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center"
+                 style="background-color: var(--color-primary-light, rgba(13,148,136,0.1));">
+                <i data-lucide="calendar-check" class="w-6 h-6" style="color: var(--color-primary);"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold" style="color: var(--color-text);">
+                    {% trans "Book Your Appointment" %}
+                </h1>
+                <p class="text-sm" style="color: var(--color-text-secondary);">
+                    {% trans "with" %} {{ clinician_name }}
+                </p>
+            </div>
+        </div>
+        <p class="text-base" style="color: var(--color-text-secondary);">
+            {{ appt_request.reason }}
+        </p>
+    </div>
+
+    <!-- Desktop: 5-column grid -->
+    <div class="desktop-grid grid-cols-5 gap-3">
+        {% for day in available_days %}
+        <div class="day-column">
+            <div class="mb-3">
+                <div class="day-header">{{ day.day_name }}</div>
+                <div class="day-date">{{ day.date_display }}</div>
+            </div>
+            <div class="flex flex-col gap-2">
+                {% for slot in day.slots %}
+                <form method="post" action="{% url 'patients:book_slot' request_id=appt_request.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="slot_start"
+                           value="{{ day.date|date:'Y-m-d' }}T{{ slot.start|time:'H:i:s' }}">
+                    <input type="hidden" name="slot_end"
+                           value="{{ day.date|date:'Y-m-d' }}T{{ slot.end|time:'H:i:s' }}">
+                    <button type="submit" class="slot-btn">
+                        {{ slot.start|time:"g:i A" }}
+                    </button>
+                </form>
+                {% empty %}
+                <p class="text-center text-sm py-4" style="color: var(--color-text-secondary);">
+                    {% trans "No slots" %}
+                </p>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Mobile: tab-style date picker -->
+    <div class="mobile-booking"
+         x-data="{ selectedDay: 0 }">
+
+        <!-- Date tabs -->
+        <div class="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-1 px-1">
+            {% for day in available_days %}
+            <button @click="selectedDay = {{ forloop.counter0 }}"
+                    class="flex-shrink-0 px-4 py-3 rounded-xl text-center transition-all"
+                    :class="selectedDay === {{ forloop.counter0 }}
+                        ? 'font-bold'
+                        : ''"
+                    :style="selectedDay === {{ forloop.counter0 }}
+                        ? 'background-color: var(--color-primary); color: white;'
+                        : 'background-color: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border);'"
+                    style="min-height: 44px;">
+                <div class="text-xs">{{ day.day_name|truncatechars:3 }}</div>
+                <div class="text-lg font-semibold">{{ day.date|date:"j" }}</div>
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Slot list per day -->
+        {% for day in available_days %}
+        <div x-show="selectedDay === {{ forloop.counter0 }}"
+             x-transition
+             class="flex flex-col gap-2">
+            {% for slot in day.slots %}
+            <form method="post" action="{% url 'patients:book_slot' request_id=appt_request.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="slot_start"
+                       value="{{ day.date|date:'Y-m-d' }}T{{ slot.start|time:'H:i:s' }}">
+                <input type="hidden" name="slot_end"
+                       value="{{ day.date|date:'Y-m-d' }}T{{ slot.end|time:'H:i:s' }}">
+                <button type="submit" class="slot-btn">
+                    {{ slot.start|time:"g:i A" }}
+                </button>
+            </form>
+            {% empty %}
+            <p class="text-center py-8" style="color: var(--color-text-secondary);">
+                {% trans "No available times on this day." %}
+            </p>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock %}

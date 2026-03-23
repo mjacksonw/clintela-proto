@@ -17,5 +17,20 @@ urlpatterns = [
     path("caregivers/", views.patient_caregivers_view, name="caregivers"),
     path("caregivers/invite/", views.patient_caregiver_invite_view, name="caregiver_invite"),
     path("caregivers/revoke/", views.patient_caregiver_revoke_view, name="caregiver_revoke"),
+    # Recovery timeline
+    path("timeline/", views.recovery_timeline_fragment, name="timeline"),
+    # Appointment booking
+    path("book/<uuid:request_id>/", views.booking_page, name="booking_page"),
+    path("book/<uuid:request_id>/confirm/", views.book_slot, name="book_slot"),
+    path(
+        "booking-confirmed/<uuid:appointment_id>/",
+        views.booking_confirmation,
+        name="booking_confirmation",
+    ),
+    path(
+        "appointment/<uuid:appointment_id>/ical/",
+        views.download_ical,
+        name="download_ical",
+    ),
     path("dev/", views.patient_dev_actions_view, name="dev_actions"),
 ]

@@ -1,0 +1,41 @@
+{% load i18n %}
+
+{% if appointment %}
+<div class="card animate-in">
+    <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+            <i data-lucide="calendar-clock" class="w-5 h-5" style="color: var(--color-primary);"></i>
+            <h3 class="text-sm font-semibold" style="color: var(--color-text-secondary);">
+                {% trans "Upcoming Appointment" %}
+            </h3>
+        </div>
+    </div>
+
+    <div class="mb-2">
+        <p class="text-lg font-bold" style="color: var(--color-text);">
+            {{ appointment.get_appointment_type_display }}
+        </p>
+        <p class="text-sm" style="color: var(--color-text-secondary);">
+            {% trans "with" %} {{ appointment.clinician.user.get_full_name }}
+        </p>
+    </div>
+
+    <div class="flex items-center gap-2 mb-3">
+        <i data-lucide="clock" class="w-4 h-4" style="color: var(--color-text-secondary);"></i>
+        <span class="text-sm" style="color: var(--color-text);">
+            {{ appointment.scheduled_start|date:"l, M j" }} {% trans "at" %} {{ appointment.scheduled_start|date:"g:i A" }}
+        </span>
+    </div>
+
+    {% if show_join_button and appointment.virtual_visit_url %}
+    <a href="{{ appointment.virtual_visit_url }}"
+       target="_blank"
+       rel="noopener"
+       class="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl font-semibold transition-all"
+       style="background-color: #7C3AED; color: white; min-height: 44px;">
+        <i data-lucide="video" class="w-5 h-5"></i>
+        {% trans "Join Now" %}
+    </a>
+    {% endif %}
+</div>
+{% endif %}
