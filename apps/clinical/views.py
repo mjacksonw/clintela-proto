@@ -1,6 +1,5 @@
 """Clinical data HTMX fragment views."""
 
-import json
 import logging
 from functools import wraps
 
@@ -209,7 +208,7 @@ def health_card_fragment(request):
     context = {
         "patient": patient,
         "snapshot": snapshot,
-        "sparkline_data_json": json.dumps(sparkline_data),
+        "sparkline_data_json": sparkline_data,
         "has_data": bool(sparkline_data),
         "trajectory_msg": trajectory_msg,
         "trajectory_class": trajectory_class,
