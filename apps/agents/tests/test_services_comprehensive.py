@@ -875,6 +875,11 @@ class TestEscalationService:
 
     def test_get_pending_escalations(self):
         """Test getting pending escalations."""
+        from apps.agents.models import Escalation
+
+        # Clear any leaked pending escalations from other tests
+        Escalation.objects.filter(status="pending").update(status="resolved")
+
         patient1 = PatientFactory()
         patient2 = PatientFactory()
         hospital = HospitalFactory()
