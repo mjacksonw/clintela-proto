@@ -31,6 +31,7 @@ Clintela deploys a multi-agent system that augments clinical teams with intellig
 Multi-modal access to care coordination:
 - Conversational AI that meets patients where they are
 - Proactive check-ins and symptom monitoring
+- My Health card with sparkline vital sign charts and warm trajectory messaging
 - Patient-reported outcome surveys (PHQ-2, KCCQ-12, Daily Symptom Check, and more)
 - Medication reminders and care plan guidance
 - Seamless escalation to human clinicians when needed
@@ -39,12 +40,12 @@ Multi-modal access to care coordination:
 
 Three-panel dashboard for nurses and physicians:
 - **Patient list**: Severity-sorted with triage color dots, unread badges, and search/sort
-- **Patient detail**: Five tabs — Details (timeline, escalations, notes), Care Plan (pathway milestones), Research (LLM chat with specialist routing), Surveys (ePRO scores, trends, assignment management), Tools (lifecycle transitions, consent, caregivers)
+- **Patient detail**: Six tabs — Details (timeline, escalations, notes), Care Plan (pathway milestones), Research (LLM chat with specialist routing), Surveys (ePRO scores, trends, assignment management), Tools (lifecycle transitions, consent, caregivers), Vitals (clinical trend charts, active alerts with rule rationale, lab results with EHR/OMOP source badges)
 - **Patient chat**: Read conversation history, inject clinician messages, take control of the AI thread
 - **Take-control mode**: Clinician takes over patient chat — AI pauses, patient sees messages from named clinician, race-safe locking with automatic timeout release
 - **Scheduling**: Weekly calendar with availability management and appointment CRUD
 - **Shift handoff**: Summary of changes since last login — new escalations, status changes, missed check-ins
-- **Keyboard shortcuts**: j/k navigate, 1-5 switch tabs, e acknowledge escalation, / search, ? help
+- **Keyboard shortcuts**: j/k navigate, 1-6 switch tabs, e acknowledge escalation, / search, ? help
 - **Real-time**: WebSocket escalation alerts, desktop notifications for critical events
 - **Dark mode**: Full support across all clinician views
 
@@ -85,6 +86,15 @@ We use a `supervisor + subagents-as-tools` pattern:
 
 Non-LLM workflows handle: permissions, thresholds, escalation rules, retries, time windows, task tracking, audit logging, and human signoff.
 
+### Clinical Intelligence Layer
+
+A deterministic rules engine monitors patient vital signs and lab data in real time:
+- **Three-layer architecture**: ClinicalObservation (time-series) → PatientClinicalSnapshot (computed state) → ClinicalAlert (rules-based detection)
+- **16 clinical rules**: Threshold, trend, missing data, and combination rules — including CHF decompensation detection (weight gain + elevated HR + declining activity)
+- **OMOP CDM concept IDs**: Bridge to EHR data pipelines — when Epic/OMOP data arrives, it maps directly with no ETL transformation needed
+- **FDA 2026 CDS-compliant**: Every alert includes an auditable rule rationale explaining why it fired in plain language
+- **Feature-flagged**: `ENABLE_CLINICAL_DATA` controls all clinical UI visibility
+
 ### Data & Events
 
 - **Inbound Events**: Webhook endpoints and polling mechanisms for external data (wearables, EHR changes)
@@ -122,7 +132,7 @@ Non-LLM workflows handle: permissions, thresholds, escalation rules, retries, ti
 
 This repository contains the prototype implementation of Clintela's user interfaces and core systems.
 
-**Current Phase**: Phase 6 complete — Survey/ePRO system with 6 clinical instruments, patient survey wizard, clinician Surveys tab, deterministic scoring with automatic escalation, and chat integration. Also: administrator KPI dashboard with 9 metric cards, operational alerts, pathway administration, and DailyMetrics pipeline. 90%+ test coverage
+**Current Phase**: Phase 7 complete — Clinical Intelligence Layer with three-layer architecture (observations, snapshots, alerts), 16-rule deterministic engine with FDA-compliant rationale, OMOP concept ID bridge, clinician Vitals tab with Chart.js charts, patient My Health card with sparklines. Built on Phase 6 (survey/ePRO, admin KPI dashboard). 1534 tests, 90%+ coverage.
 
 ---
 

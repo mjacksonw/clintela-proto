@@ -12,10 +12,10 @@ All notable changes to this project will be documented in this file.
 - Clinician Vitals tab (6th tab, keyboard shortcut `6`) with snapshot summary bar, expandable alerts, Chart.js vital sign charts with normal range bands, and lab results table with EHR/OMOP source badges
 - Patient My Health card with sparkline charts (2×2 grid) and warm trajectory messaging
 - Trajectory arrows (↗/→/↘/⬇) on patient list items with color-coded severity
-- Clinical alerts auto-wire to existing triage color system (update_triage_color)
-- Clinical data injection into AI agent context (trajectory, risk score, vital signs, active alerts)
-- Clinical alert summary in administrator KPI dashboard (severity counts, avg acknowledgment time, top 5 triggering rules)
-- Clinical alert context in clinician handoff summaries
+- Clinical alerts automatically update patient triage colors — worst alert severity drives the triage dot
+- AI Care Coordinator now references clinical data in conversations (trajectory, risk score, vital signs, active alerts)
+- Administrator KPI dashboard gains clinical alert summary card (severity counts, avg acknowledgment time, top 5 triggering rules)
+- Clinician shift handoff now includes active clinical alerts for context
 - Feature flag `ENABLE_CLINICAL_DATA` (follows existing ENABLE_RAG, ENABLE_SMS pattern) — all UI gated
 - Dark mode support for all clinical UI components
 - Seed command (`seed_clinical_data`) with 4 clinical scenarios: progressing, CHF decompensation, infection, declining activity
