@@ -92,7 +92,7 @@ def patient_dashboard_view(request):
     if settings.DEBUG:
         from .models import Patient
 
-        context["all_patients"] = Patient.objects.select_related("user").all()[:20]
+        context["all_patients"] = Patient.objects.select_related("user").order_by("user__last_name", "user__first_name")
 
     return render(request, "patients/dashboard.html", context)
 
