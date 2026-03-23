@@ -422,11 +422,11 @@ CELERY_BEAT_SCHEDULE = {
 # =============================================================================
 # FEATURE FLAGS
 # =============================================================================
-ENABLE_WEBSOCKETS = env("ENABLE_WEBSOCKETS", default=False)
-ENABLE_CELERY = env("ENABLE_CELERY", default=False)
-ENABLE_SMS = env("ENABLE_SMS", default=False)
-ENABLE_VOICE = env("ENABLE_VOICE", default=False)
-ENABLE_RAG = env("ENABLE_RAG", default=False)
+ENABLE_WEBSOCKETS = env.bool("ENABLE_WEBSOCKETS", default=False)
+ENABLE_CELERY = env.bool("ENABLE_CELERY", default=False)
+ENABLE_SMS = env.bool("ENABLE_SMS", default=False)
+ENABLE_VOICE = env.bool("ENABLE_VOICE", default=False)
+ENABLE_RAG = env.bool("ENABLE_RAG", default=False)
 ENABLE_CLINICAL_DATA = env.bool("ENABLE_CLINICAL_DATA", default=False)
 
 # =============================================================================
