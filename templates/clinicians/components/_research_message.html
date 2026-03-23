@@ -14,7 +14,7 @@
             {{ agent_type|title }}
         </div>
         {% endif %}
-        <div class="agent-message-content">{{ response|default:message.content }}</div>
+        <div class="agent-message-content" data-raw-content="{{ response|default:message.content }}">{{ response|default:message.content|linebreaksbr }}</div>
     </div>
 </div>
 {% endif %}

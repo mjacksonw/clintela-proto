@@ -5,7 +5,7 @@
         <div class="text-[10px] font-medium mb-0.5 text-teal-700 dark:text-teal-300">
             {{ clinician_name }}
         </div>
-        <div class="agent-message-content" style="color: var(--color-text);">{{ msg.content }}</div>
+        <div class="agent-message-content" style="color: var(--color-text);" data-raw-content="{{ msg.content }}">{{ msg.content|linebreaksbr }}</div>
         {% if msg.translated %}
         <div x-data="{ showOriginal: false }" class="mt-1">
             <button @click="showOriginal = !showOriginal"
