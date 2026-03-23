@@ -910,6 +910,12 @@ class TestEscalationService:
 
     def test_get_pending_escalations_no_pending(self):
         """Test when no pending escalations exist."""
+        from apps.agents.models import Escalation
+
+        # Clear any leaked data from TestCase tests (Django test ordering:
+        # TransactionTestCase runs after TestCase, data can leak)
+        Escalation.objects.filter(status="pending").update(status="resolved")
+
         patient = PatientFactory()
         EscalationFactory(patient=patient, status="resolved")
 

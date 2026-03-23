@@ -41,6 +41,72 @@
         </div>
     </div>
 
+    <!-- Who They Are (patient preferences) -->
+    <div class="mb-4 p-3 rounded-md text-sm" style="background-color: var(--color-bg); border: 1px solid var(--color-border);">
+        <div class="flex items-center gap-1.5 mb-2">
+            <i data-lucide="heart" class="w-3.5 h-3.5" style="color: #EA580C;"></i>
+            <h3 class="text-xs font-semibold" style="color: var(--color-primary);">Who They Are</h3>
+        </div>
+        {% if patient_preferences %}
+        {% if patient_preferences.preferred_name and patient_preferences.preferred_name != patient.user.first_name %}
+        <p class="text-xs mb-1.5" style="color: var(--color-text-secondary);">
+            Goes by <span class="font-medium" style="color: var(--color-text);">{{ patient_preferences.preferred_name }}</span>
+        </p>
+        {% endif %}
+        {% if patient_preferences.about_me %}
+        <p class="text-xs italic mb-2" style="color: var(--color-text); line-height: 1.5;">"{{ patient_preferences.about_me }}"</p>
+        {% endif %}
+        <div class="space-y-1.5 text-xs">
+            {% if patient_preferences.recovery_goals %}
+            <div class="flex gap-1.5">
+                <span class="font-medium flex-shrink-0" style="color: var(--color-text-secondary);">Looking forward to:</span>
+                <span style="color: var(--color-text);">{{ patient_preferences.recovery_goals }}</span>
+            </div>
+            {% endif %}
+            {% if patient_preferences.concerns %}
+            <div class="flex gap-1.5">
+                <span class="font-medium flex-shrink-0" style="color: var(--color-text-secondary);">On their mind:</span>
+                <span style="color: var(--color-text);">{{ patient_preferences.concerns }}</span>
+            </div>
+            {% endif %}
+            {% if patient_preferences.living_situation %}
+            <div class="flex gap-1.5">
+                <span class="font-medium flex-shrink-0" style="color: var(--color-text-secondary);">At home:</span>
+                <span style="color: var(--color-text);">{{ patient_preferences.living_situation }}</span>
+            </div>
+            {% endif %}
+            {% if patient_preferences.communication_style %}
+            <div class="flex gap-1.5">
+                <span class="font-medium flex-shrink-0" style="color: var(--color-text-secondary);">Prefers:</span>
+                <span style="color: var(--color-text);">{{ patient_preferences.get_communication_style_display }}{% if patient_preferences.preferred_contact_time %}, {{ patient_preferences.preferred_contact_time }}{% endif %}</span>
+            </div>
+            {% endif %}
+            {% if patient_preferences.support_network %}
+            <div class="flex gap-1.5">
+                <span class="font-medium flex-shrink-0" style="color: var(--color-text-secondary);">Support:</span>
+                <span style="color: var(--color-text);">{{ patient_preferences.support_network }}</span>
+            </div>
+            {% endif %}
+            {% if patient_preferences.values %}
+            <div class="flex gap-1.5">
+                <span class="font-medium flex-shrink-0" style="color: var(--color-text-secondary);">Values:</span>
+                <span style="color: var(--color-text);">{{ patient_preferences.values }}</span>
+            </div>
+            {% endif %}
+            {% if patient_preferences.language_preferences %}
+            <div class="flex gap-1.5">
+                <span class="font-medium flex-shrink-0" style="color: var(--color-text-secondary);">Language:</span>
+                <span style="color: var(--color-text);">{{ patient_preferences.language_preferences }}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="text-xs" style="color: var(--color-text-secondary);">
+            No preferences shared yet. The patient can share these from their About Me page.
+        </p>
+        {% endif %}
+    </div>
+
     <!-- Escalations -->
     {% if escalations %}
     <div class="mb-4">

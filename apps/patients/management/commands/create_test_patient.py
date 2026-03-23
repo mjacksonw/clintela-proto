@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 
 from apps.accounts.models import User
 from apps.accounts.tokens import short_code_token_generator
-from apps.patients.models import Hospital, Patient
+from apps.patients.models import Hospital, Patient, PatientPreferences
 
 
 class Command(BaseCommand):
@@ -65,6 +65,22 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Created patient: {patient}"))
         else:
             self.stdout.write(f"Patient already exists: {patient}")
+
+        # Create preferences for a richer demo experience
+        PatientPreferences.objects.update_or_create(
+            patient=patient,
+            defaults={
+                "preferred_name": "Sarah",
+                "about_me": "Graduate student in biochemistry. My cat Mochi keeps me company during recovery.",
+                "living_situation": "Lives alone in a studio apartment, third floor with elevator",
+                "recovery_goals": "Getting back to the lab, hiking on weekends, yoga",
+                "concerns": "Missing too much school, keeping up with my thesis work",
+                "communication_style": "direct",
+                "preferred_contact_time": "Anytime is fine",
+                "support_network": "Roommate moved out last month — parents are a 2-hour drive away",
+            },
+        )
+        self.stdout.write(self.style.SUCCESS("  Added patient preferences"))
 
         # Generate auth URL
         token = short_code_token_generator.make_token(patient)

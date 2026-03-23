@@ -28,6 +28,17 @@ Use the /browse skill from gstack for all web browsing. Never use mcp__claude-in
 - `/unfreeze` - Remove edit restrictions
 - `/gstack-upgrade` - Upgrade gstack to latest version
 
+## Care Philosophy
+
+Always read `docs/philosophy.md` before writing patient-facing features. The core principle: **help the patient be known**. Every interaction should make the patient feel known, not processed.
+
+Key rules:
+- **Never** use "contact your care team" as a brush-off — Clintela IS the care team
+- **Always** use warm, conversational language — the language of the home, not the institution
+- **Always** reference patient preferences/goals/concerns when available
+- **Never** over-medicalize — inform choices, don't impose treatments
+- **Test:** "Would this interaction make the patient feel known, or processed?"
+
 ## Design System
 
 Always read DESIGN.md before making any visual or UI decisions. All font choices (Satoshi), colors (Teal/Coral/Purple), spacing, and aesthetic direction are defined there. Do not deviate without explicit user approval.

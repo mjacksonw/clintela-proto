@@ -10,7 +10,7 @@
       style="border-color: var(--color-border); background-color: var(--color-bg); padding-bottom: calc(0.75rem + var(--dev-toolbar-h, 0px));"
       x-data="{ message: '', inflight: false }">
 
-    <label for="chat-textarea" class="sr-only">Type a message to your care team</label>
+    <label for="chat-textarea" class="sr-only">Ask me anything about your recovery</label>
     <div class="flex items-end gap-2" x-data="voiceRecorder()">
         <!-- Auto-growing textarea (hidden during recording on mobile) -->
         <textarea name="message"
@@ -19,7 +19,7 @@
                   x-show="!recording"
                   @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 120) + 'px'"
                   @keydown.enter.prevent="if (!$event.shiftKey && message.trim() && !inflight) { $el.closest('form').requestSubmit(); }"
-                  placeholder="Type a message..."
+                  placeholder="Ask me anything about your recovery..."
                   maxlength="2000"
                   rows="1"
                   :disabled="inflight"

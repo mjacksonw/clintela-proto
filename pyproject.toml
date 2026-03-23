@@ -217,6 +217,7 @@ omit = [
     "*/management/commands/create_cardiology_service.py",
     "*/management/commands/seed_cardiac_pathways.py",
     "*/management/commands/seed_pathways.py",
+    "*/management/commands/seed_demo_patients.py",
 ]
 
 [tool.coverage.report]

@@ -211,17 +211,18 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <p class="text-base leading-relaxed" style="color: var(--color-text-secondary);">
         {% if days_post_op <= 3 %}
-            You're in the early days of recovery. Some swelling, discomfort, and fatigue are normal.
-            Rest is important — your body is healing. Don't hesitate to ask your care team about anything.
+            The first few days home are often the hardest — and that's completely normal.
+            Rest when you need to, and don't hesitate to reach out if anything doesn't feel right.
         {% elif days_post_op <= 14 %}
-            You're in the active recovery phase. You should start to feel a bit better each day.
-            Light activity is usually encouraged — follow your care team's guidance on what's safe.
+            Most people start feeling a little stronger around this time.
+            Every recovery is different, though — your pace is your pace.
+            Light activity is usually encouraged — ask me if you're unsure what's safe.
         {% elif days_post_op <= 42 %}
-            You're making good progress. Most patients see significant improvement by this stage.
-            Continue following your care plan and attending any follow-up appointments.
+            You're making real progress. Most of the hard part is behind you.
+            Keep following your care plan — and let me know if anything comes up.
         {% else %}
-            You're well into your recovery journey. Most of the healing is behind you.
-            Keep up the great work and stay connected with your care team.
+            You've come a long way. Most of the healing is behind you.
+            Keep up the great work — I'm still here if you need anything.
         {% endif %}
     </p>
 </div>
@@ -246,6 +247,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Quick links -->
 <div class="grid grid-cols-2 gap-3 animate-in animate-in-delay-3">
+    <a href="{% url 'patients:about_me' %}"
+       class="card flex items-center gap-3 no-underline group"
+       style="padding: 16px;">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+             style="background-color: #FFF7ED; color: #EA580C;">
+            <i data-lucide="heart" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+            <p class="text-sm font-semibold group-hover:underline" style="color: var(--color-text);">About Me</p>
+            <p class="text-xs" style="color: var(--color-text-secondary);">Tell us who you are</p>
+        </div>
+    </a>
     <a href="{% url 'patients:caregivers' %}"
        class="card flex items-center gap-3 no-underline group"
        style="padding: 16px;">
