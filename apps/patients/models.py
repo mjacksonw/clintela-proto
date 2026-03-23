@@ -2,6 +2,7 @@
 
 import uuid
 
+from django.conf import settings
 from django.db import models, transaction
 
 
@@ -235,6 +236,12 @@ class PatientPreferences(models.Model):
     )
     preferred_contact_time = models.CharField(max_length=100, blank=True, help_text="Morning, evening, etc.")
     language_preferences = models.TextField(blank=True, help_text="Any language or cultural considerations")
+    preferred_language = models.CharField(
+        max_length=10,
+        choices=settings.LANGUAGES,
+        default="en",
+        help_text="Patient's preferred language for the interface and messages",
+    )
 
     # Support network
     support_network = models.TextField(blank=True, help_text="Who helps them, how often")

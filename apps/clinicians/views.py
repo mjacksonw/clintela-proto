@@ -400,7 +400,7 @@ def patient_chat_fragment(request, patient_id):
 
 @clinician_required
 @require_POST
-def inject_chat_message_view(request, patient_id):
+def inject_chat_message_view(request, patient_id):  # noqa: C901
     """POST: Clinician sends a message into the patient's conversation."""
     patient = request.patient
     content = request.POST.get("message", "").strip()
@@ -445,6 +445,22 @@ def inject_chat_message_view(request, patient_id):
             )
         )
 
+    # Translation: if patient prefers a non-English language, translate
+    original_content = content
+    is_translated = False
+    try:
+        patient_lang = patient.preferences.preferred_language or "en"
+    except ObjectDoesNotExist:
+        patient_lang = "en"
+
+    if patient_lang != "en":
+        from apps.agents.translation import TranslationService
+
+        translated = TranslationService.translate(content, "en", patient_lang)
+        if translated:
+            content = translated
+            is_translated = True
+
     # Create the clinician message
     try:
         msg = AgentMessage.objects.create(
@@ -452,6 +468,9 @@ def inject_chat_message_view(request, patient_id):
             role="assistant",
             agent_type="clinician",
             content=content,
+            original_content=original_content if is_translated else "",
+            source_language="en" if is_translated else "",
+            translated=is_translated,
             metadata={
                 "clinician_user_id": str(request.user.id),
                 "clinician_name": request.user.get_full_name(),

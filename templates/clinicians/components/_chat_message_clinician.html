@@ -1,3 +1,4 @@
+{% load i18n %}
 <!-- Clinician-injected message bubble -->
 <div class="flex justify-start">
     <div class="max-w-[85%] px-3 py-2 rounded-lg text-sm bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800">
@@ -5,5 +6,18 @@
             {{ clinician_name }}
         </div>
         <div class="agent-message-content" style="color: var(--color-text);">{{ msg.content }}</div>
+        {% if msg.translated %}
+        <div x-data="{ showOriginal: false }" class="mt-1">
+            <button @click="showOriginal = !showOriginal"
+                    class="text-xs" style="color: var(--color-text-secondary);">
+                {% trans "Translated" %} &middot;
+                <span x-text="showOriginal ? '{% trans "Hide original" %}' : '{% trans "View original" %}'"></span>
+            </button>
+            <div x-show="showOriginal" x-transition class="mt-1 text-sm p-2 rounded"
+                 style="background: var(--color-bg-secondary); color: var(--color-text-secondary);">
+                {{ msg.original_content }}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>

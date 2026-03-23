@@ -1,4 +1,5 @@
 {% load humanize %}
+{% load i18n %}
 {% load patient_tags %}
 <!-- Chat message bubble — used for both user and agent messages -->
 
@@ -184,6 +185,20 @@
              style="background-color: #FEF3C7; color: #92400E;">
             <i data-lucide="info" class="w-3 h-3 flex-shrink-0"></i>
             I may not have the best answer for this — consider reaching out to your care team.
+        </div>
+        {% endif %}
+
+        {% if message.translated %}
+        <div x-data="{ showOriginal: false }" class="mt-1">
+            <button @click="showOriginal = !showOriginal"
+                    class="text-xs" style="color: var(--color-text-secondary);">
+                {% trans "Translated" %} &middot;
+                <span x-text="showOriginal ? '{% trans "Hide original" %}' : '{% trans "View original" %}'"></span>
+            </button>
+            <div x-show="showOriginal" x-transition class="mt-1 text-sm p-2 rounded"
+                 style="background: var(--color-bg-secondary); color: var(--color-text-secondary);">
+                {{ message.original_content }}
+            </div>
         </div>
         {% endif %}
 

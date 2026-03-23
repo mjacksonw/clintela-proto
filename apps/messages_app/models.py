@@ -29,6 +29,11 @@ class Message(models.Model):
         blank=True,
         db_index=True,
     )
+    # Translation fields
+    original_content = models.TextField(blank=True, default="")
+    source_language = models.CharField(max_length=10, blank=True, default="")
+    translated = models.BooleanField(default=False)
+
     delivered_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
