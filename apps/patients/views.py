@@ -659,6 +659,19 @@ def book_slot(request, request_id):
     except ValueError:
         return redirect("patients:booking_page", request_id=request_id)
 
+    # Validate: start before end, both in the future, timezone-aware
+    from django.utils import timezone as tz
+
+    if scheduled_start >= scheduled_end:
+        return redirect("patients:booking_page", request_id=request_id)
+    if tz.is_naive(scheduled_start):
+        scheduled_start = tz.make_aware(scheduled_start)
+    if tz.is_naive(scheduled_end):
+        scheduled_end = tz.make_aware(scheduled_end)
+    if scheduled_start < tz.now():
+        django_messages.error(request, "That time slot is in the past. Please choose a future slot.")
+        return redirect("patients:booking_page", request_id=request_id)
+
     appointment = AppointmentBookingService.book_appointment(
         request_id=request_id,
         patient=patient,

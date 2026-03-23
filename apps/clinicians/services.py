@@ -698,15 +698,13 @@ class AppointmentBookingService:
             if not surgery_date:
                 continue
 
-            notify_at = (
-                timezone.make_aware(
-                    datetime.combine(surgery_date + timedelta(days=milestone.day), datetime.min.time().replace(hour=8))
-                )
-                if timezone.is_naive(
-                    datetime.combine(surgery_date + timedelta(days=milestone.day), datetime.min.time().replace(hour=8))
-                )
-                else datetime.combine(surgery_date + timedelta(days=milestone.day), datetime.min.time().replace(hour=8))
+            from datetime import time as time_cls
+
+            dt_naive = datetime.combine(
+                surgery_date + timedelta(days=milestone.day),
+                time_cls(8, 0),
             )
+            notify_at = timezone.make_aware(dt_naive)
 
             expires_at = notify_at + timedelta(days=7)
 

@@ -425,14 +425,16 @@ class ClinicalDataService:
             )
             return
 
-        # Check quiet hours via notification preferences
+        # Check quiet hours — respect patient's preferred contact time
         try:
-            from apps.notifications.services import NotificationService
-
-            if NotificationService._is_quiet_hours(alert.patient):
+            now = timezone.localtime()
+            hour = now.hour
+            # Respect quiet hours: no proactive messages between 9pm and 8am
+            if hour >= 21 or hour < 8:
                 logger.debug(
-                    "Deferring proactive message for %s — quiet hours",
+                    "Deferring proactive message for %s — quiet hours (%d:00)",
                     alert.patient.pk,
+                    hour,
                 )
                 return
         except Exception:
