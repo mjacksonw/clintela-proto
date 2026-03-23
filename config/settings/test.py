@@ -77,6 +77,7 @@ ENABLE_CELERY = False
 ENABLE_SMS = False
 ENABLE_VOICE = False
 ENABLE_RAG = True  # Enable RAG in tests to exercise code paths
+ENABLE_CLINICAL_DATA = True  # Enable clinical data in tests to exercise code paths
 
 # Use mock embedding backend in tests
 EMBEDDING_BACKEND = "apps.knowledge.embeddings.MockEmbeddingClient"

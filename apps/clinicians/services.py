@@ -44,6 +44,17 @@ class PatientListService:
             .values("content")[:1]
         )
 
+        # Clinical trajectory annotation (feature-flagged)
+        from django.conf import settings
+
+        clinical_annotations = {}
+        if getattr(settings, "ENABLE_CLINICAL_DATA", False):
+            from apps.clinical.models import PatientClinicalSnapshot
+
+            clinical_annotations["_clinical_trajectory"] = Subquery(
+                PatientClinicalSnapshot.objects.filter(patient_id=models.OuterRef("pk")).values("trajectory")[:1]
+            )
+
         qs = (
             Patient.objects.filter(hospital_id__in=hospital_ids, is_active=True)
             .select_related("user", "hospital")
@@ -57,6 +68,7 @@ class PatientListService:
                 ),
                 _pending_reason=pending_reason_sq,
                 _last_msg_content=last_msg_sq,
+                **clinical_annotations,
             )
         )
 
@@ -162,13 +174,31 @@ class HandoffService:
         resolved_escalations = list(resolved_escalations)
         status_changes = list(status_changes)
 
+        # Clinical alerts since last login (feature-flagged)
+        from django.conf import settings
+
+        clinical_alerts = []
+        if getattr(settings, "ENABLE_CLINICAL_DATA", False):
+            from apps.clinical.models import ClinicalAlert
+
+            clinical_alerts = list(
+                ClinicalAlert.objects.filter(
+                    patient__hospital_id__in=hospital_ids,
+                    created_at__gte=since,
+                )
+                .select_related("patient__user")
+                .order_by("-created_at")[:10]
+            )
+
         return {
             "new_escalations": new_escalations,
             "resolved_escalations": resolved_escalations,
             "status_changes": status_changes,
+            "clinical_alerts": clinical_alerts,
             "new_escalation_count": len(new_escalations),
             "resolved_count": len(resolved_escalations),
             "status_change_count": len(status_changes),
+            "clinical_alert_count": len(clinical_alerts),
         }
 
 

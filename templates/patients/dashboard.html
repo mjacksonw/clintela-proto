@@ -228,6 +228,16 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 {% endif %}
 
+<!-- My Health Card (feature-flagged) -->
+{% if ENABLE_CLINICAL_DATA %}
+<div class="animate-in animate-in-delay-2 mb-6"
+     hx-get="{% url 'clinical:health_card' %}"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+    <!-- Loaded via HTMX -->
+</div>
+{% endif %}
+
 <!-- Welcome / Care Team -->
 <div class="card animate-in animate-in-delay-2 mb-6">
     <div class="flex items-center gap-2 mb-3">

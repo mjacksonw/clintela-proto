@@ -72,6 +72,7 @@ LOCAL_APPS = [
     "apps.knowledge",
     "apps.surveys",
     "apps.administrators",
+    "apps.clinical",
 ]
 
 # Daphne must be first so its ASGI-capable runserver replaces Django's WSGI one.
@@ -109,6 +110,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.clinical.context_processors.clinical_data_flags",
             ],
         },
     },
@@ -375,6 +377,7 @@ ENABLE_CELERY = env("ENABLE_CELERY", default=False)
 ENABLE_SMS = env("ENABLE_SMS", default=False)
 ENABLE_VOICE = env("ENABLE_VOICE", default=False)
 ENABLE_RAG = env("ENABLE_RAG", default=False)
+ENABLE_CLINICAL_DATA = env.bool("ENABLE_CLINICAL_DATA", default=False)
 
 # =============================================================================
 # EMBEDDING / RAG

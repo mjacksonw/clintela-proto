@@ -77,6 +77,7 @@ function clinicianDashboard() {
                 research: `/clinician/patients/${patientId}/research/`,
                 surveys: `/patient/surveys/clinician/${patientId}/`,
                 tools: `/clinician/patients/${patientId}/tools/`,
+                vitals: `/clinical/clinician/patient/${patientId}/vitals/`,
             };
 
             const url = tabUrls[tab];
@@ -134,6 +135,10 @@ function clinicianDashboard() {
                 case '5':
                     event.preventDefault();
                     this.switchTab('tools');
+                    break;
+                case '6':
+                    event.preventDefault();
+                    this.switchTab('vitals');
                     break;
                 case 'e':
                     event.preventDefault();

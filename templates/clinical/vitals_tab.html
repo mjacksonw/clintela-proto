@@ -1,0 +1,191 @@
+{% load humanize %}
+{% if not has_data %}
+{# Empty state #}
+<div class="flex flex-col items-center justify-center py-16 text-center">
+    <svg class="w-12 h-12 text-teal-500 dark:text-teal-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+    <p class="text-gray-600 dark:text-gray-400 text-base">No clinical data available yet.</p>
+    <p class="text-gray-500 dark:text-gray-500 text-sm mt-1">Clinical observations will appear here once monitoring begins.</p>
+</div>
+{% else %}
+
+{# 1. Snapshot summary bar #}
+{% if snapshot %}
+<div class="flex items-center gap-4 px-4 py-3 mb-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium
+        {% if snapshot.trajectory == 'improving' %}bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300
+        {% elif snapshot.trajectory == 'stable' %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
+        {% elif snapshot.trajectory == 'concerning' %}bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300
+        {% elif snapshot.trajectory == 'deteriorating' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300
+        {% endif %}">
+        {% if snapshot.trajectory == 'improving' %}↗{% elif snapshot.trajectory == 'stable' %}→{% elif snapshot.trajectory == 'concerning' %}↘{% elif snapshot.trajectory == 'deteriorating' %}⬇{% endif %}
+        {{ snapshot.get_trajectory_display }}
+    </span>
+    <span class="text-sm text-gray-600 dark:text-gray-400">
+        Risk: <strong>{{ snapshot.risk_score|floatformat:0 }}/100</strong>
+    </span>
+    <span class="text-sm text-gray-600 dark:text-gray-400">
+        Data: <strong>{{ snapshot.data_completeness|floatformat:0 }}%</strong>
+    </span>
+    {% if snapshot.active_alerts_count > 0 %}
+    <span class="text-sm text-orange-600 dark:text-orange-400 font-medium">
+        {{ snapshot.active_alerts_count }} active alert{{ snapshot.active_alerts_count|pluralize }}
+    </span>
+    {% endif %}
+</div>
+{% endif %}
+
+{# 2. Active alerts #}
+{% if alerts %}
+<div class="mb-6">
+    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Active Alerts</h4>
+    <div class="space-y-2">
+        {% for alert in alerts %}
+        <div x-data="{ expanded: false }" class="rounded-lg border-l-4 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors
+            {% if alert.severity == 'red' %}border-red-600 bg-red-50/50 dark:bg-red-900/10
+            {% elif alert.severity == 'orange' %}border-orange-500 bg-orange-50/50 dark:bg-orange-900/10
+            {% elif alert.severity == 'yellow' %}border-yellow-500 bg-yellow-50/50 dark:bg-yellow-900/10
+            {% else %}border-teal-500 bg-teal-50/50 dark:bg-teal-900/10{% endif %}"
+            @click="expanded = !expanded">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-2 h-2 rounded-full
+                        {% if alert.severity == 'red' %}bg-red-600
+                        {% elif alert.severity == 'orange' %}bg-orange-500
+                        {% elif alert.severity == 'yellow' %}bg-yellow-500
+                        {% else %}bg-teal-500{% endif %}"></span>
+                    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ alert.title }}</span>
+                </div>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ alert.created_at|naturaltime }}</span>
+            </div>
+            <div x-show="expanded" x-collapse class="mt-2 text-sm text-gray-600 dark:text-gray-400 pl-4">
+                <p class="mb-1">{{ alert.description }}</p>
+                {% if alert.rule_rationale %}
+                <p class="text-xs text-gray-500 dark:text-gray-500 italic border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
+                    {{ alert.rule_rationale }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# 3. Vital sign charts — rendered server-side, Chart.js init via inline JS #}
+{{ chart_data|json_script:"chart-data" }}
+<div id="vitals-chart-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
+
+{# 4. Lab results #}
+{% if lab_results %}
+<div>
+    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Lab Results</h4>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                    <th class="text-left py-2 text-gray-500 dark:text-gray-400 font-medium">Test</th>
+                    <th class="text-right py-2 text-gray-500 dark:text-gray-400 font-medium">Value</th>
+                    <th class="text-right py-2 text-gray-500 dark:text-gray-400 font-medium">Date</th>
+                    <th class="text-right py-2 text-gray-500 dark:text-gray-400 font-medium">Source</th>
+                </tr>
+            </thead>
+            <tbody class="tabular-nums">
+                {% for lab in lab_results %}
+                <tr class="border-b border-gray-100 dark:border-gray-800">
+                    <td class="py-2 text-gray-900 dark:text-gray-100">{{ lab.name }}</td>
+                    <td class="py-2 text-right {% if lab.is_abnormal %}text-orange-600 dark:text-orange-400 font-medium{% else %}text-gray-900 dark:text-gray-100{% endif %}">
+                        {{ lab.value|floatformat:2 }} {{ lab.unit }}
+                    </td>
+                    <td class="py-2 text-right text-gray-500 dark:text-gray-400">{{ lab.at|date:"M j" }}</td>
+                    <td class="py-2 text-right">
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                            {{ lab.source }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# Chart.js initialization — vanilla JS for HTMX compatibility #}
+<script>
+(function() {
+    if (typeof Chart === 'undefined') return;
+    const el = document.getElementById('chart-data');
+    if (!el) return;
+    const chartData = JSON.parse(el.textContent);
+    const grid = document.getElementById('vitals-chart-grid');
+    if (!grid) return;
+
+    const lineColor = '#2563EB';
+    const bandColor = 'rgba(13, 148, 136, 0.1)';
+
+    for (const [name, data] of Object.entries(chartData)) {
+        const slug = name.replace(/\s+/g, '-').toLowerCase();
+        const wrapper = document.createElement('div');
+        wrapper.className = 'rounded-lg border border-gray-200 dark:border-gray-700 p-4';
+        wrapper.innerHTML = `<h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">${name}</h4><canvas id="chart-${slug}" aria-label="${name} chart, 30-day trend" role="img" style="height:160px;width:100%;"></canvas>`;
+        grid.appendChild(wrapper);
+
+        const canvas = document.getElementById('chart-' + slug);
+        if (!canvas) continue;
+
+        const datasets = [{
+            label: name,
+            data: data.values,
+            borderColor: lineColor,
+            borderWidth: 2,
+            pointRadius: 2,
+            pointHoverRadius: 5,
+            tension: 0.3,
+            fill: false,
+        }];
+
+        if (data.normal_low !== null && data.normal_high !== null) {
+            datasets.push({
+                label: 'Normal Range',
+                data: new Array(data.labels.length).fill(data.normal_high),
+                borderColor: 'transparent',
+                backgroundColor: bandColor,
+                fill: '+1',
+                pointRadius: 0,
+            });
+            datasets.push({
+                label: '',
+                data: new Array(data.labels.length).fill(data.normal_low),
+                borderColor: 'transparent',
+                backgroundColor: 'transparent',
+                fill: false,
+                pointRadius: 0,
+            });
+        }
+
+        new Chart(canvas, {
+            type: 'line',
+            data: { labels: data.labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => ctx.dataset.label ? `${ctx.parsed.y} ${data.unit}` : '',
+                        },
+                    },
+                },
+                scales: {
+                    x: { ticks: { maxTicksLimit: 8, font: { size: 11 } }, grid: { display: false } },
+                    y: { ticks: { font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                },
+            },
+        });
+    }
+})();
+</script>
+{% endif %}

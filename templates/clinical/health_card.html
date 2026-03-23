@@ -1,0 +1,87 @@
+{% if not has_data %}
+{# Empty state — warm, not clinical #}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">My Health</h3>
+    <div class="flex flex-col items-center text-center py-4">
+        <svg class="w-10 h-10 text-teal-500 dark:text-teal-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+        <p class="text-gray-600 dark:text-gray-400 text-base">
+            Once we start tracking your health data, you'll see your progress here.
+        </p>
+        <p class="text-gray-500 dark:text-gray-500 text-sm mt-1">
+            In the meantime, your care team is still right here if you need anything.
+        </p>
+    </div>
+</div>
+{% else %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">My Health</h3>
+
+    {# Sparklines — 2x2 grid, each 120x40 #}
+    {{ sparkline_data_json|json_script:"sparkline-data" }}
+    <div class="grid grid-cols-2 gap-4 mb-4" id="sparkline-container">
+        <template x-data x-for="(name, data) in JSON.parse(document.getElementById('sparkline-data').textContent)" :key="name">
+            <div class="text-center">
+                <canvas :id="'spark-' + name.replace(/\s+/g, '-').toLowerCase()"
+                        :aria-label="name + ': ' + data.current + ' ' + data.unit"
+                        role="img"
+                        width="120" height="40"
+                        class="mx-auto"></canvas>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1" x-text="name"></p>
+            </div>
+        </template>
+    </div>
+
+    {# Trajectory summary — warm language #}
+    {% if trajectory_msg %}
+    <p class="{{ trajectory_class }} text-base leading-relaxed">
+        {{ trajectory_msg }}
+    </p>
+    {% endif %}
+
+    {# Connect to patient goals #}
+    {% if goal_message %}
+    <p class="text-teal-600 dark:text-teal-400 text-sm mt-2">
+        {{ goal_message }}
+    </p>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const data = JSON.parse(document.getElementById('sparkline-data').textContent);
+    const tealColor = '#0D9488';
+
+    for (const [name, sparkData] of Object.entries(data)) {
+        const canvasId = 'spark-' + name.replace(/\s+/g, '-').toLowerCase();
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) continue;
+
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: sparkData.values.map((_, i) => i),
+                datasets: [{
+                    data: sparkData.values,
+                    borderColor: tealColor,
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    tension: 0.4,
+                    fill: false,
+                }],
+            },
+            options: {
+                responsive: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                scales: {
+                    x: { display: false },
+                    y: { display: false },
+                },
+                elements: { line: { borderJoinStyle: 'round' } },
+            },
+        });
+    }
+});
+</script>
+{% endif %}

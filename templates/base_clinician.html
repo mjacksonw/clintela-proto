@@ -2,6 +2,10 @@
 {% load static %}
 
 {% block extra_head %}
+{% if ENABLE_CLINICAL_DATA %}
+<!-- Chart.js for clinical vitals charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+{% endif %}
 <style type="text/tailwindcss">
     /* Hide Alpine x-cloak elements until Alpine initializes */
     [x-cloak] { display: none !important; }
@@ -116,6 +120,16 @@
                         :aria-selected="activeTab === 'tools'">
                     Tools
                 </button>
+                {% if ENABLE_CLINICAL_DATA %}
+                <button role="tab"
+                        class="px-3 py-2.5 text-sm font-medium border-b-2 transition-colors"
+                        :class="activeTab === 'vitals' ? 'border-teal-500 text-teal-600' : 'border-transparent'"
+                        :style="activeTab !== 'vitals' ? 'color: var(--color-text-secondary)' : ''"
+                        @click="switchTab('vitals')"
+                        :aria-selected="activeTab === 'vitals'">
+                    Vitals
+                </button>
+                {% endif %}
             </div>
 
             <!-- Tab content / detail panel -->

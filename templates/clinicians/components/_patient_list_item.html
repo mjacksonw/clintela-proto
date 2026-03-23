@@ -10,6 +10,16 @@
         <!-- Triage dot + name -->
         <div class="flex items-center gap-2 flex-1 min-w-0">
             <span class="triage-dot triage-{{ p.status }}" aria-hidden="true"></span>
+            {% if ENABLE_CLINICAL_DATA and item.trajectory %}
+            <span class="text-sm leading-none
+                {% if item.trajectory == 'improving' %}text-teal-600 dark:text-teal-400
+                {% elif item.trajectory == 'stable' %}text-gray-400 dark:text-gray-500
+                {% elif item.trajectory == 'concerning' %}text-orange-500 dark:text-orange-400
+                {% elif item.trajectory == 'deteriorating' %}text-red-600 dark:text-red-400
+                {% endif %}"
+                title="Trending: {{ item.trajectory }}"
+                aria-label="Trajectory: {{ item.trajectory }}">{% if item.trajectory == 'improving' %}↗{% elif item.trajectory == 'stable' %}→{% elif item.trajectory == 'concerning' %}↘{% elif item.trajectory == 'deteriorating' %}⬇{% endif %}</span>
+            {% endif %}
             <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between">
                     <span class="text-sm font-semibold truncate" style="color: var(--color-text);">
