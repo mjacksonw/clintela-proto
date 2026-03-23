@@ -1,3 +1,4 @@
+{% load i18n %}
 <!-- Patient header — sticky, 64px height -->
 <header role="banner"
         class="sticky top-0 z-40 h-16 flex items-center justify-between px-4 lg:px-6
@@ -141,6 +142,47 @@
                 <i data-lucide="volume-x" class="w-5 h-5" style="color: var(--color-text-secondary);"></i>
             </template>
         </button>
+
+        <!-- Language selector -->
+        {% if patient %}
+        <div x-data="{ langOpen: false }" class="relative">
+            <button @click="langOpen = !langOpen"
+                    class="p-3 rounded-lg transition-colors hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800
+                           focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                    aria-label="{% trans 'Change language' %}"
+                    title="{% trans 'Change language' %}"
+                    aria-haspopup="true"
+                    :aria-expanded="langOpen">
+                <i data-lucide="globe" class="w-5 h-5" style="color: var(--color-text-secondary);"></i>
+            </button>
+            <div x-show="langOpen"
+                 @click.outside="langOpen = false"
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-100"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute right-0 mt-2 w-40 rounded-lg shadow-lg border py-1"
+                 style="background-color: var(--color-surface); border-color: var(--color-border); z-index: 50;"
+                 x-cloak>
+                <form method="POST" action="{% url 'set_language' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <button type="submit" name="language" value="en"
+                            class="block w-full text-left px-4 py-2 text-sm hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
+                            style="color: var(--color-text); min-height: 44px;">
+                        🇺🇸 English {% if LANGUAGE_CODE == 'en' %}✓{% endif %}
+                    </button>
+                    <button type="submit" name="language" value="es"
+                            class="block w-full text-left px-4 py-2 text-sm hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
+                            style="color: var(--color-text); min-height: 44px;">
+                        🇲🇽 Español {% if LANGUAGE_CODE == 'es' %}✓{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Dark mode toggle -->
         <button @click="window.clintelaTheme.toggle(); $nextTick(() => { if (window.lucide) lucide.createIcons(); })"
