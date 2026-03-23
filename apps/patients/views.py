@@ -87,7 +87,7 @@ def patient_dashboard_view(request):
 
     context = {
         "patient": patient,
-        "messages": messages,
+        "chat_messages": messages,
         "days_post_op": days_post_op,
         "suggestion_chips": suggestion_chips,
         "debug": settings.DEBUG,

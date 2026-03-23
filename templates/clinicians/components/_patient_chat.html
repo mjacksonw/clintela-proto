@@ -16,13 +16,13 @@
         </div>
         <span class="text-[10px] px-1.5 py-0.5 rounded-full"
               style="background-color: var(--color-bg); color: var(--color-text-secondary);">
-            {{ messages|length }} messages
+            {{ chat_messages|length }} messages
         </span>
     </div>
 
     <!-- Messages -->
     <div id="chat-messages" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
-        {% for msg in messages %}
+        {% for msg in chat_messages %}
         <div class="flex {% if msg.role == 'user' %}justify-end{% else %}justify-start{% endif %}">
             <div class="max-w-[85%] px-3 py-2 rounded-lg text-sm
                         {% if msg.role == 'user' %}bg-blue-500 text-white

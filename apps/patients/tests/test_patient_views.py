@@ -390,7 +390,7 @@ class TestPatientDashboardConversationVisibility:
         response = self.client.get(reverse("patients:dashboard"))
 
         assert response.status_code == 200
-        assert len(response.context["messages"]) == 1
+        assert len(response.context["chat_messages"]) == 1
 
     def test_escalated_conversation_still_shown(self):
         """Escalated conversations must remain visible to the patient.
@@ -402,8 +402,8 @@ class TestPatientDashboardConversationVisibility:
         response = self.client.get(reverse("patients:dashboard"))
 
         assert response.status_code == 200
-        assert len(response.context["messages"]) == 1
-        assert "how are you feeling" in response.context["messages"][0].content
+        assert len(response.context["chat_messages"]) == 1
+        assert "how are you feeling" in response.context["chat_messages"][0].content
 
     def test_completed_conversation_not_shown(self):
         """Completed conversations should not be loaded on the dashboard."""
@@ -411,7 +411,7 @@ class TestPatientDashboardConversationVisibility:
         response = self.client.get(reverse("patients:dashboard"))
 
         assert response.status_code == 200
-        assert response.context["messages"] == []
+        assert response.context["chat_messages"] == []
 
     def test_most_recent_conversation_wins(self):
         """When multiple valid conversations exist, show the most recent."""
@@ -431,8 +431,8 @@ class TestPatientDashboardConversationVisibility:
         response = self.client.get(reverse("patients:dashboard"))
 
         assert response.status_code == 200
-        assert len(response.context["messages"]) == 1
-        assert "New message" in response.context["messages"][0].content
+        assert len(response.context["chat_messages"]) == 1
+        assert "New message" in response.context["chat_messages"][0].content
 
 
 @pytest.mark.django_db
@@ -464,7 +464,7 @@ class TestPatientDashboardConversationError:
 
         # Should still render the dashboard, just with empty messages
         assert response.status_code == 200
-        assert response.context["messages"] == []
+        assert response.context["chat_messages"] == []
 
 
 @pytest.mark.django_db

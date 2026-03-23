@@ -264,7 +264,7 @@ def patient_research_fragment(request, patient_id):
         {
             "patient": patient,
             "conversation": conversation,
-            "messages": messages,
+            "chat_messages": messages,
         },
         request=request,
     )
@@ -377,7 +377,7 @@ def _render_chat_html(request, patient):
         {
             "patient": patient,
             "conversation": conversation,
-            "messages": messages,
+            "chat_messages": messages,
             "paused_by": paused_by,
             "is_controlled_by_me": is_controlled_by_me,
             "is_controlled_by_other": is_controlled_by_other,

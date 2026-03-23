@@ -9,7 +9,7 @@
 
     <!-- Messages -->
     <div id="research-messages" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
-        {% for msg in messages %}
+        {% for msg in chat_messages %}
         {% include "clinicians/components/_research_message.html" with message=msg %}
         {% empty %}
         <div class="text-center py-8">
