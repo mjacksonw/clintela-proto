@@ -11,6 +11,8 @@
         </div>
 
         <div class="card">
+            {% include "components/_messages.html" %}
+
             <form method="post" action="{% url 'clinicians:login' %}">
                 {% csrf_token %}
 

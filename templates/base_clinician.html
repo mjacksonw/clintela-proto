@@ -134,6 +134,9 @@
 
             <!-- Tab content / detail panel -->
             <div id="detail-panel" role="tabpanel" class="flex-1 overflow-y-auto min-h-0">
+                <div class="px-4 pt-3">
+                    {% include "components/_messages.html" %}
+                </div>
                 {% block detail_content %}
                 <div class="flex items-center justify-center h-full" style="color: var(--color-text-secondary);">
                     <div class="text-center">
