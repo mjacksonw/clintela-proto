@@ -170,14 +170,16 @@
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.path }}">
                     <button type="submit" name="language" value="en"
-                            class="block w-full text-left px-4 py-2 text-sm hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
+                            class="block w-full text-left px-4 py-2 text-sm hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800 flex items-center gap-2"
                             style="color: var(--color-text); min-height: 44px;">
-                        🇺🇸 English {% if LANGUAGE_CODE == 'en' %}✓{% endif %}
+                        <span class="text-xs font-medium uppercase tracking-wide opacity-60">EN</span>
+                        English {% if LANGUAGE_CODE == 'en' %}<i data-lucide="check" class="w-3.5 h-3.5 ml-auto" style="color: var(--color-primary);"></i>{% endif %}
                     </button>
                     <button type="submit" name="language" value="es"
-                            class="block w-full text-left px-4 py-2 text-sm hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800"
+                            class="block w-full text-left px-4 py-2 text-sm hover:bg-warm-100 [data-theme='dark']:hover:bg-warm-800 flex items-center gap-2"
                             style="color: var(--color-text); min-height: 44px;">
-                        🇲🇽 Español {% if LANGUAGE_CODE == 'es' %}✓{% endif %}
+                        <span class="text-xs font-medium uppercase tracking-wide opacity-60">ES</span>
+                        Español {% if LANGUAGE_CODE == 'es' %}<i data-lucide="check" class="w-3.5 h-3.5 ml-auto" style="color: var(--color-primary);"></i>{% endif %}
                     </button>
                 </form>
             </div>

@@ -1,4 +1,4 @@
-{% load humanize %}
+{% load humanize i18n %}
 
 {% if instances %}
 <!-- Pending Surveys -->
@@ -17,11 +17,11 @@
                     ~{{ instance.instrument.estimated_minutes }} min
                     &middot;
                     {% if instance.status == 'in_progress' %}
-                        <span style="color: #2563EB; font-weight: 500;">In Progress</span>
+                        <span style="color: #2563EB; font-weight: 500;">{% trans "In Progress" %}</span>
                     {% elif instance.due_date == today %}
-                        <span style="color: #D97706; font-weight: 500;">Due today</span>
+                        <span style="color: #D97706; font-weight: 500;">{% trans "Due today" %}</span>
                     {% else %}
-                        Due {{ instance.due_date|date:"l" }}
+                        {% blocktrans with day=instance.due_date|date:"l" %}Due {{ day }}{% endblocktrans %}
                     {% endif %}
                 </p>
             </div>
@@ -29,7 +29,7 @@
         <button onclick="openSurvey('{{ instance.id }}')"
                 class="px-5 py-2.5 rounded-md text-base font-semibold text-white"
                 style="background-color: #2563EB; min-height: 44px;">
-            {% if instance.status == 'in_progress' %}Continue{% else %}Start{% endif %}
+            {% if instance.status == 'in_progress' %}{% trans "Continue" %}{% else %}{% trans "Start" %}{% endif %}
         </button>
     </div>
 </div>
@@ -39,14 +39,13 @@
 <div class="card mb-3" style="padding: 24px;">
     <div class="text-center" style="color: var(--color-text-secondary);">
         <i data-lucide="clipboard-check" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
-        <h3 class="text-lg font-semibold mb-1" style="color: var(--color-text);">All caught up!</h3>
+        <h3 class="text-lg font-semibold mb-1" style="color: var(--color-text);">{% trans "All caught up!" %}</h3>
         {% if next_date %}
         <p class="text-sm">
-            Your next check-in is <strong>{{ next_date|date:"l" }}</strong>.
-            Keep up the great work with your recovery.
+            {% blocktrans with day=next_date|date:"l" %}Your next check-in is <strong>{{ day }}</strong>. Keep up the great work with your recovery.{% endblocktrans %}
         </p>
         {% else %}
-        <p class="text-sm">No check-ins scheduled right now.</p>
+        <p class="text-sm">{% trans "No check-ins scheduled right now." %}</p>
         {% endif %}
     </div>
 </div>
