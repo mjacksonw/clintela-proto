@@ -1,26 +1,30 @@
 {% extends "base_patient.html" %}
 {% load static %}
 {% load humanize %}
+{% load i18n %}
 
-{% block title %}Recovery Dashboard — Clintela{% endblock %}
+{% block title %}{% trans "Recovery Dashboard" %} — Clintela{% endblock %}
 
 {% block dashboard_content %}
+
+<!-- Celebration Toast -->
+{% include "patients/components/_celebration_toast.html" %}
 
 <!-- Recovery Status Hero -->
 <div class="card animate-in mb-6">
     <div class="flex items-start justify-between">
         <div>
             <p class="text-sm font-medium mb-1" style="color: var(--color-text-secondary);">
-                Recovery Progress
+                {% trans "Recovery Progress" %}
             </p>
             {% if days_post_op is not None %}
             <div class="flex items-baseline gap-2">
                 <span class="text-5xl font-bold" style="color: var(--color-text);">
-                    Day {{ days_post_op }}
+                    {% blocktrans with day=days_post_op %}Day {{ day }}{% endblocktrans %}
                 </span>
             </div>
             <p class="mt-1 text-base" style="color: var(--color-text-secondary);">
-                {% if patient.surgery_type %}{{ patient.surgery_type }}{% else %}Surgery{% endif %}
+                {% if patient.surgery_type %}{{ patient.surgery_type }}{% else %}{% trans "Surgery" %}{% endif %}
                 &middot;
                 {% if patient.surgery_date %}{{ patient.surgery_date|date:"M j, Y" }}{% endif %}
             </p>
@@ -28,7 +32,7 @@
             <div class="flex items-center gap-3 mt-2">
                 <i data-lucide="heart-pulse" class="w-8 h-8" style="color: var(--color-text-secondary);"></i>
                 <p class="text-lg" style="color: var(--color-text-secondary);">
-                    Your care team is setting up your recovery plan
+                    {% trans "Your care team is setting up your recovery plan" %}
                 </p>
             </div>
             {% endif %}
@@ -40,7 +44,7 @@
              style="{% if patient.status == 'green' %}background-color: #D1FAE5; color: #065F46;{% elif patient.status == 'yellow' %}background-color: #FEF3C7; color: #92400E;{% elif patient.status == 'orange' %}background-color: #FFEDD5; color: #9A3412;{% elif patient.status == 'red' %}background-color: #FEE2E2; color: #991B1B;{% endif %}">
             <i data-lucide="{% if patient.status == 'green' %}check-circle{% elif patient.status == 'yellow' %}alert-circle{% elif patient.status == 'orange' %}alert-triangle{% else %}alert-octagon{% endif %}"
                class="w-4 h-4"></i>
-            {% if patient.status == 'green' %}On Track{% elif patient.status == 'yellow' %}Needs Attention{% elif patient.status == 'orange' %}Escalated{% else %}Critical{% endif %}
+            {% if patient.status == 'green' %}{% trans "On Track" %}{% elif patient.status == 'yellow' %}{% trans "Needs Attention" %}{% elif patient.status == 'orange' %}{% trans "Escalated" %}{% else %}{% trans "Critical" %}{% endif %}
         </div>
         {% endif %}
     </div>
@@ -207,26 +211,37 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="card animate-in animate-in-delay-1 mb-6">
     <div class="flex items-center gap-2 mb-3">
         <i data-lucide="calendar-check" class="w-5 h-5" style="color: var(--color-primary);"></i>
-        <h2 class="text-lg font-semibold">What to Expect</h2>
+        <h2 class="text-lg font-semibold">{% trans "What to Expect" %}</h2>
     </div>
     <p class="text-base leading-relaxed" style="color: var(--color-text-secondary);">
         {% if days_post_op <= 3 %}
-            The first few days home are often the hardest — and that's completely normal.
-            Rest when you need to, and don't hesitate to reach out if anything doesn't feel right.
+            {% trans "The first few days home are often the hardest — and that's completely normal. Rest when you need to, and don't hesitate to reach out if anything doesn't feel right." %}
         {% elif days_post_op <= 14 %}
-            Most people start feeling a little stronger around this time.
-            Every recovery is different, though — your pace is your pace.
-            Light activity is usually encouraged — ask me if you're unsure what's safe.
+            {% trans "Most people start feeling a little stronger around this time. Every recovery is different, though — your pace is your pace. Light activity is usually encouraged — ask me if you're unsure what's safe." %}
         {% elif days_post_op <= 42 %}
-            You're making real progress. Most of the hard part is behind you.
-            Keep following your care plan — and let me know if anything comes up.
+            {% trans "You're making real progress. Most of the hard part is behind you. Keep following your care plan — and let me know if anything comes up." %}
         {% else %}
-            You've come a long way. Most of the healing is behind you.
-            Keep up the great work — I'm still here if you need anything.
+            {% trans "You've come a long way. Most of the healing is behind you. Keep up the great work — I'm still here if you need anything." %}
         {% endif %}
     </p>
 </div>
 {% endif %}
+
+<!-- Upcoming Appointment -->
+<div class="animate-in animate-in-delay-1 mb-6"
+     hx-get="{% url 'patients:upcoming_appointment' %}"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+    <!-- Loaded via HTMX -->
+</div>
+
+<!-- Recovery Timeline -->
+<div class="animate-in animate-in-delay-2 mb-6"
+     hx-get="{% url 'patients:timeline' %}"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+    <!-- Loaded via HTMX -->
+</div>
 
 <!-- My Health Card (feature-flagged) -->
 {% if ENABLE_CLINICAL_DATA %}
@@ -242,16 +257,14 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="card animate-in animate-in-delay-2 mb-6">
     <div class="flex items-center gap-2 mb-3">
         <i data-lucide="heart-handshake" class="w-5 h-5" style="color: #0D9488;"></i>
-        <h2 class="text-lg font-semibold">Your Care Team</h2>
+        <h2 class="text-lg font-semibold">{% trans "Your Care Team" %}</h2>
     </div>
     <p class="text-base leading-relaxed" style="color: var(--color-text-secondary);">
-        Hi {{ patient.user.first_name|default:"there" }} —
         {% if patient.hospital %}
-            your team at <strong>{{ patient.hospital.name }}</strong> is here for you.
+            {% blocktrans with name=patient.user.first_name|default:"there" hospital=patient.hospital.name %}Hi {{ name }} — your team at <strong>{{ hospital }}</strong> is here for you. Use the chat anytime to ask questions about your recovery.{% endblocktrans %}
         {% else %}
-            your care team is here for you.
+            {% blocktrans with name=patient.user.first_name|default:"there" %}Hi {{ name }} — your care team is here for you. Use the chat anytime to ask questions about your recovery.{% endblocktrans %}
         {% endif %}
-        Use the chat anytime to ask questions about your recovery.
     </p>
 </div>
 
@@ -265,8 +278,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <i data-lucide="heart" class="w-5 h-5"></i>
         </div>
         <div class="min-w-0">
-            <p class="text-sm font-semibold group-hover:underline" style="color: var(--color-text);">About Me</p>
-            <p class="text-xs" style="color: var(--color-text-secondary);">Tell us who you are</p>
+            <p class="text-sm font-semibold group-hover:underline" style="color: var(--color-text);">{% trans "About Me" %}</p>
+            <p class="text-xs" style="color: var(--color-text-secondary);">{% trans "Tell us who you are" %}</p>
         </div>
     </a>
     <a href="{% url 'patients:caregivers' %}"
@@ -277,8 +290,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <i data-lucide="users" class="w-5 h-5"></i>
         </div>
         <div class="min-w-0">
-            <p class="text-sm font-semibold group-hover:underline" style="color: var(--color-text);">Caregivers</p>
-            <p class="text-xs" style="color: var(--color-text-secondary);">Invite family</p>
+            <p class="text-sm font-semibold group-hover:underline" style="color: var(--color-text);">{% trans "Caregivers" %}</p>
+            <p class="text-xs" style="color: var(--color-text-secondary);">{% trans "Invite family" %}</p>
         </div>
     </a>
     <a href="{% url 'patients:consent' %}"
@@ -289,8 +302,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <i data-lucide="shield-check" class="w-5 h-5"></i>
         </div>
         <div class="min-w-0">
-            <p class="text-sm font-semibold group-hover:underline" style="color: var(--color-text);">Privacy</p>
-            <p class="text-xs" style="color: var(--color-text-secondary);">Manage consent</p>
+            <p class="text-sm font-semibold group-hover:underline" style="color: var(--color-text);">{% trans "Privacy" %}</p>
+            <p class="text-xs" style="color: var(--color-text-secondary);">{% trans "Manage consent" %}</p>
         </div>
     </a>
 </div>

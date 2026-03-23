@@ -29,6 +29,7 @@ class Clinician(models.Model):
     specialty = models.CharField(max_length=100, blank=True)
     license_number = models.CharField(max_length=50, blank=True)
     npi_number = models.CharField(max_length=50, blank=True)
+    zoom_link = models.URLField(blank=True, help_text="Personal Zoom meeting room URL")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -172,6 +173,9 @@ class Appointment(models.Model):
     scheduled_end = models.DateTimeField()
     notes = models.TextField(blank=True)
     virtual_visit_url = models.CharField(max_length=500, blank=True)
+    reminder_24h_sent = models.BooleanField(default=False)
+    reminder_1h_sent = models.BooleanField(default=False)
+    ical_sent = models.BooleanField(default=False)
 
     class Meta:
         db_table = "clinicians_appointment"
@@ -189,3 +193,85 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"{self.appointment_type} - {self.patient} with {self.clinician} at {self.scheduled_start}"
+
+
+class AppointmentRequest(models.Model):
+    """Patient-facing booking request triggered by milestones, escalations, or clinicians."""
+
+    TRIGGER_TYPES = [
+        ("milestone", "Pathway Milestone"),
+        ("escalation", "System Escalation"),
+        ("clinician", "Clinician Requested"),
+    ]
+
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("booked", "Booked"),
+        ("expired", "Expired"),
+        ("cancelled", "Cancelled"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    patient = models.ForeignKey(
+        "patients.Patient",
+        on_delete=models.CASCADE,
+        related_name="appointment_requests",
+    )
+    clinician = models.ForeignKey(
+        Clinician,
+        on_delete=models.CASCADE,
+        related_name="appointment_requests",
+    )
+    trigger_type = models.CharField(max_length=20, choices=TRIGGER_TYPES)
+    reason = models.TextField()
+    appointment_type = models.CharField(
+        max_length=20,
+        choices=Appointment.TYPE_CHOICES,
+        default="follow_up",
+    )
+    milestone = models.ForeignKey(
+        "pathways.PathwayMilestone",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    escalation = models.ForeignKey(
+        "agents.Escalation",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    requested_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    appointment = models.OneToOneField(
+        Appointment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="request",
+    )
+    earliest_notify_at = models.DateTimeField()
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "clinicians_appointment_request"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["patient", "status"],
+                name="idx_appt_req_patient_status",
+            ),
+            models.Index(
+                fields=["earliest_notify_at", "status"],
+                name="idx_appt_req_notify",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.get_trigger_type_display()} request for {self.patient} - {self.status}"

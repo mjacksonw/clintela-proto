@@ -1,4 +1,5 @@
 {% load static %}
+{% load i18n %}
 <!-- Chat input — textarea + voice record button + send button with HTMX -->
 <form id="chat-form"
       hx-post="{% url 'patients:chat_send' %}"
@@ -10,7 +11,7 @@
       style="border-color: var(--color-border); background-color: var(--color-bg); padding-bottom: calc(0.75rem + var(--dev-toolbar-h, 0px));"
       x-data="{ message: '', inflight: false }">
 
-    <label for="chat-textarea" class="sr-only">Ask me anything about your recovery</label>
+    <label for="chat-textarea" class="sr-only">{% trans "Ask me anything about your recovery" %}</label>
     <div class="flex items-end gap-2" x-data="voiceRecorder()">
         <!-- Auto-growing textarea (hidden during recording on mobile) -->
         <textarea name="message"
@@ -19,7 +20,7 @@
                   x-show="!recording"
                   @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 120) + 'px'"
                   @keydown.enter.prevent="if (!$event.shiftKey && message.trim() && !inflight) { $el.closest('form').requestSubmit(); }"
-                  placeholder="Ask me anything about your recovery..."
+                  placeholder="{% trans "Ask me anything about your recovery..." %}"
                   maxlength="2000"
                   rows="1"
                   :disabled="inflight"
@@ -39,7 +40,7 @@
                 <!-- Cancel button -->
                 <button type="button" @click="cancelRecording()"
                         class="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-warm-200"
-                        aria-label="Cancel recording">
+                        aria-label="{% trans "Cancel recording" %}">
                     <i data-lucide="x" class="w-4 h-4" style="color: var(--color-text-secondary);"></i>
                 </button>
                 <!-- Pulsing dot -->
@@ -63,7 +64,7 @@
                        transition-all duration-150 bg-warm-200 hover:bg-warm-300
                        [data-theme='dark']:bg-warm-700 [data-theme='dark']:hover:bg-warm-600
                        focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                aria-label="Record voice message">
+                aria-label="{% trans "Record voice message" %}">
             <i data-lucide="mic" class="w-5 h-5" style="color: var(--color-text);"></i>
         </button>
 
@@ -74,7 +75,7 @@
                 class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0
                        bg-danger text-white animate-pulse transition-all duration-150
                        focus-visible:ring-2 focus-visible:ring-danger focus-visible:ring-offset-2 focus-visible:outline-none"
-                aria-label="Stop recording and send">
+                aria-label="{% trans "Stop recording and send" %}">
             <i data-lucide="circle-stop" class="w-5 h-5"></i>
         </button>
 
@@ -90,7 +91,7 @@
                     : inflight
                         ? 'bg-primary/50 text-white cursor-wait'
                         : 'bg-warm-300 text-warm-500 cursor-not-allowed'"
-                aria-label="Send message">
+                aria-label="{% trans "Send message" %}">
             <template x-if="!inflight">
                 <i data-lucide="arrow-up" class="w-5 h-5"></i>
             </template>

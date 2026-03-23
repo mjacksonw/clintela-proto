@@ -1,0 +1,154 @@
+/* Celebration confetti — pure CSS, no JS library needed
+   Colors from DESIGN.md: Teal (#0D9488), Coral (#EA580C), Purple (#7C3AED) */
+
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 9998;
+}
+
+.confetti-piece {
+    position: absolute;
+    top: -10px;
+    opacity: 0;
+    animation: confettiFall 2.5s ease-out forwards;
+}
+
+/* Generate 24 confetti pieces with varied positions and delays */
+.confetti-piece:nth-child(1)  { left:  5%; animation-delay: 0.0s; width: 8px; height: 8px; background: #0D9488; border-radius: 50%; }
+.confetti-piece:nth-child(2)  { left: 10%; animation-delay: 0.1s; width: 6px; height: 10px; background: #EA580C; border-radius: 2px; }
+.confetti-piece:nth-child(3)  { left: 15%; animation-delay: 0.05s; width: 8px; height: 8px; background: #7C3AED; border-radius: 50%; }
+.confetti-piece:nth-child(4)  { left: 22%; animation-delay: 0.15s; width: 10px; height: 6px; background: #0D9488; border-radius: 2px; }
+.confetti-piece:nth-child(5)  { left: 28%; animation-delay: 0.08s; width: 7px; height: 7px; background: #EA580C; border-radius: 50%; }
+.confetti-piece:nth-child(6)  { left: 34%; animation-delay: 0.2s; width: 6px; height: 9px; background: #7C3AED; border-radius: 2px; }
+.confetti-piece:nth-child(7)  { left: 40%; animation-delay: 0.03s; width: 9px; height: 9px; background: #0D9488; border-radius: 50%; }
+.confetti-piece:nth-child(8)  { left: 46%; animation-delay: 0.12s; width: 8px; height: 6px; background: #EA580C; border-radius: 2px; }
+.confetti-piece:nth-child(9)  { left: 52%; animation-delay: 0.18s; width: 7px; height: 7px; background: #7C3AED; border-radius: 50%; }
+.confetti-piece:nth-child(10) { left: 58%; animation-delay: 0.06s; width: 6px; height: 10px; background: #0D9488; border-radius: 2px; }
+.confetti-piece:nth-child(11) { left: 63%; animation-delay: 0.22s; width: 8px; height: 8px; background: #EA580C; border-radius: 50%; }
+.confetti-piece:nth-child(12) { left: 68%; animation-delay: 0.1s; width: 10px; height: 6px; background: #7C3AED; border-radius: 2px; }
+.confetti-piece:nth-child(13) { left: 73%; animation-delay: 0.14s; width: 7px; height: 7px; background: #0D9488; border-radius: 50%; }
+.confetti-piece:nth-child(14) { left: 78%; animation-delay: 0.02s; width: 6px; height: 9px; background: #EA580C; border-radius: 2px; }
+.confetti-piece:nth-child(15) { left: 83%; animation-delay: 0.16s; width: 9px; height: 9px; background: #7C3AED; border-radius: 50%; }
+.confetti-piece:nth-child(16) { left: 88%; animation-delay: 0.07s; width: 8px; height: 6px; background: #0D9488; border-radius: 2px; }
+.confetti-piece:nth-child(17) { left: 92%; animation-delay: 0.19s; width: 7px; height: 7px; background: #EA580C; border-radius: 50%; }
+.confetti-piece:nth-child(18) { left: 96%; animation-delay: 0.04s; width: 6px; height: 10px; background: #7C3AED; border-radius: 2px; }
+.confetti-piece:nth-child(19) { left: 20%; animation-delay: 0.25s; width: 8px; height: 8px; background: #0D9488; border-radius: 50%; }
+.confetti-piece:nth-child(20) { left: 37%; animation-delay: 0.11s; width: 10px; height: 6px; background: #EA580C; border-radius: 2px; }
+.confetti-piece:nth-child(21) { left: 55%; animation-delay: 0.09s; width: 7px; height: 7px; background: #7C3AED; border-radius: 50%; }
+.confetti-piece:nth-child(22) { left: 70%; animation-delay: 0.21s; width: 6px; height: 9px; background: #0D9488; border-radius: 2px; }
+.confetti-piece:nth-child(23) { left: 85%; animation-delay: 0.13s; width: 9px; height: 9px; background: #EA580C; border-radius: 50%; }
+.confetti-piece:nth-child(24) { left: 47%; animation-delay: 0.17s; width: 8px; height: 6px; background: #7C3AED; border-radius: 2px; }
+
+@keyframes confettiFall {
+    0% {
+        opacity: 1;
+        top: -10px;
+        transform: translateX(0) rotate(0deg);
+    }
+    25% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        top: 100vh;
+        transform: translateX(var(--confetti-drift, 40px)) rotate(720deg);
+    }
+}
+
+/* Varied drift directions */
+.confetti-piece:nth-child(odd) { --confetti-drift: -30px; }
+.confetti-piece:nth-child(3n) { --confetti-drift: 50px; }
+.confetti-piece:nth-child(5n) { --confetti-drift: -60px; }
+.confetti-piece:nth-child(7n) { --confetti-drift: 20px; }
+
+/* Celebration toast styling */
+.celebration-toast {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+    pointer-events: none;
+}
+
+.celebration-toast-inner {
+    pointer-events: auto;
+    max-width: 480px;
+    width: 100%;
+    padding: 16px 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0D9488, #0F766E);
+    color: white;
+    box-shadow: 0 8px 32px rgba(13, 148, 136, 0.3);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.celebration-toast-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.celebration-toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.celebration-toast-title {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+
+.celebration-toast-message {
+    font-size: 14px;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+.celebration-toast-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: white;
+    opacity: 0.7;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    font-size: 18px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.celebration-toast-close:hover {
+    opacity: 1;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .confetti-piece {
+        animation: none !important;
+        display: none !important;
+    }
+    .celebration-toast-inner {
+        transition: none !important;
+    }
+}

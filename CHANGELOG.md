@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.12.0] - 2026-03-23
+
+### Added
+- Proactive patient messaging — clinical alerts (missing weight, declining activity, weight trends) now send warm, personalized messages to patients via chat
+- Visual recovery timeline on patient dashboard — vertical timeline with pathway milestones, completion status, and warm day-by-day messaging
+- Milestone celebrations — confetti animation and toast notification when patients complete pathway milestones, with `prefers-reduced-motion` support
+- Calendly-style appointment booking — patient self-service slot picker with 5-day grid, clinician availability integration, iCal download, and email/SMS confirmation drip
+- Real-time chat translation — DoorDash/Reddit-style automatic translation between patient and clinician languages, with "View original" toggle
+- Full i18n infrastructure — Django LocaleMiddleware, language selector (EN/ES), 170+ patient-facing strings marked with `{% trans %}`, complete Spanish translation
+- CORS/CSP security headers via django-cors-headers and django-csp with CDN whitelisting
+- Upcoming appointment card on patient dashboard with "Join Now" button for virtual visits
+- "Request Virtual Visit" button on clinician Tools tab for clinician-initiated booking
+- Appointment reminder Celery tasks (24h and 1h before) with SMS/email notification
+- Appointment request expiry and milestone-based scheduling tasks
+
+### Changed
+- Suggestion chip touch targets increased to 44px minimum (WCAG compliance, resolves TODO-014)
+- SMS opt-out now includes celebration notification type for consistent behavior
+
+### Fixed
+- Timezone-naive datetime comparison crash in booking slot generation (`datetime.combine` → `timezone.make_aware`)
+- Quiet hours check called nonexistent `NotificationService._is_quiet_hours()` — replaced with simple 9pm-8am guard
+- Booking slot validation: added start < end, future-only, and timezone-awareness checks
+- Convoluted datetime handling in `schedule_pathway_milestones` simplified to always `make_aware`
+- Django 5.0 `LANGUAGE_SESSION_KEY` removal — fixed `AttributeError` in locale middleware
+
 ## [0.2.11.0] - 2026-03-23
 
 ### Added

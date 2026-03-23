@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Too Many Attempts — Clintela{% endblock %}
+{% block title %}{% trans "Too Many Attempts" %} — Clintela{% endblock %}
 
 {% block body %}
 <div class="min-h-screen flex flex-col items-center justify-center px-4"
@@ -15,15 +16,15 @@
             </div>
 
             <h1 class="text-xl font-semibold mb-2" style="color: var(--color-text);">
-                Too Many Attempts
+                {% trans "Too Many Attempts" %}
             </h1>
 
             <p class="text-sm mb-6" style="color: var(--color-text-secondary);">
-                You've made too many attempts. Please try again in an hour.
+                {% trans "You've made too many attempts. Please try again in an hour." %}
             </p>
 
             <p class="text-sm" style="color: var(--color-text-secondary);">
-                If you need immediate assistance, contact your care team directly using the number on your discharge leaflet.
+                {% trans "If you need immediate assistance, contact your care team directly using the number on your discharge leaflet." %}
             </p>
         </div>
     </div>

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Link Expired — Clintela{% endblock %}
+{% block title %}{% trans "Link Expired" %} — Clintela{% endblock %}
 
 {% block body %}
 <div class="min-h-screen flex flex-col items-center justify-center px-4"
@@ -14,18 +15,18 @@
                 <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
                     <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
                 </div>
-                <h1 class="text-xl font-semibold" style="color: var(--color-text);">Link Expired</h1>
+                <h1 class="text-xl font-semibold" style="color: var(--color-text);">{% trans "Link Expired" %}</h1>
             </div>
 
             <p class="text-sm mb-6" style="color: var(--color-text-secondary);">
-                This link has expired for security reasons. You can request a new one or sign in manually.
+                {% trans "This link has expired for security reasons. You can request a new one or sign in manually." %}
             </p>
 
             <!-- Resend link -->
             <form method="post" action="{% url 'accounts:resend_link' %}" class="mb-6">
                 {% csrf_token %}
                 <label class="block text-sm font-medium mb-2" style="color: var(--color-text);">
-                    Send a new link to your phone
+                    {% trans "Send a new link to your phone" %}
                 </label>
                 <input type="tel"
                        name="phone_number"
@@ -41,13 +42,13 @@
                         class="w-full mt-3 px-4 py-3 rounded-lg text-white font-medium text-base
                                transition-colors hover:opacity-90"
                         style="background-color: var(--color-primary); height: 48px;">
-                    Send New Link
+                    {% trans "Send New Link" %}
                 </button>
             </form>
 
             <div class="border-t pt-4" style="border-color: var(--color-border);">
                 <p class="text-sm font-medium mb-3" style="color: var(--color-text);">
-                    Or sign in with your leaflet code
+                    {% trans "Or sign in with your leaflet code" %}
                 </p>
                 <form method="post" action="{% url 'accounts:manual_entry' %}">
                     {% csrf_token %}
@@ -77,7 +78,7 @@
                             style="border-color: var(--color-border);
                                    color: var(--color-text);
                                    height: 48px;">
-                        Sign In
+                        {% trans "Sign In" %}
                     </button>
                 </form>
             </div>

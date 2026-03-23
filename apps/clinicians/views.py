@@ -15,6 +15,7 @@ from apps.agents.services import EscalationService
 from apps.clinicians.auth import clinician_required
 from apps.clinicians.models import ClinicianNote
 from apps.clinicians.services import (
+    AppointmentBookingService,
     ClinicianResearchService,
     HandoffService,
     PatientListService,
@@ -399,7 +400,7 @@ def patient_chat_fragment(request, patient_id):
 
 @clinician_required
 @require_POST
-def inject_chat_message_view(request, patient_id):
+def inject_chat_message_view(request, patient_id):  # noqa: C901
     """POST: Clinician sends a message into the patient's conversation."""
     patient = request.patient
     content = request.POST.get("message", "").strip()
@@ -444,6 +445,22 @@ def inject_chat_message_view(request, patient_id):
             )
         )
 
+    # Translation: if patient prefers a non-English language, translate
+    original_content = content
+    is_translated = False
+    try:
+        patient_lang = patient.preferences.preferred_language or "en"
+    except ObjectDoesNotExist:
+        patient_lang = "en"
+
+    if patient_lang != "en":
+        from apps.agents.translation import TranslationService
+
+        translated = TranslationService.translate(content, "en", patient_lang)
+        if translated:
+            content = translated
+            is_translated = True
+
     # Create the clinician message
     try:
         msg = AgentMessage.objects.create(
@@ -451,6 +468,9 @@ def inject_chat_message_view(request, patient_id):
             role="assistant",
             agent_type="clinician",
             content=content,
+            original_content=original_content if is_translated else "",
+            source_language="en" if is_translated else "",
+            translated=is_translated,
             metadata={
                 "clinician_user_id": str(request.user.id),
                 "clinician_name": request.user.get_full_name(),
@@ -972,6 +992,47 @@ def timeline_day_fragment(request, patient_id, date):
     html = render_to_string(
         "clinicians/components/_timeline_day.html",
         {"events": day_events, "date": target_date},
+        request=request,
+    )
+    return HttpResponse(html)
+
+
+# ---------------------------------------------------------------------------
+# Request Virtual Visit
+# ---------------------------------------------------------------------------
+
+
+@clinician_required
+@require_POST
+def request_virtual_visit_view(request, patient_id):
+    """POST: Clinician requests a virtual visit for a patient.
+
+    Creates an AppointmentRequest that the patient can self-book.
+    """
+    patient = request.patient
+    clinician = request.clinician
+    reason = request.POST.get("reason", "").strip()
+
+    if not reason:
+        reason = "Your care team would like to schedule a virtual visit with you."
+
+    appt_request = AppointmentBookingService.create_request(
+        patient=patient,
+        clinician=clinician,
+        trigger_type="clinician",
+        reason=reason,
+        appointment_type="virtual_visit",
+        requested_by=request.user,
+    )
+
+    # Return a success fragment
+    html = render_to_string(
+        "clinicians/components/_request_visit_button.html",
+        {
+            "patient": patient,
+            "request_sent": True,
+            "request_id": appt_request.id,
+        },
         request=request,
     )
     return HttpResponse(html)

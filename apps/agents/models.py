@@ -114,6 +114,11 @@ class AgentMessage(models.Model):
         blank=True,
     )
 
+    # Translation fields
+    original_content = models.TextField(blank=True, default="")
+    source_language = models.CharField(max_length=10, blank=True, default="")
+    translated = models.BooleanField(default=False)
+
     # Additional metadata
     metadata = models.JSONField(default=dict, blank=True)
 

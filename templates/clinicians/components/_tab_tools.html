@@ -118,6 +118,15 @@
     </div>
     {% endif %}
 
+    <!-- Request Virtual Visit -->
+    <div class="p-3 rounded-md border" style="border-color: var(--color-border);">
+        <h3 class="text-xs font-semibold mb-1" style="color: var(--color-text);">Virtual Visit</h3>
+        <p class="text-[11px] mb-2" style="color: var(--color-text-secondary);">
+            Request a video visit — the patient will be asked to book a time.
+        </p>
+        {% include "clinicians/components/_request_visit_button.html" %}
+    </div>
+
     <!-- Send Auth Text -->
     <div class="p-3 rounded-md border" style="border-color: var(--color-border);">
         <h3 class="text-xs font-semibold mb-1" style="color: var(--color-text);">Send Auth Text</h3>

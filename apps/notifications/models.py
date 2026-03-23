@@ -31,6 +31,7 @@ class Notification(models.Model):
         ("reminder", "Reminder"),
         ("alert", "Alert"),
         ("update", "Update"),
+        ("celebration", "Celebration"),
     ]
 
     patient = models.ForeignKey(

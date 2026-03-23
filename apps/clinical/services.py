@@ -156,6 +156,9 @@ class ClinicalDataService:
         if rule_result.severity in (SEVERITY_RED, SEVERITY_ORANGE):
             ClinicalDataService._create_escalation(alert)
 
+        # Proactive patient messaging for patient-facing rules
+        ClinicalDataService._maybe_notify_patient(alert)
+
         return alert
 
     @staticmethod
@@ -377,6 +380,82 @@ class ClinicalDataService:
             .count()
         )
         return Decimal(str(round(vitals_with_data / len(SPARKLINE_VITALS), 2)))
+
+    # =========================================================================
+    # Proactive Patient Messaging
+    # =========================================================================
+
+    # Rules that should trigger a warm, human message to the patient.
+    # Each maps to a message template that passes the "known, not processed" test.
+    PATIENT_FACING_RULES = {
+        "missing_weight": "missing_data",
+        "missing_hr": "missing_data",
+        "weight_gain_3day": "weight_trend",
+        "steps_declining_7day": "activity_decline",
+    }
+
+    @staticmethod
+    def _maybe_notify_patient(alert):
+        """Send a proactive message to the patient if this alert is patient-facing.
+
+        Philosophy alignment: These messages must feel like they come from someone
+        who knows the patient. Reference their name, goals, and situation.
+        Never sound like a system notification.
+
+        Dedup: Max 1 message per rule_name per patient per 24 hours.
+        """
+        if alert.rule_name not in ClinicalDataService.PATIENT_FACING_RULES:
+            return
+
+        # Dedup check: has this rule already messaged this patient in the last 24h?
+        from apps.agents.models import AgentMessage
+
+        since = timezone.now() - timedelta(hours=24)
+        already_sent = AgentMessage.objects.filter(
+            conversation__patient=alert.patient,
+            metadata__proactive_rule=alert.rule_name,
+            created_at__gte=since,
+        ).exists()
+
+        if already_sent:
+            logger.debug(
+                "Skipping proactive message for %s/%s — already sent within 24h",
+                alert.patient.pk,
+                alert.rule_name,
+            )
+            return
+
+        # Check quiet hours — respect patient's preferred contact time
+        try:
+            now = timezone.localtime()
+            hour = now.hour
+            # Respect quiet hours: no proactive messages between 9pm and 8am
+            if hour >= 21 or hour < 8:
+                logger.debug(
+                    "Deferring proactive message for %s — quiet hours (%d:00)",
+                    alert.patient.pk,
+                    hour,
+                )
+                return
+        except Exception:
+            logger.debug("Quiet hours check failed for patient %s, proceeding", alert.patient.pk)
+
+        # Dispatch asynchronously via Celery
+        from apps.clinical.tasks import send_proactive_patient_message
+
+        message_category = ClinicalDataService.PATIENT_FACING_RULES[alert.rule_name]
+        try:
+            send_proactive_patient_message.delay(
+                patient_id=alert.patient.pk,
+                rule_name=alert.rule_name,
+                message_category=message_category,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to dispatch proactive message for patient %s, rule %s",
+                alert.patient.pk,
+                alert.rule_name,
+            )
 
     @staticmethod
     def process_patient_batch(patient):

@@ -119,6 +119,14 @@ def _inject_preferences(patient_context: dict, patient) -> None:
         logger.debug("No patient preferences available for patient %s", patient.id)
 
 
+def _get_patient_language(patient) -> str:
+    """Get the patient's preferred language, defaulting to English."""
+    try:
+        return patient.preferences.preferred_language or "en"
+    except ObjectDoesNotExist:
+        return "en"
+
+
 def _inject_clinical_data(patient_context: dict, patient) -> None:
     """Inject clinical snapshot data into context when feature flag is on."""
     from django.conf import settings
@@ -139,7 +147,7 @@ def _inject_clinical_data(patient_context: dict, patient) -> None:
         logger.warning("Clinical snapshot unavailable for patient %s", patient.id)
 
 
-def process_patient_message(patient, content, channel="chat", audio_url=None):
+def process_patient_message(patient, content, channel="chat", audio_url=None):  # noqa: C901
     """Shared helper for processing a patient message through the AI workflow.
 
     Used by web chat, SMS inbound, and voice input views to eliminate
@@ -178,6 +186,17 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
     if audio_url:
         metadata["audio_url"] = audio_url
 
+    # Translation: detect patient's preferred language
+    patient_lang = _get_patient_language(patient)
+    content_for_llm = content  # original patient text, may be overridden below
+
+    if patient_lang != "en":
+        from apps.agents.translation import TranslationService
+
+        translated_input = TranslationService.translate(content, patient_lang, "en")
+        if translated_input:
+            content_for_llm = translated_input
+
     ConversationService.add_message(
         conversation=conversation,
         role="user",
@@ -214,7 +233,7 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
     _inject_preferences(context["patient"], patient)
 
     workflow = get_workflow()
-    result = async_to_sync(workflow.process_message)(content, context)
+    result = async_to_sync(workflow.process_message)(content_for_llm, context)
 
     response_text = result.get("response", "").strip()
     if not response_text:
@@ -223,6 +242,17 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
     agent_type = result.get("agent_type", "care_coordinator")
     escalate = result.get("escalate", False)
     confidence = result.get("metadata", {}).get("confidence_score")
+
+    # Translation: translate LLM response to patient's language
+    original_response = response_text
+    response_translated = False
+    if patient_lang != "en":
+        from apps.agents.translation import TranslationService
+
+        translated_response = TranslationService.translate(response_text, "en", patient_lang)
+        if translated_response:
+            response_text = translated_response
+            response_translated = True
 
     # Save agent message
     agent_message = ConversationService.add_message(
@@ -235,6 +265,13 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):
         escalation_reason=result.get("escalation_reason", ""),
         metadata={"channel": channel} if channel != "chat" else {},
     )
+
+    # Store translation metadata on the agent message
+    if response_translated:
+        agent_message.original_content = original_response
+        agent_message.source_language = "en"
+        agent_message.translated = True
+        agent_message.save(update_fields=["original_content", "source_language", "translated"])
 
     # Store RAG citations if available
     rag_result = result.get("rag_result")

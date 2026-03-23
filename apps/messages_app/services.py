@@ -189,7 +189,7 @@ class SMSService:
         """Disable SMS for all notification types."""
         from apps.notifications.models import NotificationPreference
 
-        for ntype in ["escalation", "reminder", "alert", "update"]:
+        for ntype in ["escalation", "reminder", "alert", "update", "celebration"]:
             NotificationPreference.objects.update_or_create(
                 patient=patient,
                 channel="sms",

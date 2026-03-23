@@ -1,22 +1,23 @@
+{% load i18n %}
 {% if not has_data %}
 {# Empty state — warm, not clinical #}
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">My Health</h3>
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{% trans "My Health" %}</h3>
     <div class="flex flex-col items-center text-center py-4">
         <svg class="w-10 h-10 text-teal-500 dark:text-teal-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
         </svg>
         <p class="text-gray-600 dark:text-gray-400 text-base">
-            Once we start tracking your health data, you'll see your progress here.
+            {% trans "Once we start tracking your health data, you'll see your progress here." %}
         </p>
         <p class="text-gray-500 dark:text-gray-500 text-sm mt-1">
-            In the meantime, your care team is still right here if you need anything.
+            {% trans "In the meantime, your care team is still right here if you need anything." %}
         </p>
     </div>
 </div>
 {% else %}
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">My Health</h3>
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{% trans "My Health" %}</h3>
 
     {# Sparklines — 2x2 grid, each 120x40 #}
     {{ sparkline_data_json|json_script:"sparkline-data" }}

@@ -535,6 +535,217 @@ def patient_dev_actions_view(request):
     return redirect("patients:dashboard")
 
 
+def recovery_timeline_fragment(request):
+    """HTMX fragment: patient recovery timeline."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return HttpResponse("")
+
+    from .services import RecoveryTimelineService
+
+    timeline = RecoveryTimelineService.get_timeline(patient)
+    return render(
+        request,
+        "patients/components/_recovery_timeline.html",
+        {
+            "timeline": timeline,
+            "patient": patient,
+        },
+    )
+
+
+def upcoming_appointment_fragment(request):
+    """HTMX fragment: upcoming appointment card on patient dashboard."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return HttpResponse("")
+
+    from django.utils import timezone
+
+    from apps.clinicians.models import Appointment
+
+    now = timezone.now()
+    appointment = (
+        Appointment.objects.filter(
+            patient=patient,
+            scheduled_start__gte=now,
+            status__in=["scheduled", "confirmed"],
+        )
+        .select_related("clinician__user")
+        .order_by("scheduled_start")
+        .first()
+    )
+
+    if not appointment:
+        return HttpResponse("")
+
+    # Show join button if appointment is within 15 minutes
+    from datetime import timedelta
+
+    show_join = appointment.scheduled_start <= now + timedelta(minutes=15)
+
+    return render(
+        request,
+        "patients/components/_upcoming_appointment.html",
+        {
+            "appointment": appointment,
+            "show_join_button": show_join,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Appointment Booking
+# ---------------------------------------------------------------------------
+
+
+def booking_page(request, request_id):
+    """Calendly-style slot picker for patient self-booking."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return redirect("accounts:start")
+
+    from apps.clinicians.models import AppointmentRequest
+    from apps.clinicians.services import AppointmentBookingService
+
+    try:
+        appt_request = AppointmentRequest.objects.select_related(
+            "clinician__user",
+        ).get(
+            id=request_id,
+            patient=patient,
+            status="pending",
+        )
+    except AppointmentRequest.DoesNotExist:
+        return redirect("patients:dashboard")
+
+    available_days = AppointmentBookingService.get_available_slots_for_booking(
+        appt_request.clinician,
+        days=5,
+    )
+
+    return render(
+        request,
+        "patients/booking.html",
+        {
+            "patient": patient,
+            "appt_request": appt_request,
+            "available_days": available_days,
+            "clinician_name": appt_request.clinician.user.get_full_name(),
+        },
+    )
+
+
+@require_POST
+def book_slot(request, request_id):
+    """Confirm a booking from the slot picker."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return HttpResponse(status=403)
+
+    from datetime import datetime as dt
+
+    from apps.clinicians.services import AppointmentBookingService
+
+    slot_start = request.POST.get("slot_start", "")
+    slot_end = request.POST.get("slot_end", "")
+
+    if not slot_start or not slot_end:
+        return redirect("patients:booking_page", request_id=request_id)
+
+    try:
+        scheduled_start = dt.fromisoformat(slot_start)
+        scheduled_end = dt.fromisoformat(slot_end)
+    except ValueError:
+        return redirect("patients:booking_page", request_id=request_id)
+
+    # Validate: start before end, both in the future, timezone-aware
+    from django.utils import timezone as tz
+
+    if scheduled_start >= scheduled_end:
+        return redirect("patients:booking_page", request_id=request_id)
+    if tz.is_naive(scheduled_start):
+        scheduled_start = tz.make_aware(scheduled_start)
+    if tz.is_naive(scheduled_end):
+        scheduled_end = tz.make_aware(scheduled_end)
+    if scheduled_start < tz.now():
+        django_messages.error(request, "That time slot is in the past. Please choose a future slot.")
+        return redirect("patients:booking_page", request_id=request_id)
+
+    appointment = AppointmentBookingService.book_appointment(
+        request_id=request_id,
+        patient=patient,
+        scheduled_start=scheduled_start,
+        scheduled_end=scheduled_end,
+    )
+
+    if appointment is None:
+        django_messages.error(
+            request,
+            "That time slot is no longer available. Please choose another.",
+        )
+        return redirect("patients:booking_page", request_id=request_id)
+
+    # Send confirmation notification
+    AppointmentBookingService.send_confirmation_drip(appointment)
+
+    return redirect("patients:booking_confirmation", appointment_id=appointment.id)
+
+
+def booking_confirmation(request, appointment_id):
+    """Confirmation page after successful booking."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return redirect("accounts:start")
+
+    from apps.clinicians.models import Appointment
+
+    try:
+        appointment = Appointment.objects.select_related(
+            "clinician__user",
+        ).get(
+            id=appointment_id,
+            patient=patient,
+        )
+    except Appointment.DoesNotExist:
+        return redirect("patients:dashboard")
+
+    return render(
+        request,
+        "patients/booking_confirmation.html",
+        {
+            "patient": patient,
+            "appointment": appointment,
+        },
+    )
+
+
+def download_ical(request, appointment_id):
+    """Download iCal .ics file for an appointment."""
+    patient = _get_authenticated_patient(request)
+    if not patient:
+        return HttpResponse(status=403)
+
+    from apps.clinicians.ical import generate_ical_event
+    from apps.clinicians.models import Appointment
+
+    try:
+        appointment = Appointment.objects.select_related(
+            "clinician__user",
+        ).get(
+            id=appointment_id,
+            patient=patient,
+        )
+    except Appointment.DoesNotExist:
+        return HttpResponse(status=404)
+
+    ical_data = generate_ical_event(appointment)
+
+    response = HttpResponse(ical_data, content_type="text/calendar; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="appointment-{appointment.id}.ics"'
+    return response
+
+
 def _dev_simulate_sms(request):
     """Simulate an inbound SMS for dev toolbar."""
     patient = _get_authenticated_patient(request)

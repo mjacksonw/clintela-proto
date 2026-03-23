@@ -160,9 +160,12 @@
             }
         }
 
-        /* Suggestion chips — cursor pointer */
+        /* Suggestion chips — cursor pointer + WCAG touch target */
         .suggestion-chip {
             cursor: pointer;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
         }
 
         /* Markdown inside agent message bubbles */

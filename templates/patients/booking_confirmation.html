@@ -1,0 +1,104 @@
+{% extends "base_patient.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Appointment Confirmed" %} — Clintela{% endblock %}
+
+{% block dashboard_content %}
+
+<div class="max-w-lg mx-auto px-4 py-8">
+    <div class="card animate-in text-center">
+        <!-- Success icon -->
+        <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+             style="background-color: rgba(13,148,136,0.1);">
+            <i data-lucide="check-circle" class="w-8 h-8" style="color: var(--color-primary);"></i>
+        </div>
+
+        <h1 class="text-2xl font-bold mb-2" style="color: var(--color-text);">
+            {% trans "You're all set!" %}
+        </h1>
+        <p class="text-base mb-6" style="color: var(--color-text-secondary);">
+            {% trans "Your appointment has been confirmed." %}
+        </p>
+
+        <!-- Appointment details card -->
+        <div class="rounded-xl p-5 mb-6 text-left"
+             style="background-color: var(--color-bg); border: 1px solid var(--color-border);">
+
+            <div class="flex items-center gap-3 mb-4">
+                <i data-lucide="calendar" class="w-5 h-5" style="color: var(--color-primary);"></i>
+                <div>
+                    <p class="text-sm font-medium" style="color: var(--color-text-secondary);">
+                        {% trans "Date & Time" %}
+                    </p>
+                    <p class="text-lg font-semibold" style="color: var(--color-text);">
+                        {{ appointment.scheduled_start|date:"l, F j, Y" }}
+                    </p>
+                    <p class="text-base" style="color: var(--color-text);">
+                        {{ appointment.scheduled_start|date:"g:i A" }} — {{ appointment.scheduled_end|date:"g:i A" }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 mb-4">
+                <i data-lucide="user" class="w-5 h-5" style="color: var(--color-primary);"></i>
+                <div>
+                    <p class="text-sm font-medium" style="color: var(--color-text-secondary);">
+                        {% trans "Clinician" %}
+                    </p>
+                    <p class="text-base font-semibold" style="color: var(--color-text);">
+                        {{ appointment.clinician.user.get_full_name }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <i data-lucide="stethoscope" class="w-5 h-5" style="color: var(--color-primary);"></i>
+                <div>
+                    <p class="text-sm font-medium" style="color: var(--color-text-secondary);">
+                        {% trans "Type" %}
+                    </p>
+                    <p class="text-base" style="color: var(--color-text);">
+                        {{ appointment.get_appointment_type_display }}
+                    </p>
+                </div>
+            </div>
+
+            {% if appointment.virtual_visit_url %}
+            <div class="flex items-center gap-3 mt-4 pt-4"
+                 style="border-top: 1px solid var(--color-border);">
+                <i data-lucide="video" class="w-5 h-5" style="color: #7C3AED;"></i>
+                <div>
+                    <p class="text-sm font-medium" style="color: var(--color-text-secondary);">
+                        {% trans "Virtual Visit Link" %}
+                    </p>
+                    <a href="{{ appointment.virtual_visit_url }}"
+                       target="_blank"
+                       rel="noopener"
+                       class="text-base font-medium underline"
+                       style="color: #7C3AED;">
+                        {% trans "Join Video Call" %}
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col gap-3">
+            <a href="{% url 'patients:download_ical' appointment_id=appointment.id %}"
+               class="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all"
+               style="background-color: var(--color-primary); color: white; min-height: 44px;">
+                <i data-lucide="download" class="w-5 h-5"></i>
+                {% trans "Add to Calendar" %}
+            </a>
+
+            <a href="{% url 'patients:dashboard' %}"
+               class="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all"
+               style="border: 1px solid var(--color-border); color: var(--color-text); min-height: 44px;">
+                {% trans "Back to Dashboard" %}
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
