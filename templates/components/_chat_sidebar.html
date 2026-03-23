@@ -44,8 +44,8 @@
      aria-label="{% trans "Chat messages" %}"
      class="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 custom-scrollbar">
 
-    {% if messages %}
-        {% for msg in messages %}
+    {% if chat_messages %}
+        {% for msg in chat_messages %}
             {% include "components/_message_bubble.html" with message=msg %}
         {% endfor %}
     {% else %}

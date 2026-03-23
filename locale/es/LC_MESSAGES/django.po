@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Clintela 0.2.11.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-23 13:00+0000\n"
+"POT-Creation-Date: 2026-03-23 20:32+0000\n"
 "PO-Revision-Date: 2026-03-23 13:00+0000\n"
 "Last-Translator: Clintela Team\n"
 "Language-Team: Spanish\n"
@@ -16,812 +16,908 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#: apps/clinical/tasks.py:31
 #, python-brace-format
-msgid ""
-"Hey {preferred_name}, we haven't seen a reading from you in a couple of "
-"days. When you get a chance, could you check in? No rush — just helps us "
-"keep an eye on how you're doing.{goal_reference}"
-msgstr ""
-"Hola {preferred_name}, no hemos recibido una lectura tuya en un par de "
-"días. Cuando puedas, ¿podrías registrarte? Sin prisa — solo nos ayuda "
-"a estar al tanto de cómo te va.{goal_reference}"
+msgid "Hey {preferred_name}, we haven't seen a reading from you in a couple of days. When you get a chance, could you check in? No rush — just helps us keep an eye on how you're doing.{goal_reference}"
+msgstr "Hola {preferred_name}, no hemos recibido una lectura tuya en un par de días. Cuando puedas, ¿podrías registrarte? Sin prisa — solo nos ayuda a estar al tanto de cómo te va.{goal_reference}"
 
+#: apps/clinical/tasks.py:36
 #, python-brace-format
-msgid ""
-"Hey {preferred_name}, your weight has been creeping up a bit over the last "
-"few days. Have you noticed any swelling in your ankles or feet? It might be "
-"nothing, but we'd rather check in than miss something.{goal_reference}"
-msgstr ""
-"Hola {preferred_name}, tu peso ha subido un poco en los últimos días. "
-"¿Has notado alguna hinchazón en los tobillos o los pies? Puede que no sea "
-"nada, pero preferimos preguntar antes que pasar algo por alto.{goal_reference}"
+msgid "Hey {preferred_name}, your weight has been creeping up a bit over the last few days. Have you noticed any swelling in your ankles or feet? It might be nothing, but we'd rather check in than miss something.{goal_reference}"
+msgstr "Hola {preferred_name}, tu peso ha subido un poco en los últimos días. ¿Has notado alguna hinchazón en los tobillos o los pies? Puede que no sea nada, pero preferimos preguntar antes que pasar algo por alto.{goal_reference}"
 
+#: apps/clinical/tasks.py:42
 #, python-brace-format
-msgid ""
-"We noticed you've been a bit less active lately, {preferred_name}. How are "
-"you feeling? Sometimes a slow day is just a slow day — but if something's "
-"bothering you, we're right here.{goal_reference}"
-msgstr ""
-"Hemos notado que has estado un poco menos activo/a últimamente, "
-"{preferred_name}. ¿Cómo te sientes? A veces un día tranquilo es solo eso "
-"— pero si algo te preocupa, aquí estamos.{goal_reference}"
+msgid "We noticed you've been a bit less active lately, {preferred_name}. How are you feeling? Sometimes a slow day is just a slow day — but if something's bothering you, we're right here.{goal_reference}"
+msgstr "Hemos notado que has estado un poco menos activo/a últimamente, {preferred_name}. ¿Cómo te sientes? A veces un día tranquilo es solo eso — pero si algo te preocupa, aquí estamos.{goal_reference}"
 
-msgid ""
-" We want to make sure nothing slows down your recovery so you can get back "
-"to what matters to you."
-msgstr ""
-" Queremos asegurarnos de que nada retrase tu recuperación para que puedas "
-"volver a lo que más te importa."
+#: apps/clinical/tasks.py:85
+msgid " We want to make sure nothing slows down your recovery so you can get back to what matters to you."
+msgstr " Queremos asegurarnos de que nada retrase tu recuperación para que puedas volver a lo que más te importa."
 
+#: apps/pathways/services.py:44
 #, python-format
 msgid "Day %(day)d milestone reached!"
 msgstr "¡Hito del día %(day)d alcanzado!"
 
+#: apps/pathways/services.py:67
 msgid "You made it through your first day home. That takes courage."
 msgstr "Superaste tu primer día en casa. Eso requiere valentía."
 
+#: apps/pathways/services.py:68
 msgid "Three days in — the hardest part is often behind you now. Keep going."
 msgstr "Tres días ya — la parte más difícil suele haber quedado atrás. Sigue adelante."
 
-msgid ""
-"A whole week! Your body is healing and you're taking great care of yourself."
-msgstr ""
-"¡Una semana entera! Tu cuerpo se está recuperando y te estás cuidando muy bien."
+#: apps/pathways/services.py:69
+msgid "A whole week! Your body is healing and you're taking great care of yourself."
+msgstr "¡Una semana entera! Tu cuerpo se está recuperando y te estás cuidando muy bien."
 
+#: apps/pathways/services.py:70
 msgid "Two weeks of recovery. You should be proud of how far you've come."
 msgstr "Dos semanas de recuperación. Deberías estar orgulloso/a de lo lejos que has llegado."
 
-msgid ""
-"One month! This is a major milestone. You've shown real dedication to your "
-"recovery."
-msgstr ""
-"¡Un mes! Este es un hito importante. Has demostrado una verdadera dedicación "
-"a tu recuperación."
+#: apps/pathways/services.py:71
+msgid "One month! This is a major milestone. You've shown real dedication to your recovery."
+msgstr "¡Un mes! Este es un hito importante. Has demostrado una verdadera dedicación a tu recuperación."
 
+#: apps/pathways/services.py:77
 msgid "You've completed another milestone. Keep up the great work!"
 msgstr "¡Has completado otro hito. Sigue así!"
 
+#: apps/pathways/services.py:82
 msgid "Every step brings you closer to what matters most to you."
 msgstr "Cada paso te acerca más a lo que más te importa."
 
+#: apps/patients/services.py:13
 msgid "Welcome home. Your recovery journey begins."
 msgstr "Bienvenido/a a casa. Tu camino de recuperación comienza."
 
+#: apps/patients/services.py:14
 msgid "The first few days are the hardest. You're doing great."
 msgstr "Los primeros días son los más difíciles. Lo estás haciendo muy bien."
 
+#: apps/patients/services.py:15
 msgid "One week! You're building great momentum."
 msgstr "¡Una semana! Estás ganando buen impulso."
 
+#: apps/patients/services.py:16
 msgid "Two weeks in. Every day counts."
 msgstr "Dos semanas ya. Cada día cuenta."
 
+#: apps/patients/services.py:17
 msgid "One month! Look how far you've come."
 msgstr "¡Un mes! Mira lo lejos que has llegado."
 
+#: apps/patients/services.py:123
 msgid "Important update"
 msgstr "Actualización importante"
 
+#: apps/patients/services.py:124
 msgid "Something to watch"
 msgstr "Algo a tener en cuenta"
 
+#: apps/patients/services.py:125
 msgid "Good to know"
 msgstr "Bueno saberlo"
 
+#: apps/patients/services.py:127
 msgid "Update"
 msgstr "Actualización"
 
+#: templates/accounts/dob_entry.html:4
 msgid "Verify Your Identity"
 msgstr "Verifica tu identidad"
 
+#: templates/accounts/dob_entry.html:18
 msgid "Welcome to Clintela"
 msgstr "Bienvenido/a a Clintela"
 
+#: templates/accounts/dob_entry.html:27
 #, python-format
 msgid "Code verified: %(code)s"
 msgstr "Código verificado: %(code)s"
 
+#: templates/accounts/dob_entry.html:41
 msgid "Please enter your date of birth"
 msgstr "Por favor, ingresa tu fecha de nacimiento"
 
+#: templates/accounts/dob_entry.html:61 templates/surveys/_survey_card.html:32
 msgid "Continue"
 msgstr "Continuar"
 
+#: templates/accounts/dob_entry.html:67
 msgid "Code doesn't match your leaflet?"
 msgstr "¿El código no coincide con tu folleto?"
 
+#: templates/accounts/dob_entry.html:69
 msgid "Try again"
 msgstr "Intentar de nuevo"
 
+#: templates/accounts/rate_limited.html:4
+#: templates/accounts/rate_limited.html:21
 msgid "Too Many Attempts"
 msgstr "Demasiados intentos"
 
+#: templates/accounts/rate_limited.html:25
 msgid "You've made too many attempts. Please try again in an hour."
 msgstr "Has hecho demasiados intentos. Por favor, inténtalo de nuevo en una hora."
 
-msgid ""
-"If you need immediate assistance, contact your care team directly using the "
-"number on your discharge leaflet."
-msgstr ""
-"Si necesitas ayuda inmediata, contacta a tu equipo de cuidado directamente "
-"usando el número en tu folleto de alta."
+#: templates/accounts/rate_limited.html:29
+msgid "If you need immediate assistance, contact your care team directly using the number on your discharge leaflet."
+msgstr "Si necesitas ayuda inmediata, contacta a tu equipo de cuidado directamente usando el número en tu folleto de alta."
 
+#: templates/accounts/token_expired.html:4
+#: templates/accounts/token_expired.html:20
 msgid "Link Expired"
 msgstr "Enlace expirado"
 
-msgid ""
-"This link has expired for security reasons. You can request a new one or "
-"sign in manually."
-msgstr ""
-"Este enlace ha expirado por razones de seguridad. Puedes solicitar uno nuevo "
-"o iniciar sesión manualmente."
+#: templates/accounts/token_expired.html:24
+msgid "This link has expired for security reasons. You can request a new one or sign in manually."
+msgstr "Este enlace ha expirado por razones de seguridad. Puedes solicitar uno nuevo o iniciar sesión manualmente."
 
+#: templates/accounts/token_expired.html:31
 msgid "Send a new link to your phone"
 msgstr "Enviar un nuevo enlace a tu teléfono"
 
+#: templates/accounts/token_expired.html:47
 msgid "Send New Link"
 msgstr "Enviar nuevo enlace"
 
+#: templates/accounts/token_expired.html:53
 msgid "Or sign in with your leaflet code"
 msgstr "O inicia sesión con el código de tu folleto"
 
+#: templates/accounts/token_expired.html:83
 msgid "Sign In"
 msgstr "Iniciar sesión"
 
+#: templates/base_patient.html:44
 msgid "Chat with your care team"
 msgstr "Chatea con tu equipo de cuidado"
 
+#: templates/base_patient.html:53
 msgid "Open chat sidebar"
 msgstr "Abrir panel de chat"
 
+#: templates/base_patient.html:79 templates/base_patient.html:85
+#: templates/components/_chat_sidebar.html:9
 msgid "Chat"
 msgstr "Chat"
 
+#: templates/base_patient.html:89
 msgid "Close chat"
 msgstr "Cerrar chat"
 
+#: templates/base_patient.html:104
 msgid "Recovery dashboard"
 msgstr "Panel de recuperación"
 
+#: templates/base_patient.html:121
 msgid "Open chat"
 msgstr "Abrir chat"
 
+#: templates/base_patient.html:133
 msgid "Collapse chat sidebar"
 msgstr "Cerrar panel de chat"
 
+#: templates/clinical/health_card.html:5 templates/clinical/health_card.html:20
 msgid "My Health"
 msgstr "Mi Salud"
 
+#: templates/clinical/health_card.html:11
 msgid "Once we start tracking your health data, you'll see your progress here."
 msgstr "Cuando empecemos a monitorear tus datos de salud, verás tu progreso aquí."
 
-msgid ""
-"In the meantime, your care team is still right here if you need anything."
-msgstr ""
-"Mientras tanto, tu equipo de cuidado sigue aquí si necesitas algo."
+#: templates/clinical/health_card.html:14
+msgid "In the meantime, your care team is still right here if you need anything."
+msgstr "Mientras tanto, tu equipo de cuidado sigue aquí si necesitas algo."
 
+#: templates/clinicians/components/_chat_message_clinician.html:13
+#: templates/components/_message_bubble.html:195
 msgid "Translated"
 msgstr "Traducido"
 
+#: templates/clinicians/components/_chat_message_clinician.html:14
+#: templates/components/_message_bubble.html:196
 msgid "Hide original"
 msgstr "Ocultar original"
 
+#: templates/clinicians/components/_chat_message_clinician.html:14
+#: templates/components/_message_bubble.html:196
 msgid "View original"
 msgstr "Ver original"
 
+#: templates/clinicians/components/_request_visit_button.html:7
 msgid "Visit requested"
 msgstr "Visita solicitada"
 
+#: templates/clinicians/components/_request_visit_button.html:19
 msgid "Request a virtual visit with this patient"
 msgstr "Solicitar una visita virtual con este paciente"
 
+#: templates/clinicians/components/_request_visit_button.html:21
 msgid "Request Visit"
 msgstr "Solicitar visita"
 
+#: templates/components/_chat_input.html:14
 msgid "Ask me anything about your recovery"
 msgstr "Pregúntame lo que quieras sobre tu recuperación"
 
+#: templates/components/_chat_input.html:23
 msgid "Ask me anything about your recovery..."
 msgstr "Pregúntame lo que quieras sobre tu recuperación..."
 
+#: templates/components/_chat_input.html:43
 msgid "Cancel recording"
 msgstr "Cancelar grabación"
 
+#: templates/components/_chat_input.html:67
 msgid "Record voice message"
 msgstr "Grabar mensaje de voz"
 
+#: templates/components/_chat_input.html:78
 msgid "Stop recording and send"
 msgstr "Detener grabación y enviar"
 
+#: templates/components/_chat_input.html:94
 msgid "Send message"
 msgstr "Enviar mensaje"
 
+#: templates/components/_chat_sidebar.html:19
 msgid "You're offline — messages can't be sent right now"
 msgstr "Estás sin conexión — los mensajes no se pueden enviar ahora"
 
+#: templates/components/_chat_sidebar.html:30
 msgid "Your care team has been notified and will follow up shortly."
 msgstr "Tu equipo de cuidado ha sido notificado y te contactará pronto."
 
+#: templates/components/_chat_sidebar.html:34
 msgid "Dismiss"
 msgstr "Cerrar"
 
+#: templates/components/_chat_sidebar.html:44
 msgid "Chat messages"
 msgstr "Mensajes del chat"
 
-msgid "Is this normal?"
-msgstr "¿Es esto normal?"
-
-msgid "My medications"
-msgstr "Mis medicamentos"
-
-msgid "Talk to my care team"
-msgstr "Hablar con mi equipo de cuidado"
-
+#: templates/components/_empty_chat.html:9
 #, python-format
 msgid "Hi %(name)s!"
 msgstr "¡Hola %(name)s!"
 
+#: templates/components/_empty_chat.html:13
 msgid "I'm here to help with your recovery. Ask me anything."
 msgstr "Estoy aquí para ayudarte con tu recuperación. Pregúntame lo que quieras."
 
+#: templates/components/_empty_chat.html:18
 msgid "Your conversations are private and shared only with your care team."
 msgstr "Tus conversaciones son privadas y solo se comparten con tu equipo de cuidado."
 
+#: templates/components/_empty_chat.html:35
+msgid "Is this normal?"
+msgstr "¿Es esto normal?"
+
+#: templates/components/_empty_chat.html:41
+msgid "My medications"
+msgstr "Mis medicamentos"
+
+#: templates/components/_empty_chat.html:47
+msgid "Talk to my care team"
+msgstr "Hablar con mi equipo de cuidado"
+
+#: templates/components/_header.html:59 templates/components/_header.html:106
 msgid "Notifications"
 msgstr "Notificaciones"
 
+#: templates/components/_header.html:64
 msgid "Mark all read"
 msgstr "Marcar todo como leído"
 
+#: templates/components/_header.html:72 templates/components/_header.html:114
+#: templates/surveys/_survey_card.html:42
 msgid "All caught up!"
 msgstr "¡Todo al día!"
 
+#: templates/components/_header.html:107
 msgid "Close notifications"
 msgstr "Cerrar notificaciones"
 
+#: templates/components/_header.html:152 templates/components/_header.html:153
 msgid "Change language"
 msgstr "Cambiar idioma"
 
+#: templates/components/_header.html:192 templates/components/_header.html:193
 msgid "Toggle dark mode"
 msgstr "Cambiar modo oscuro"
 
+#: templates/components/_message_bubble.html:54
 msgid "Voice recording has expired"
 msgstr "La grabación de voz ha expirado"
 
+#: templates/components/_message_bubble.html:54
 msgid "Recording expired"
 msgstr "Grabación expirada"
 
+#: templates/components/_message_bubble.html:75
 #, python-format
 msgid "%(name)s completed"
 msgstr "%(name)s completado"
 
+#: templates/components/_message_bubble.html:79
 msgid "Score:"
 msgstr "Puntuación:"
 
+#: templates/components/_message_bubble.html:86
 msgid "View Details"
 msgstr "Ver detalles"
 
+#: templates/components/_message_bubble.html:157
 #, python-format
 msgid "Based on %(count)s clinical source"
 msgid_plural "Based on %(count)s clinical sources"
 msgstr[0] "Basado en %(count)s fuente clínica"
 msgstr[1] "Basado en %(count)s fuentes clínicas"
 
-msgid ""
-"I may not have the best answer for this — consider reaching out to your care "
-"team."
+#: templates/components/_message_bubble.html:187
+msgid "I want to make sure you get the best guidance on this — let me involve a nurse."
 msgstr ""
-"Puede que no tenga la mejor respuesta para esto — considera contactar a tu "
-"equipo de cuidado."
 
+#: templates/components/_message_bubble.html:208
 msgid "Sent"
 msgstr "Enviado"
 
+#: templates/components/_message_bubble.html:210
 msgid "Delivered"
 msgstr "Entregado"
 
+#: templates/components/_message_bubble.html:212
 msgid "Failed to send"
 msgstr "Error al enviar"
 
+#: templates/home.html:4
 msgid "Clintela — Your Recovery Companion"
 msgstr "Clintela — Tu Compañero de Recuperación"
 
+#: templates/home.html:17
 msgid "Your recovery companion — available 24/7"
 msgstr "Tu compañero de recuperación — disponible 24/7"
 
+#: templates/home.html:21
 msgid "Secure, private, and connected to your care team."
 msgstr "Seguro, privado y conectado con tu equipo de cuidado."
 
+#: templates/home.html:29
 msgid "I have an access code"
 msgstr "Tengo un código de acceso"
 
+#: templates/home.html:33
 msgid "Your access code is on the leaflet from your care team."
 msgstr "Tu código de acceso está en el folleto de tu equipo de cuidado."
 
+#: templates/patients/about_me.html:5 templates/patients/dashboard.html:281
 msgid "About Me"
 msgstr "Sobre Mí"
 
+#: templates/patients/about_me.html:14
+#: templates/patients/booking_confirmation.html:98
+#: templates/patients/caregivers.html:15 templates/patients/consent.html:14
 msgid "Back to Dashboard"
 msgstr "Volver al Panel"
 
+#: templates/patients/about_me.html:17
 #, python-format
 msgid "Help Us Know You, %(name)s"
 msgstr "Ayúdanos a conocerte, %(name)s"
 
-msgid ""
-"Recovery is personal. The more we know about your life — not just your "
-"surgery — the better we can be there for you. Everything here is optional. "
-"Share what feels right, skip what doesn't. You can always come back."
-msgstr ""
-"La recuperación es personal. Cuanto más sepamos de tu vida — no solo de tu "
-"cirugía — mejor podremos acompañarte. Todo aquí es opcional. Comparte lo "
-"que te parezca bien, sáltate lo que no. Siempre puedes volver."
+#: templates/patients/about_me.html:20
+msgid "Recovery is personal. The more we know about your life — not just your surgery — the better we can be there for you. Everything here is optional. Share what feels right, skip what doesn't. You can always come back."
+msgstr "La recuperación es personal. Cuanto más sepamos de tu vida — no solo de tu cirugía — mejor podremos acompañarte. Todo aquí es opcional. Comparte lo que te parezca bien, sáltate lo que no. Siempre puedes volver."
 
+#: templates/patients/about_me.html:32
 msgid "Who you are"
 msgstr "Quién eres"
 
+#: templates/patients/about_me.html:39
 msgid "What should we call you?"
 msgstr "¿Cómo te gustaría que te llamemos?"
 
-msgid ""
-"A nickname, your first name, whatever feels like you. We'll use this when we "
-"check in."
-msgstr ""
-"Un apodo, tu nombre, lo que sientas que eres tú. Lo usaremos cuando te "
-"escribamos."
+#: templates/patients/about_me.html:42
+msgid "A nickname, your first name, whatever feels like you. We'll use this when we check in."
+msgstr "Un apodo, tu nombre, lo que sientas que eres tú. Lo usaremos cuando te escribamos."
 
+#: templates/patients/about_me.html:45
 msgid "e.g. Eddie, Mrs. Alexander, Edna..."
 msgstr "ej. Eddie, Sra. Alexander, Edna..."
 
+#: templates/patients/about_me.html:54
 msgid "Tell us about yourself"
 msgstr "Cuéntanos sobre ti"
 
-msgid ""
-"There's no right answer. Just anything that helps us understand you as a "
-"person, not just a patient."
-msgstr ""
-"No hay una respuesta correcta. Solo lo que nos ayude a entenderte como "
-"persona, no solo como paciente."
+#: templates/patients/about_me.html:57
+msgid "There's no right answer. Just anything that helps us understand you as a person, not just a patient."
+msgstr "No hay una respuesta correcta. Solo lo que nos ayude a entenderte como persona, no solo como paciente."
 
-msgid ""
-"Some people write things like \"Retired teacher, love my book club, live in "
-"a second-floor walk-up\" or \"Dad of three, work from home, my dog is my "
-"best nurse.\""
-msgstr ""
-"Algunas personas escriben cosas como \"Maestra jubilada, me encanta mi club "
-"de lectura, vivo en un segundo piso sin elevador\" o \"Papá de tres, trabajo "
-"desde casa, mi perro es mi mejor enfermero.\""
+#: templates/patients/about_me.html:63
+msgid "Some people write things like \"Retired teacher, love my book club, live in a second-floor walk-up\" or \"Dad of three, work from home, my dog is my best nurse.\""
+msgstr "Algunas personas escriben cosas como \"Maestra jubilada, me encanta mi club de lectura, vivo en un segundo piso sin elevador\" o \"Papá de tres, trabajo desde casa, mi perro es mi mejor enfermero.\""
 
+#: templates/patients/about_me.html:71
 msgid "Who's in your corner?"
 msgstr "¿Quién te acompaña?"
 
-msgid ""
-"The people who are helping you through this — family, friends, neighbors. "
-"Knowing who's around you helps us help all of you."
-msgstr ""
-"Las personas que te están ayudando — familia, amigos, vecinos. "
-"Saber quién está a tu lado nos ayuda a ayudarles a todos."
+#: templates/patients/about_me.html:74
+msgid "The people who are helping you through this — family, friends, neighbors. Knowing who's around you helps us help all of you."
+msgstr "Las personas que te están ayudando — familia, amigos, vecinos. Saber quién está a tu lado nos ayuda a ayudarles a todos."
 
-msgid ""
-"e.g. \"My daughter Sarah checks on me daily,\" \"Neighbor walks my dog while "
-"I recover\""
-msgstr ""
-"ej. \"Mi hija Sara me visita todos los días,\" \"Mi vecino pasea a mi perro "
-"mientras me recupero\""
+#: templates/patients/about_me.html:80
+msgid "e.g. \"My daughter Sarah checks on me daily,\" \"Neighbor walks my dog while I recover\""
+msgstr "ej. \"Mi hija Sara me visita todos los días,\" \"Mi vecino pasea a mi perro mientras me recupero\""
 
+#: templates/patients/about_me.html:90
 msgid "Your daily life"
 msgstr "Tu vida diaria"
 
+#: templates/patients/about_me.html:97
 msgid "Your living situation"
 msgstr "Tu situación de vivienda"
 
-msgid ""
-"This helps us understand your day-to-day — things like stairs, having help "
-"at home, or being on your own."
-msgstr ""
-"Esto nos ayuda a entender tu día a día — cosas como escaleras, tener ayuda "
-"en casa o estar solo/a."
+#: templates/patients/about_me.html:100
+msgid "This helps us understand your day-to-day — things like stairs, having help at home, or being on your own."
+msgstr "Esto nos ayuda a entender tu día a día — cosas como escaleras, tener ayuda en casa o estar solo/a."
 
+#: templates/patients/about_me.html:103
 msgid "e.g. Live with my husband, one-story house, cat named Whiskers"
 msgstr "ej. Vivo con mi esposo, casa de un piso, gato llamado Bigotes"
 
+#: templates/patients/about_me.html:112
 msgid "Your daily routines"
 msgstr "Tus rutinas diarias"
 
-msgid ""
-"Helps us time check-ins around your day — not at 6 AM if you're a night owl, "
-"not during your favorite show."
-msgstr ""
-"Nos ayuda a programar los mensajes según tu día — no a las 6 AM si eres "
-"noctámbulo/a, ni durante tu programa favorito."
+#: templates/patients/about_me.html:115
+msgid "Helps us time check-ins around your day — not at 6 AM if you're a night owl, not during your favorite show."
+msgstr "Nos ayuda a programar los mensajes según tu día — no a las 6 AM si eres noctámbulo/a, ni durante tu programa favorito."
 
-msgid ""
-"e.g. \"Morning person — up by 6:30. Tea and crossword before anything else.\""
-msgstr ""
-"ej. \"Madrugador/a — despierto/a a las 6:30. Té y crucigrama antes que nada.\""
+#: templates/patients/about_me.html:121
+msgid "e.g. \"Morning person — up by 6:30. Tea and crossword before anything else.\""
+msgstr "ej. \"Madrugador/a — despierto/a a las 6:30. Té y crucigrama antes que nada.\""
 
+#: templates/patients/about_me.html:131
 msgid "Your recovery"
 msgstr "Tu recuperación"
 
+#: templates/patients/about_me.html:138
 msgid "What are you looking forward to?"
 msgstr "¿Qué te ilusiona?"
 
-msgid ""
-"What do you want to get back to? A goal gives your recovery direction — and "
-"gives us something to cheer you toward."
-msgstr ""
-"¿A qué quieres volver? Una meta le da dirección a tu recuperación — y nos "
-"da algo por lo que animarte."
+#: templates/patients/about_me.html:141
+msgid "What do you want to get back to? A goal gives your recovery direction — and gives us something to cheer you toward."
+msgstr "¿A qué quieres volver? Una meta le da dirección a tu recuperación — y nos da algo por lo que animarte."
 
-msgid ""
-"e.g. \"Getting back to my garden,\" \"Walking my daughter down the aisle in "
-"June\""
-msgstr ""
-"ej. \"Volver a mi jardín,\" \"Llevar a mi hija al altar en junio\""
+#: templates/patients/about_me.html:147
+msgid "e.g. \"Getting back to my garden,\" \"Walking my daughter down the aisle in June\""
+msgstr "ej. \"Volver a mi jardín,\" \"Llevar a mi hija al altar en junio\""
 
+#: templates/patients/about_me.html:155
 msgid "Is anything on your mind?"
 msgstr "¿Hay algo que te preocupe?"
 
-msgid ""
-"Worries are completely normal after surgery. Naming them helps us keep an "
-"eye on the things that matter to you."
-msgstr ""
-"Las preocupaciones son completamente normales después de una cirugía. "
-"Nombrarlas nos ayuda a estar atentos a lo que te importa."
+#: templates/patients/about_me.html:158
+msgid "Worries are completely normal after surgery. Naming them helps us keep an eye on the things that matter to you."
+msgstr "Las preocupaciones son completamente normales después de una cirugía. Nombrarlas nos ayuda a estar atentos a lo que te importa."
 
-msgid ""
-"e.g. \"Stairs at home,\" \"Managing all these medications,\" \"Being alone "
-"at night\""
-msgstr ""
-"ej. \"Las escaleras en casa,\" \"Manejar todos estos medicamentos,\" \"Estar "
-"solo/a de noche\""
+#: templates/patients/about_me.html:164
+msgid "e.g. \"Stairs at home,\" \"Managing all these medications,\" \"Being alone at night\""
+msgstr "ej. \"Las escaleras en casa,\" \"Manejar todos estos medicamentos,\" \"Estar solo/a de noche\""
 
+#: templates/patients/about_me.html:172
 msgid "What matters most to you?"
 msgstr "¿Qué es lo que más te importa?"
 
-msgid ""
-"Everyone's different. Some people value independence above all. Others want "
-"to understand everything. Some just want to feel safe. What's yours?"
-msgstr ""
-"Cada persona es diferente. Algunos valoran la independencia por encima de "
-"todo. Otros quieren entenderlo todo. Algunos solo quieren sentirse seguros. "
-"¿Cuál es el tuyo?"
+#: templates/patients/about_me.html:175
+msgid "Everyone's different. Some people value independence above all. Others want to understand everything. Some just want to feel safe. What's yours?"
+msgstr "Cada persona es diferente. Algunos valoran la independencia por encima de todo. Otros quieren entenderlo todo. Algunos solo quieren sentirse seguros. ¿Cuál es el tuyo?"
 
+#: templates/patients/about_me.html:188
 msgid "How we connect"
 msgstr "Cómo nos comunicamos"
 
+#: templates/patients/about_me.html:195
 msgid "How do you like to hear things?"
 msgstr "¿Cómo te gusta recibir información?"
 
-msgid ""
-"Some people like a chatty, warm tone. Others prefer we get to the point. "
-"We'll match your style."
-msgstr ""
-"A algunas personas les gusta un tono cálido y conversacional. Otras "
-"prefieren ir al grano. Nos adaptaremos a tu estilo."
+#: templates/patients/about_me.html:198
+msgid "Some people like a chatty, warm tone. Others prefer we get to the point. We'll match your style."
+msgstr "A algunas personas les gusta un tono cálido y conversacional. Otras prefieren ir al grano. Nos adaptaremos a tu estilo."
 
+#: templates/patients/about_me.html:203
 msgid "No preference — surprise me"
 msgstr "Sin preferencia — sorpréndeme"
 
+#: templates/patients/about_me.html:204
 msgid "Chatty and warm — like talking to a friend"
 msgstr "Cálido y conversacional — como hablar con un amigo"
 
+#: templates/patients/about_me.html:205
 msgid "Straight to the point — just the facts"
 msgstr "Directo al grano — solo los hechos"
 
+#: templates/patients/about_me.html:206
 msgid "Explain everything — I like to understand the why"
 msgstr "Explícamelo todo — me gusta entender el porqué"
 
+#: templates/patients/about_me.html:214
 msgid "When's a good time to check in?"
 msgstr "¿Cuándo es buen momento para escribirte?"
 
-msgid ""
-"We'll try to reach out when it's convenient — not when you're resting or "
-"busy."
-msgstr ""
-"Intentaremos escribirte cuando te convenga — no cuando estés descansando o "
-"ocupado/a."
+#: templates/patients/about_me.html:217
+msgid "We'll try to reach out when it's convenient — not when you're resting or busy."
+msgstr "Intentaremos escribirte cuando te convenga — no cuando estés descansando o ocupado/a."
 
+#: templates/patients/about_me.html:220
 msgid "e.g. Mornings are best, not after 8 PM"
 msgstr "ej. Las mañanas son mejor, no después de las 8 PM"
 
+#: templates/patients/about_me.html:229
 msgid "Language or cultural preferences"
 msgstr "Preferencias de idioma o culturales"
 
-msgid ""
-"Anything we should know to make you feel more at home — a language you "
-"prefer, cultural or religious considerations, dietary needs we should keep "
-"in mind."
-msgstr ""
-"Cualquier cosa que debamos saber para que te sientas más cómodo/a — un "
-"idioma que prefieras, consideraciones culturales o religiosas, necesidades "
-"dietéticas que debamos tener en cuenta."
+#: templates/patients/about_me.html:232
+msgid "Anything we should know to make you feel more at home — a language you prefer, cultural or religious considerations, dietary needs we should keep in mind."
+msgstr "Cualquier cosa que debamos saber para que te sientas más cómodo/a — un idioma que prefieras, consideraciones culturales o religiosas, necesidades dietéticas que debamos tener en cuenta."
 
+#: templates/patients/about_me.html:235
 msgid "e.g. Spanish-speaking family, prefer English for medical topics"
 msgstr "ej. Familia hispanohablante, prefiero inglés para temas médicos"
 
+#: templates/patients/about_me.html:247
 msgid "Save — we'll remember"
 msgstr "Guardar — lo recordaremos"
 
+#: templates/patients/about_me.html:250
 msgid "You can update any of this anytime. Nothing is set in stone."
 msgstr "Puedes actualizar cualquier cosa en cualquier momento. Nada está escrito en piedra."
 
+#: templates/patients/booking.html:5 templates/patients/booking.html:75
 msgid "Book Your Appointment"
 msgstr "Reserva tu cita"
 
+#: templates/patients/booking.html:78
+#: templates/patients/components/_upcoming_appointment.html:19
 msgid "with"
 msgstr "con"
 
+#: templates/patients/booking.html:109
 msgid "No slots"
 msgstr "Sin horarios"
 
+#: templates/patients/booking.html:157
 msgid "No available times on this day."
 msgstr "No hay horarios disponibles este día."
 
+#: templates/patients/booking_confirmation.html:4
 msgid "Appointment Confirmed"
 msgstr "Cita confirmada"
 
+#: templates/patients/booking_confirmation.html:17
 msgid "You're all set!"
 msgstr "¡Todo listo!"
 
+#: templates/patients/booking_confirmation.html:20
 msgid "Your appointment has been confirmed."
 msgstr "Tu cita ha sido confirmada."
 
+#: templates/patients/booking_confirmation.html:31
 msgid "Date & Time"
 msgstr "Fecha y hora"
 
+#: templates/patients/booking_confirmation.html:46
 msgid "Clinician"
 msgstr "Profesional"
 
+#: templates/patients/booking_confirmation.html:58
 msgid "Type"
 msgstr "Tipo"
 
+#: templates/patients/booking_confirmation.html:72
 msgid "Virtual Visit Link"
 msgstr "Enlace de visita virtual"
 
+#: templates/patients/booking_confirmation.html:79
 msgid "Join Video Call"
 msgstr "Unirse a videollamada"
 
+#: templates/patients/booking_confirmation.html:92
 msgid "Add to Calendar"
 msgstr "Agregar al calendario"
 
+#: templates/patients/caregivers.html:6 templates/patients/caregivers.html:17
 msgid "My Caregivers"
 msgstr "Mis cuidadores"
 
-msgid ""
-"Invite family members to follow your recovery. They'll get read-only access "
-"to your status."
-msgstr ""
-"Invita a familiares a seguir tu recuperación. Tendrán acceso de solo lectura "
-"a tu estado."
+#: templates/patients/caregivers.html:19
+msgid "Invite family members to follow your recovery. They'll get read-only access to your status."
+msgstr "Invita a familiares a seguir tu recuperación. Tendrán acceso de solo lectura a tu estado."
 
+#: templates/patients/caregivers.html:28
 msgid "Active Caregivers"
 msgstr "Cuidadores activos"
 
+#: templates/patients/caregivers.html:43
 #, python-format
 msgid "Joined %(time)s"
 msgstr "Se unió %(time)s"
 
+#: templates/patients/caregivers.html:56
 msgid "Remove"
 msgstr "Eliminar"
 
+#: templates/patients/caregivers.html:71
 msgid "Pending Invitations"
 msgstr "Invitaciones pendientes"
 
+#: templates/patients/caregivers.html:85
 #, python-format
 msgid "Sent %(time)s"
 msgstr "Enviada %(time)s"
 
+#: templates/patients/caregivers.html:97
 msgid "Cancel"
 msgstr "Cancelar"
 
+#: templates/patients/caregivers.html:111
 msgid "Invite a Caregiver"
 msgstr "Invitar a un cuidador"
 
+#: templates/patients/caregivers.html:118
 msgid "Full Name"
 msgstr "Nombre completo"
 
+#: templates/patients/caregivers.html:128
 msgid "Relationship"
 msgstr "Parentesco"
 
+#: templates/patients/caregivers.html:133
 msgid "Select relationship"
 msgstr "Seleccionar parentesco"
 
+#: templates/patients/caregivers.html:142
 msgid "Email"
 msgstr "Correo electrónico"
 
+#: templates/patients/caregivers.html:152
 msgid "Phone Number"
 msgstr "Número de teléfono"
 
-msgid ""
-"At least one of email or phone is required. We'll send them a link to accept "
-"the invitation."
-msgstr ""
-"Se requiere al menos un correo o teléfono. Les enviaremos un enlace para "
-"aceptar la invitación."
+#: templates/patients/caregivers.html:161
+msgid "At least one of email or phone is required. We'll send them a link to accept the invitation."
+msgstr "Se requiere al menos un correo o teléfono. Les enviaremos un enlace para aceptar la invitación."
 
+#: templates/patients/caregivers.html:169
 msgid "Send Invitation"
 msgstr "Enviar invitación"
 
+#: templates/patients/caregivers.html:179
 msgid "How it works"
 msgstr "Cómo funciona"
 
+#: templates/patients/caregivers.html:181
 msgid "You send an invitation with their name and contact"
 msgstr "Envías una invitación con su nombre y contacto"
 
+#: templates/patients/caregivers.html:182
 msgid "They receive a link and verify using your access code"
 msgstr "Reciben un enlace y verifican usando tu código de acceso"
 
+#: templates/patients/caregivers.html:183
 msgid "Once verified, they can see your recovery status"
 msgstr "Una vez verificados, pueden ver tu estado de recuperación"
 
+#: templates/patients/caregivers.html:184
 msgid "You can remove their access at any time"
 msgstr "Puedes eliminar su acceso en cualquier momento"
 
+#: templates/patients/components/_celebration_toast.html:59
 msgid "Milestone reached!"
 msgstr "¡Hito alcanzado!"
 
+#: templates/patients/components/_celebration_toast.html:66
 msgid "Dismiss celebration"
 msgstr "Cerrar celebración"
 
+#: templates/patients/components/_recovery_timeline.html:7
+#: templates/patients/components/_recovery_timeline.html:17
 msgid "Your Recovery Journey"
 msgstr "Tu camino de recuperación"
 
+#: templates/patients/components/_recovery_timeline.html:10
 msgid "Your recovery timeline will appear here once your care plan is set up."
 msgstr "Tu línea de tiempo de recuperación aparecerá aquí cuando se configure tu plan de cuidado."
 
+#: templates/patients/components/_recovery_timeline.html:20
 msgid "Recovery timeline"
 msgstr "Línea de tiempo de recuperación"
 
+#: templates/patients/components/_recovery_timeline.html:38
 msgid "Completed"
 msgstr "Completado"
 
+#: templates/patients/components/_recovery_timeline.html:48
 msgid "Current milestone"
 msgstr "Hito actual"
 
+#: templates/patients/components/_recovery_timeline.html:54
 msgid "Upcoming — Day"
 msgstr "Próximo — Día"
 
+#: templates/patients/components/_recovery_timeline.html:75
 msgid "Day"
 msgstr "Día"
 
+#: templates/patients/components/_recovery_timeline.html:80
 msgid "You are here"
 msgstr "Estás aquí"
 
+#: templates/patients/components/_upcoming_appointment.html:9
 msgid "Upcoming Appointment"
 msgstr "Próxima cita"
 
+#: templates/patients/components/_upcoming_appointment.html:26
 msgid "at"
 msgstr "a las"
 
+#: templates/patients/components/_upcoming_appointment.html:37
 msgid "Join Now"
 msgstr "Unirse ahora"
 
+#: templates/patients/consent.html:5 templates/patients/consent.html:16
 msgid "Privacy & Consent"
 msgstr "Privacidad y consentimiento"
 
-msgid ""
-"Control how your information is used and shared. Changes take effect "
-"immediately."
-msgstr ""
-"Controla cómo se usa y comparte tu información. Los cambios toman efecto "
-"inmediatamente."
+#: templates/patients/consent.html:18
+msgid "Control how your information is used and shared. Changes take effect immediately."
+msgstr "Controla cómo se usa y comparte tu información. Los cambios toman efecto inmediatamente."
 
+#: templates/patients/consent.html:45
 #, python-format
 msgid "Toggle %(label)s"
 msgstr "Activar/desactivar %(label)s"
 
+#: templates/patients/consent.html:53
 #, python-format
 msgid "Last updated %(time)s ago"
 msgstr "Última actualización hace %(time)s"
 
+#: templates/patients/consent.html:65
 msgid "Your privacy matters"
 msgstr "Tu privacidad importa"
 
-msgid ""
-"All consent changes are logged for your protection. Your care team can see "
-"what you've agreed to, but cannot change your preferences. You can update "
-"these settings at any time."
-msgstr ""
-"Todos los cambios de consentimiento se registran para tu protección. Tu "
-"equipo de cuidado puede ver a qué has accedido, pero no puede cambiar tus "
-"preferencias. Puedes actualizar estas configuraciones en cualquier momento."
+#: templates/patients/consent.html:67
+msgid "All consent changes are logged for your protection. Your care team can see what you've agreed to, but cannot change your preferences. You can update these settings at any time."
+msgstr "Todos los cambios de consentimiento se registran para tu protección. Tu equipo de cuidado puede ver a qué has accedido, pero no puede cambiar tus preferencias. Puedes actualizar estas configuraciones en cualquier momento."
 
+#: templates/patients/dashboard.html:6
 msgid "Recovery Dashboard"
 msgstr "Panel de Recuperación"
 
+#: templates/patients/dashboard.html:18
 msgid "Recovery Progress"
 msgstr "Progreso de recuperación"
 
+#: templates/patients/dashboard.html:23
 #, python-format
 msgid "Day %(day)s"
 msgstr "Día %(day)s"
 
+#: templates/patients/dashboard.html:27
 msgid "Surgery"
 msgstr "Cirugía"
 
+#: templates/patients/dashboard.html:35
 msgid "Your care team is setting up your recovery plan"
 msgstr "Tu equipo de cuidado está preparando tu plan de recuperación"
 
+#: templates/patients/dashboard.html:47
 msgid "On Track"
 msgstr "En camino"
 
+#: templates/patients/dashboard.html:47
 msgid "Needs Attention"
 msgstr "Necesita atención"
 
+#: templates/patients/dashboard.html:47
 msgid "Escalated"
 msgstr "Escalado"
 
+#: templates/patients/dashboard.html:47
 msgid "Critical"
 msgstr "Crítico"
 
+#: templates/patients/dashboard.html:214
 msgid "What to Expect"
 msgstr "Qué esperar"
 
-msgid ""
-"The first few days home are often the hardest — and that's completely "
-"normal. Rest when you need to, and don't hesitate to reach out if anything "
-"doesn't feel right."
-msgstr ""
-"Los primeros días en casa suelen ser los más difíciles — y eso es "
-"completamente normal. Descansa cuando lo necesites, y no dudes en "
-"comunicarte si algo no se siente bien."
+#: templates/patients/dashboard.html:218
+msgid "The first few days home are often the hardest — and that's completely normal. Rest when you need to, and don't hesitate to reach out if anything doesn't feel right."
+msgstr "Los primeros días en casa suelen ser los más difíciles — y eso es completamente normal. Descansa cuando lo necesites, y no dudes en comunicarte si algo no se siente bien."
 
-msgid ""
-"Most people start feeling a little stronger around this time. Every recovery "
-"is different, though — your pace is your pace. Light activity is usually "
-"encouraged — ask me if you're unsure what's safe."
-msgstr ""
-"La mayoría de las personas empiezan a sentirse un poco más fuertes en esta "
-"etapa. Cada recuperación es diferente — tu ritmo es tu ritmo. La actividad "
-"ligera suele ser recomendable — pregúntame si no estás seguro/a de qué es "
-"seguro."
+#: templates/patients/dashboard.html:220
+msgid "Most people start feeling a little stronger around this time. Every recovery is different, though — your pace is your pace. Light activity is usually encouraged — ask me if you're unsure what's safe."
+msgstr "La mayoría de las personas empiezan a sentirse un poco más fuertes en esta etapa. Cada recuperación es diferente — tu ritmo es tu ritmo. La actividad ligera suele ser recomendable — pregúntame si no estás seguro/a de qué es seguro."
 
-msgid ""
-"You're making real progress. Most of the hard part is behind you. Keep "
-"following your care plan — and let me know if anything comes up."
-msgstr ""
-"Estás progresando de verdad. La parte más difícil ya quedó atrás. Sigue "
-"tu plan de cuidado — y avísame si surge algo."
+#: templates/patients/dashboard.html:222
+msgid "You're making real progress. Most of the hard part is behind you. Keep following your care plan — and let me know if anything comes up."
+msgstr "Estás progresando de verdad. La parte más difícil ya quedó atrás. Sigue tu plan de cuidado — y avísame si surge algo."
 
-msgid ""
-"You've come a long way. Most of the healing is behind you. Keep up the great "
-"work — I'm still here if you need anything."
-msgstr ""
-"Has recorrido un largo camino. La mayor parte de la recuperación quedó "
-"atrás. Sigue así — sigo aquí si necesitas algo."
+#: templates/patients/dashboard.html:224
+msgid "You've come a long way. Most of the healing is behind you. Keep up the great work — I'm still here if you need anything."
+msgstr "Has recorrido un largo camino. La mayor parte de la recuperación quedó atrás. Sigue así — sigo aquí si necesitas algo."
 
+#: templates/patients/dashboard.html:260
 msgid "Your Care Team"
 msgstr "Tu Equipo de Cuidado"
 
+#: templates/patients/dashboard.html:264
 #, python-format
-msgid ""
-"Hi %(name)s — your team at <strong>%(hospital)s</strong> is here for you. "
-"Use the chat anytime to ask questions about your recovery."
-msgstr ""
-"Hola %(name)s — tu equipo en <strong>%(hospital)s</strong> está aquí para "
-"ti. Usa el chat en cualquier momento para hacer preguntas sobre tu "
-"recuperación."
+msgid "Hi %(name)s — your team at <strong>%(hospital)s</strong> is here for you. Use the chat anytime to ask questions about your recovery."
+msgstr "Hola %(name)s — tu equipo en <strong>%(hospital)s</strong> está aquí para ti. Usa el chat en cualquier momento para hacer preguntas sobre tu recuperación."
 
+#: templates/patients/dashboard.html:266
 #, python-format
-msgid ""
-"Hi %(name)s — your care team is here for you. Use the chat anytime to ask "
-"questions about your recovery."
-msgstr ""
-"Hola %(name)s — tu equipo de cuidado está aquí para ti. Usa el chat en "
-"cualquier momento para hacer preguntas sobre tu recuperación."
+msgid "Hi %(name)s — your care team is here for you. Use the chat anytime to ask questions about your recovery."
+msgstr "Hola %(name)s — tu equipo de cuidado está aquí para ti. Usa el chat en cualquier momento para hacer preguntas sobre tu recuperación."
 
+#: templates/patients/dashboard.html:282
 msgid "Tell us who you are"
 msgstr "Cuéntanos quién eres"
 
+#: templates/patients/dashboard.html:293
 msgid "Caregivers"
 msgstr "Cuidadores"
 
+#: templates/patients/dashboard.html:294
 msgid "Invite family"
 msgstr "Invitar familia"
 
+#: templates/patients/dashboard.html:305
 msgid "Privacy"
 msgstr "Privacidad"
 
+#: templates/patients/dashboard.html:306
 msgid "Manage consent"
 msgstr "Gestionar consentimiento"
+
+#: templates/surveys/_score_history.html:7
+msgid "Recent Check-ins"
+msgstr "Revisiones recientes"
+
+#: templates/surveys/_score_history.html:41
+msgid "No check-ins completed yet."
+msgstr "Aún no has completado ninguna revisión."
+
+#: templates/surveys/_survey_card.html:20
+msgid "In Progress"
+msgstr "En progreso"
+
+#: templates/surveys/_survey_card.html:22
+msgid "Due today"
+msgstr "Pendiente hoy"
+
+#: templates/surveys/_survey_card.html:24
+#, python-format
+msgid "Due %(day)s"
+msgstr "Pendiente el %(day)s"
+
+#: templates/surveys/_survey_card.html:32
+msgid "Start"
+msgstr "Comenzar"
+
+#: templates/surveys/_survey_card.html:45
+#, python-format
+msgid "Your next check-in is <strong>%(day)s</strong>. Keep up the great work with your recovery."
+msgstr "Tu próxima revisión es el <strong>%(day)s</strong>. ¡Sigue así con tu recuperación!"
+
+#: templates/surveys/_survey_card.html:48
+msgid "No check-ins scheduled right now."
+msgstr "No hay revisiones programadas en este momento."
+
+#~ msgid "I may not have the best answer for this — consider reaching out to your care team."
+#~ msgstr "Puede que no tenga la mejor respuesta para esto — considera contactar a tu equipo de cuidado."

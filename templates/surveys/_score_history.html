@@ -1,10 +1,10 @@
-{% load humanize %}
+{% load humanize i18n %}
 
 {% if history %}
 <div class="card" style="padding: 24px;">
     <div class="flex items-center gap-2 mb-4">
         <i data-lucide="bar-chart-3" class="w-5 h-5" style="color: var(--color-primary);"></i>
-        <h2 class="text-lg font-semibold" style="color: var(--color-text);">Recent Check-ins</h2>
+        <h2 class="text-lg font-semibold" style="color: var(--color-text);">{% trans "Recent Check-ins" %}</h2>
     </div>
 
     <div class="space-y-3">
@@ -38,6 +38,6 @@
 <!-- Empty state -->
 <div class="text-center py-4" style="color: var(--color-text-secondary);">
     <i data-lucide="bar-chart-3" class="w-8 h-8 mx-auto mb-1.5 opacity-30"></i>
-    <p class="text-sm">No check-ins completed yet.</p>
+    <p class="text-sm">{% trans "No check-ins completed yet." %}</p>
 </div>
 {% endif %}
