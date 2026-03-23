@@ -1,8 +1,10 @@
 """Coverage gap tests for Phase 8 additions to clinical app."""
 
+from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.utils import timezone
 
 from apps.clinical.services import ClinicalDataService
 from apps.clinical.tasks import _get_proactive_message, send_proactive_patient_message
@@ -105,3 +107,180 @@ class TestClinicalServiceEdgeCases:
         with patch("apps.agents.models.Escalation.objects.create", side_effect=Exception("test")):
             # Should not raise
             ClinicalDataService._create_escalation(alert)
+
+
+@pytest.mark.django_db
+class TestProactiveTaskWithPreferences:
+    """Test proactive messaging with real patient + preferences for coverage."""
+
+    @pytest.fixture
+    def patient_with_prefs(self):
+        from apps.accounts.models import User
+        from apps.patients.models import Hospital, Patient, PatientPreferences
+
+        hospital = Hospital.objects.create(name="Coverage Hospital")
+        user = User.objects.create_user(
+            username="cov_patient",
+            email="cov@test.com",
+            password="test",  # pragma: allowlist secret
+            first_name="CovTest",
+        )
+        patient = Patient.objects.create(user=user, hospital=hospital, date_of_birth=date(1965, 3, 15))
+        PatientPreferences.objects.create(
+            patient=patient,
+            preferred_name="CoveragePatient",
+            recovery_goals="Get back to gardening",
+        )
+        return patient
+
+    def test_task_with_preferred_name(self, patient_with_prefs):
+        """Task uses preferred_name from PatientPreferences."""
+        send_proactive_patient_message(
+            patient_id=patient_with_prefs.pk,
+            rule_name="missing_weight",
+            message_category="missing_data",
+        )
+        from apps.agents.models import AgentMessage
+
+        msg = AgentMessage.objects.filter(
+            conversation__patient=patient_with_prefs,
+            metadata__proactive_rule="missing_weight",
+        ).first()
+        assert msg is not None
+        assert "CoveragePatient" in msg.content
+
+    def test_task_with_recovery_goals(self, patient_with_prefs):
+        """Task includes goal reference when recovery_goals set."""
+        send_proactive_patient_message(
+            patient_id=patient_with_prefs.pk,
+            rule_name="weight_gain_3day",
+            message_category="weight_trend",
+        )
+        from apps.agents.models import AgentMessage
+
+        msg = AgentMessage.objects.filter(
+            conversation__patient=patient_with_prefs,
+            metadata__proactive_rule="weight_gain_3day",
+        ).first()
+        assert msg is not None
+        assert "recovery" in msg.content.lower() or "matters" in msg.content.lower()
+
+    def test_task_preferences_exception(self):
+        """Task handles preferences exception gracefully."""
+        from apps.accounts.models import User
+        from apps.patients.models import Hospital, Patient
+
+        hospital = Hospital.objects.create(name="No Prefs Hospital")
+        user = User.objects.create_user(
+            username="noprefs_pat",
+            password="test",  # pragma: allowlist secret
+            first_name="NoPref",
+        )
+        patient = Patient.objects.create(user=user, hospital=hospital, date_of_birth=date(1970, 1, 1))
+        # No preferences — should use first_name fallback
+        send_proactive_patient_message(
+            patient_id=patient.pk,
+            rule_name="steps_declining_7day",
+            message_category="activity_decline",
+        )
+        from apps.agents.models import AgentMessage
+
+        msg = AgentMessage.objects.filter(
+            conversation__patient=patient,
+            metadata__proactive_rule="steps_declining_7day",
+        ).first()
+        assert msg is not None
+        assert "NoPref" in msg.content
+
+
+@pytest.mark.django_db
+class TestClinicianTasksCoverage:
+    """Cover clinicians/tasks.py edge cases."""
+
+    @pytest.fixture
+    def setup_data(self):
+        from apps.accounts.models import User
+        from apps.clinicians.models import Clinician
+        from apps.patients.models import Hospital, Patient
+
+        hospital = Hospital.objects.create(name="Task Cov Hospital")
+        clin_user = User.objects.create_user(
+            username="dr_cov",
+            password="test",  # pragma: allowlist secret
+            role="clinician",
+            first_name="Dr",
+            last_name="Coverage",
+        )
+        clinician = Clinician.objects.create(user=clin_user, role="physician", is_active=True)
+        clinician.hospitals.add(hospital)
+
+        pat_user = User.objects.create_user(
+            username="pat_cov",
+            password="test",  # pragma: allowlist secret
+            role="patient",
+            first_name="Pat",
+            last_name="Coverage",
+        )
+        patient = Patient.objects.create(user=pat_user, hospital=hospital, date_of_birth=date(1980, 5, 5))
+        return {"patient": patient, "clinician": clinician, "hospital": hospital}
+
+    def test_expire_appointment_requests(self, setup_data):
+        """Expire task marks old pending requests as expired."""
+        from apps.clinicians.models import AppointmentRequest
+        from apps.clinicians.tasks import expire_appointment_requests
+
+        now = timezone.now()
+        req = AppointmentRequest.objects.create(
+            patient=setup_data["patient"],
+            clinician=setup_data["clinician"],
+            trigger_type="milestone",
+            reason="Day 14 follow-up",
+            earliest_notify_at=now - timedelta(days=10),
+            expires_at=now - timedelta(days=1),  # Already expired
+            status="pending",
+        )
+        result = expire_appointment_requests()
+        req.refresh_from_db()
+        assert req.status == "expired"
+        assert result["expired"] >= 1
+
+    def test_notify_upcoming_appointments(self, setup_data):
+        """Notify task sends notifications for due requests."""
+        from apps.clinicians.models import AppointmentRequest
+        from apps.clinicians.tasks import notify_upcoming_appointments
+
+        now = timezone.now()
+        AppointmentRequest.objects.create(
+            patient=setup_data["patient"],
+            clinician=setup_data["clinician"],
+            trigger_type="clinician",
+            reason="Virtual visit",
+            earliest_notify_at=now - timedelta(hours=1),  # Already due
+            expires_at=now + timedelta(days=7),
+            status="pending",
+        )
+        result = notify_upcoming_appointments()
+        assert result["notified"] >= 1
+
+    def test_reminder_exception_handling(self, setup_data):
+        """Reminder task handles notification exceptions gracefully."""
+        from apps.clinicians.models import Appointment
+        from apps.clinicians.tasks import send_appointment_reminders
+
+        now = timezone.now()
+        Appointment.objects.create(
+            clinician=setup_data["clinician"],
+            patient=setup_data["patient"],
+            scheduled_start=now + timedelta(hours=23),
+            scheduled_end=now + timedelta(hours=23, minutes=30),
+            appointment_type="follow_up",
+            status="scheduled",
+            reminder_24h_sent=False,
+        )
+        with patch(
+            "apps.notifications.services.NotificationService.create_notification",
+            side_effect=Exception("notification error"),
+        ):
+            # Should not raise — handles exception internally
+            result = send_appointment_reminders()
+            assert result["processed"] == 0
