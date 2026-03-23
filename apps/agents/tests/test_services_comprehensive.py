@@ -48,17 +48,29 @@ class TestConversationService:
         assert conversation.id == existing_conversation.id
         assert AgentConversation.objects.filter(patient=patient).count() == 1
 
-    def test_get_or_create_conversation_creates_when_no_active(self):
-        """Test creating new when existing is not active."""
+    def test_get_or_create_conversation_finds_escalated(self):
+        """Test that escalated conversations are found (single-conversation model)."""
         patient = PatientFactory()
         AgentConversationFactory(patient=patient, status="completed")
-        AgentConversationFactory(patient=patient, status="escalated")
+        escalated = AgentConversationFactory(patient=patient, status="escalated")
+
+        conversation = ConversationService.get_or_create_conversation(patient, agent_type="care_coordinator")
+
+        # Should return the escalated conversation, not create a new one
+        assert conversation.pk == escalated.pk
+        assert conversation.status == "escalated"
+        assert AgentConversation.objects.filter(patient=patient).count() == 2
+
+    def test_get_or_create_conversation_creates_when_only_completed(self):
+        """Test creating new when all existing are completed."""
+        patient = PatientFactory()
+        AgentConversationFactory(patient=patient, status="completed")
 
         conversation = ConversationService.get_or_create_conversation(patient, agent_type="care_coordinator")
 
         assert conversation.status == "active"
         assert conversation.agent_type == "care_coordinator"
-        assert AgentConversation.objects.filter(patient=patient).count() == 3
+        assert AgentConversation.objects.filter(patient=patient).count() == 2
 
     def test_get_or_create_conversation_different_agent_types(self):
         """Test creating conversations with different agent types."""
@@ -192,17 +204,16 @@ class TestConversationService:
 
         conversation.refresh_from_db()
         assert conversation.status == "escalated"
-        assert conversation.escalation_reason == ""
 
-    def test_update_conversation_status_with_escalation_reason(self):
-        """Test updating status with escalation reason."""
+    def test_update_conversation_status_with_escalation_reason_ignored(self):
+        """Test that escalation_reason param is accepted but ignored (deprecated)."""
         conversation = AgentConversationFactory(status="active")
 
+        # escalation_reason param kept for API compat but no longer stored on conversation
         ConversationService.update_conversation_status(conversation, "escalated", escalation_reason="Critical symptom")
 
         conversation.refresh_from_db()
         assert conversation.status == "escalated"
-        assert conversation.escalation_reason == "Critical symptom"
 
     def test_update_conversation_status_all_statuses(self):
         """Test updating to various statuses."""
@@ -741,7 +752,6 @@ class TestEscalationService:
         # Verify conversation was updated
         conversation.refresh_from_db()
         assert conversation.status == "escalated"
-        assert conversation.escalation_reason == "Severe pain reported"
 
     def test_create_escalation_without_conversation(self):
         """Test creating escalation without conversation."""
@@ -846,9 +856,9 @@ class TestEscalationService:
         assert escalation.status == "resolved"
         assert escalation.resolved_at is not None
 
-        # Verify conversation was updated
+        # Verify conversation was restored to active (not completed)
         conversation.refresh_from_db()
-        assert conversation.status == "completed"
+        assert conversation.status == "active"
 
     def test_resolve_escalation_without_conversation(self):
         """Test resolving escalation without conversation."""
@@ -1132,6 +1142,91 @@ class TestEscalationService:
 
 
 @pytest.mark.django_db
+class TestConversationLifecycle:
+    """Single-conversation-per-patient lifecycle tests.
+
+    Verifies the state machine:
+        (none) → active → escalated → (resolve) → active
+    and that get_or_create_conversation never creates duplicates.
+    """
+
+    def test_get_or_create_returns_escalated_conversation(self):
+        """Escalated conversations must be found, not duplicated."""
+        patient = PatientFactory()
+        original = AgentConversationFactory(patient=patient, status="escalated")
+
+        found = ConversationService.get_or_create_conversation(patient)
+
+        assert found.pk == original.pk
+        assert AgentConversation.objects.filter(patient=patient).count() == 1
+
+    def test_get_or_create_skips_completed_conversation(self):
+        """Completed conversations should not be returned — create a fresh one."""
+        patient = PatientFactory()
+        old = AgentConversationFactory(patient=patient, status="completed")
+
+        found = ConversationService.get_or_create_conversation(patient)
+
+        assert found.pk != old.pk
+        assert found.status == "active"
+        assert AgentConversation.objects.filter(patient=patient).count() == 2
+
+    def test_resolve_last_escalation_restores_active(self):
+        """Resolving the last pending escalation restores conversation to active."""
+        patient = PatientFactory()
+        conversation = AgentConversationFactory(patient=patient, status="escalated")
+        escalation = EscalationFactory(patient=patient, conversation=conversation, status="pending")
+
+        EscalationService.resolve_escalation(str(escalation.id))
+
+        conversation.refresh_from_db()
+        assert conversation.status == "active"
+
+    def test_resolve_with_remaining_pending_keeps_escalated(self):
+        """If other pending escalations remain, conversation stays escalated."""
+        patient = PatientFactory()
+        conversation = AgentConversationFactory(patient=patient, status="escalated")
+        esc1 = EscalationFactory(patient=patient, conversation=conversation, status="pending")
+        EscalationFactory(patient=patient, conversation=conversation, status="pending")  # esc2 still pending
+
+        EscalationService.resolve_escalation(str(esc1.id))
+
+        conversation.refresh_from_db()
+        assert conversation.status == "escalated"
+
+    def test_full_lifecycle_active_escalated_resolved_active(self):
+        """End-to-end: active → escalated → resolved → active."""
+        patient = PatientFactory()
+
+        # 1. Create conversation (active)
+        conversation = ConversationService.get_or_create_conversation(patient)
+        assert conversation.status == "active"
+
+        # 2. Escalation triggered
+        escalation = EscalationService.create_escalation(
+            patient=patient,
+            conversation=conversation,
+            reason="Chest pain reported",
+            severity="urgent",
+        )
+        conversation.refresh_from_db()
+        assert conversation.status == "escalated"
+
+        # 3. get_or_create still finds the same conversation
+        same = ConversationService.get_or_create_conversation(patient)
+        assert same.pk == conversation.pk
+
+        # 4. Resolve escalation
+        EscalationService.resolve_escalation(str(escalation.id))
+        conversation.refresh_from_db()
+        assert conversation.status == "active"
+
+        # 5. Still the same conversation
+        still_same = ConversationService.get_or_create_conversation(patient)
+        assert still_same.pk == conversation.pk
+
+
+@pytest.mark.django_db
 class TestServiceIntegration:
     """Integration tests combining multiple services."""
 
@@ -1208,11 +1303,11 @@ class TestServiceIntegration:
         )
         assert result is True
 
-        # Verify final state
+        # Verify final state — conversation restored to active (not completed)
         escalation.refresh_from_db()
         assert escalation.status == "resolved"
         conversation.refresh_from_db()
-        assert conversation.status == "completed"
+        assert conversation.status == "active"
 
     def test_concurrent_conversations_same_patient(self):
         """Test that patient can have multiple conversations."""

@@ -19,7 +19,6 @@ class AgentConversationAdmin(admin.ModelAdmin):
         "status",
         "context",
         "tool_invocations",
-        "escalation_reason",
         "llm_metadata",
         "created_at",
         "updated_at",

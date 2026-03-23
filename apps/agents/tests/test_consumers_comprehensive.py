@@ -630,7 +630,6 @@ class TestAgentChatConsumerProcessMessage:
         # Verify conversation status updated
         updated_conversation = await database_sync_to_async(AgentConversation.objects.get)(id=conversation.id)
         assert updated_conversation.status == "escalated"
-        assert updated_conversation.escalation_reason == escalation_workflow_result["escalation_reason"]
 
 
 @pytest.mark.django_db

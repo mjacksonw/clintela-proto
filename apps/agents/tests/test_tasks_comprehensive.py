@@ -1001,7 +1001,6 @@ class TestGenerateConversationSummaries:
         conversation = AgentConversationFactory(
             patient=patient,
             status="escalated",
-            escalation_reason="Patient reported severe pain",
             context={},
         )
 
