@@ -569,8 +569,8 @@ class SchedulingService:
 
         slots = []
         for window in windows:
-            current = datetime.combine(target_date, window.start_time)
-            end = datetime.combine(target_date, window.end_time)
+            current = timezone.make_aware(datetime.combine(target_date, window.start_time))
+            end = timezone.make_aware(datetime.combine(target_date, window.end_time))
             delta = timedelta(minutes=duration_minutes)
 
             while current + delta <= end:
