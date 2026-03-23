@@ -632,9 +632,9 @@ class TestResolveEscalation:
 
         assert response.status_code == 200
 
-        # Refresh conversation from database
+        # Refresh conversation from database — restored to active (not completed)
         await database_sync_to_async(conversation.refresh_from_db)()
-        assert conversation.status == "completed"
+        assert conversation.status == "active"
 
 
 # ============================================================================

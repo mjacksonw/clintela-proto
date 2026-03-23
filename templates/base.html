@@ -221,14 +221,24 @@
     <!-- marked.js + DOMPurify for safe markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+    <script src="{% static 'js/markdown-render.js' %}"></script>
 
-    <!-- HTMX CSRF configuration -->
+    <!-- HTMX CSRF configuration + global markdown rendering -->
     <script>
         document.addEventListener('htmx:configRequest', function(event) {
             var csrfMeta = document.querySelector('meta[name="csrf-token"]');
             if (csrfMeta) {
                 event.detail.headers['X-CSRFToken'] = csrfMeta.getAttribute('content');
             }
+        });
+        // Render markdown in any .agent-message-content elements after every HTMX swap.
+        // This covers patient chat, clinician chat, and research chat uniformly.
+        document.addEventListener('htmx:afterSettle', function() {
+            if (window.clintelaMarkdown) window.clintelaMarkdown.renderAgentMessages();
+        });
+        // Also render on initial page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.clintelaMarkdown) window.clintelaMarkdown.renderAgentMessages();
         });
     </script>
 

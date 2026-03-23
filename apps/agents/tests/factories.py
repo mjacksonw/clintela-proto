@@ -67,7 +67,6 @@ class AgentConversationFactory(factory.django.DjangoModelFactory):
     status = "active"
     context = factory.LazyFunction(dict)
     tool_invocations = factory.LazyFunction(list)
-    escalation_reason = ""
 
 
 class AgentMessageFactory(factory.django.DjangoModelFactory):

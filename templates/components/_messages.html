@@ -1,0 +1,12 @@
+{% if messages %}
+<div class="messages-container mb-4 animate-in" role="status" aria-live="polite">
+    {% for msg in messages %}
+    <div class="px-4 py-3 rounded-lg text-sm flex items-center gap-2 mb-2"
+         role="{% if msg.tags == 'error' %}alert{% else %}status{% endif %}"
+         style="{% if msg.tags == 'success' %}background-color: #D1FAE5; color: #065F46;{% elif msg.tags == 'error' %}background-color: #FEE2E2; color: #991B1B;{% elif msg.tags == 'warning' %}background-color: #FEF3C7; color: #92400E;{% else %}background-color: #DBEAFE; color: #1E40AF;{% endif %}">
+        <i data-lucide="{% if msg.tags == 'success' %}check-circle{% elif msg.tags == 'error' %}alert-circle{% elif msg.tags == 'warning' %}alert-triangle{% else %}info{% endif %}" class="w-4 h-4 flex-shrink-0"></i>
+        {{ msg }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

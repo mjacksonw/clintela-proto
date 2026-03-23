@@ -38,7 +38,7 @@
                     {{ msg.agent_type|agent_display_name }}
                 </div>
                 {% endif %}
-                <div class="agent-message-content">{{ msg.content }}</div>
+                <div class="agent-message-content" data-raw-content="{{ msg.content }}">{{ msg.content|linebreaksbr }}</div>
             </div>
         </div>
         {% endfor %}
@@ -48,8 +48,13 @@
     {% include "clinicians/components/_take_control_bar.html" %}
 
     <script>
-        // Scroll chat to bottom on load (runs each time HTMX swaps this fragment)
+        // Runs each time HTMX swaps this fragment
         requestAnimationFrame(() => {
+            // Render markdown in agent messages
+            if (window.clintelaMarkdown) {
+                window.clintelaMarkdown.renderAgentMessages(document.getElementById('chat-panel'));
+            }
+            // Scroll chat to bottom
             const el = document.getElementById('chat-messages');
             if (el) el.scrollTop = el.scrollHeight;
         });

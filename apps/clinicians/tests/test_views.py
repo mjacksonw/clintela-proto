@@ -3,10 +3,11 @@
 import uuid as _uuid
 
 from django.test import TestCase
+from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.agents.models import AgentConversation, AgentMessage, Escalation
-from apps.clinicians.models import Clinician, ClinicianNote
+from apps.clinicians.models import Appointment, Clinician, ClinicianNote
 from apps.patients.models import Hospital, Patient
 
 _DOB = "1960-01-15"
@@ -75,6 +76,45 @@ class DashboardViewTest(ViewTestBase):
         self.client.logout()
         response = self.client.get("/clinician/dashboard/")
         assert response.status_code == 302
+
+
+class AppointmentToastLayoutTest(ViewTestBase):
+    """Next-appointment toast must not use fixed positioning (would overlap chat input)."""
+
+    def test_toast_not_fixed_when_appointment_exists(self):
+        """Toast renders as a flex item, not a fixed overlay."""
+        now = timezone.now()
+        Appointment.objects.create(
+            patient=self.patient,
+            clinician=self.clinician,
+            created_by=self.clin_user,
+            appointment_type="virtual_visit",
+            status="scheduled",
+            scheduled_start=now + timezone.timedelta(hours=1),
+            scheduled_end=now + timezone.timedelta(hours=2),
+        )
+        response = self.client.get("/clinician/dashboard/")
+        content = response.content.decode()
+
+        # Toast should appear with appointment info
+        assert "Virtual Visit" in content
+        # Toast must be a flex item (not fixed) — fixed positioning overlaps chat input
+        # Extract the toast's <div> class attribute and verify no "fixed" positioning
+        toast_start = content.find("Footer toast: next appointment")
+        assert toast_start != -1, "Toast comment not found in output"
+        # Find the <div class="..." after the comment
+        div_start = content.find('class="', toast_start)
+        div_end = content.find('"', div_start + 7)
+        toast_classes = content[div_start + 7 : div_end]
+        assert "fixed" not in toast_classes, f"Toast still uses fixed positioning: {toast_classes}"
+        assert "flex-shrink-0" in toast_classes, "Toast should be a flex-shrink-0 layout item"
+
+    def test_toast_hidden_when_no_appointment(self):
+        """No toast rendered when there is no upcoming appointment."""
+        response = self.client.get("/clinician/dashboard/")
+        content = response.content.decode()
+        assert "next_appointment_toast" not in content
+        assert "calendar" not in content or b"Next:" not in response.content
 
 
 class PatientListFragmentTest(ViewTestBase):

@@ -50,7 +50,6 @@ class AgentConversation(models.Model):
     # JSONB fields for flexible agent state
     context = models.JSONField(default=dict, blank=True)
     tool_invocations = models.JSONField(default=list, blank=True)
-    escalation_reason = models.TextField(blank=True)
 
     # LLM metadata
     llm_metadata = models.JSONField(default=dict, blank=True)

@@ -445,7 +445,7 @@ def generate_conversation_summaries():
                         },
                         "transcript": transcript,
                         "actions": conversation.tool_invocations,
-                        "outcome": conversation.escalation_reason or "Completed",
+                        "outcome": "Completed",
                         "duration": str(conversation.updated_at - conversation.created_at),
                         "interaction_type": "Chat",
                     },
