@@ -420,14 +420,57 @@ The admin dashboard (Phase 6) currently shows hospital-specific metrics only. Th
 
 ---
 
-### TODO-014: Chat Sidebar Suggestion Chips Touch Target
-**What:** Increase suggestion chip height from 38px to 44px minimum WCAG touch target in `_chat_sidebar.html`.
+### TODO-014: Chat Sidebar Suggestion Chips Touch Target ✅
+**Completed:** v0.2.12.0 (2026-03-23) — Fixed by /design-review FINDING-001, commit c33f0e5.
 
-**Why:** Design review (2026-03-20) found chips below 44px minimum. Deferred because the chips are pre-existing code not changed in the Phase 4 branch.
+---
 
-**Effort:** Tiny (human: ~5 min / CC: ~2 min)
-**Priority:** P3
-**Blocked by:** None
+### TODO-019: Real Zoom/Teams/Meet Integration for Virtual Visits
+**What:** Replace static clinician zoom_link with proper video platform integration (Zoom API, Microsoft Teams, Google Meet) that creates unique per-appointment meeting rooms.
+
+**Why:** Current MVP uses a static zoom link per clinician, which means patients could join randomly. Production needs unique meeting URLs per appointment with proper access controls.
+
+**Pros:**
+- Unique meeting links per appointment (no unauthorized access)
+- Calendar integration (auto-populate video link in iCal)
+- Waiting room / lobby controls
+- Recording capability for clinical documentation
+
+**Cons:**
+- Zoom/Teams API integration complexity
+- OAuth app approval process
+- Multiple platform support needed
+
+**Context:**
+The Calendly-style booking flow (Phase 8) creates appointments with `virtual_visit_url` field. Currently populated from `Clinician.zoom_link`. Replace with dynamic meeting creation via platform API.
+
+**Effort:** Medium (human: ~1-2 weeks / CC: ~1 hour)
+**Priority:** P2
+**Blocked by:** None — booking infrastructure shipped in v0.2.12.0
+
+---
+
+### TODO-020: Additional Languages + Auto-Translation for Agent Messages
+**What:** Add more languages beyond Spanish (e.g., Mandarin, Vietnamese, Haitian Creole — top non-English healthcare languages in the US). Auto-translate LLM agent responses so patients always see messages in their preferred language.
+
+**Why:** Phase 8 shipped i18n infrastructure + Spanish + real-time chat translation between humans. But LLM agent responses are always in English. Patients who set Spanish should see agent responses in Spanish too.
+
+**Pros:**
+- Agent responses in patient's language without manual translation
+- Broader patient population served
+- LLM can respond in-language natively (prompt instruction) vs post-hoc translation
+
+**Cons:**
+- LLM quality varies by language
+- Medical terminology accuracy needs clinical review per language
+- Testing burden multiplied per language
+
+**Context:**
+The translation layer (`apps/agents/translation.py`) already translates human-to-human messages DoorDash/Reddit-style. Extending to agent messages: either prompt the LLM to respond in the patient's language directly, or translate responses post-hoc using the existing TranslationService. The former is likely better for fluency.
+
+**Effort:** Medium (human: ~1 week / CC: ~30 min per language)
+**Priority:** P2
+**Blocked by:** None — i18n infrastructure shipped in v0.2.12.0
 
 ---
 
