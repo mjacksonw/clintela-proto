@@ -57,6 +57,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "django_extensions",
     "ninja",
+    "corsheaders",
 ]
 
 LOCAL_APPS = [
@@ -83,12 +84,15 @@ INSTALLED_APPS = ["daphne"] + DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # =============================================================================
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "csp.middleware.CSPMiddleware",
 ]
 
 # =============================================================================
@@ -159,10 +163,20 @@ LOGOUT_REDIRECT_URL = "/accounts/login/"
 # =============================================================================
 # INTERNATIONALIZATION
 # =============================================================================
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "en"
 TIME_ZONE = "UTC"
 USE_I18N = True
+USE_L10N = True
 USE_TZ = True
+
+LANGUAGES = [
+    ("en", "English"),
+    ("es", "Spanish"),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
 
 # =============================================================================
 # STATIC FILES
@@ -207,6 +221,29 @@ SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT")
 SECURE_HSTS_SECONDS = env("SECURE_HSTS_SECONDS")
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env("SECURE_HSTS_INCLUDE_SUBDOMAINS")
 SECURE_HSTS_PRELOAD = env("SECURE_HSTS_PRELOAD")
+
+# =============================================================================
+# CORS (django-cors-headers)
+# =============================================================================
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    default=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],
+)
+CORS_ALLOW_CREDENTIALS = True
+
+# =============================================================================
+# CONTENT SECURITY POLICY (django-csp)
+# =============================================================================
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "api.fontshare.com", "cdn.jsdelivr.net")
+CSP_FONT_SRC = ("'self'", "api.fontshare.com", "cdn.fontshare.com")
+CSP_IMG_SRC = ("'self'", "data:")
+CSP_CONNECT_SRC = ("'self'", "ws:", "wss:")
+CSP_FRAME_ANCESTORS = ("'none'",)
 
 # =============================================================================
 # LOGGING
