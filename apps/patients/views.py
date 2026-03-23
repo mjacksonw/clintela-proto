@@ -65,7 +65,11 @@ def patient_dashboard_view(request):
         from apps.agents.models import AgentConversation
 
         conversation = (
-            AgentConversation.objects.filter(patient=patient, status="active", clinician__isnull=True)
+            AgentConversation.objects.filter(
+                patient=patient,
+                status__in=("active", "escalated"),
+                clinician__isnull=True,
+            )
             .order_by("-created_at")
             .first()
         )

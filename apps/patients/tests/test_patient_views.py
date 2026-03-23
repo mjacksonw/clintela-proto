@@ -347,6 +347,95 @@ class TestPatientDashboardDebugMode:
 
 
 @pytest.mark.django_db
+@pytest.mark.django_db
+class TestPatientDashboardConversationVisibility:
+    """Verify patients can see their conversations regardless of escalation status."""
+
+    def setup_method(self):
+        from apps.agents.models import AgentConversation, AgentMessage
+
+        self.AgentConversation = AgentConversation
+        self.AgentMessage = AgentMessage
+
+        self.client = Client()
+        self.user = User.objects.create_user(username="visuser", password="testpass")
+        self.hospital = Hospital.objects.create(name="Vis Hospital", code="VIS001")
+        self.patient = Patient.objects.create(
+            user=self.user,
+            hospital=self.hospital,
+            date_of_birth="1990-01-15",
+            leaflet_code="VIS001",
+        )
+        session = self.client.session
+        session["patient_id"] = str(self.patient.id)
+        session["authenticated"] = True
+        session.save()
+
+    def _create_conversation(self, status="active", with_message=True):
+        conv = self.AgentConversation.objects.create(
+            patient=self.patient,
+            status=status,
+        )
+        if with_message:
+            self.AgentMessage.objects.create(
+                conversation=conv,
+                role="assistant",
+                content="Hello, how are you feeling today?",
+            )
+        return conv
+
+    def test_active_conversation_shown(self):
+        """Active conversations should be visible on the patient dashboard."""
+        self._create_conversation(status="active")
+        response = self.client.get(reverse("patients:dashboard"))
+
+        assert response.status_code == 200
+        assert len(response.context["messages"]) == 1
+
+    def test_escalated_conversation_still_shown(self):
+        """Escalated conversations must remain visible to the patient.
+
+        Regression test: previously the dashboard filtered status='active'
+        only, making escalated conversations vanish on refresh.
+        """
+        self._create_conversation(status="escalated")
+        response = self.client.get(reverse("patients:dashboard"))
+
+        assert response.status_code == 200
+        assert len(response.context["messages"]) == 1
+        assert "how are you feeling" in response.context["messages"][0].content
+
+    def test_completed_conversation_not_shown(self):
+        """Completed conversations should not be loaded on the dashboard."""
+        self._create_conversation(status="completed")
+        response = self.client.get(reverse("patients:dashboard"))
+
+        assert response.status_code == 200
+        assert response.context["messages"] == []
+
+    def test_most_recent_conversation_wins(self):
+        """When multiple valid conversations exist, show the most recent."""
+        old = self._create_conversation(status="escalated")
+        self.AgentMessage.objects.filter(conversation=old).update(
+            content="Old message",
+        )
+
+        import time
+
+        time.sleep(0.01)  # ensure ordering difference
+        new = self._create_conversation(status="active")
+        self.AgentMessage.objects.filter(conversation=new).update(
+            content="New message",
+        )
+
+        response = self.client.get(reverse("patients:dashboard"))
+
+        assert response.status_code == 200
+        assert len(response.context["messages"]) == 1
+        assert "New message" in response.context["messages"][0].content
+
+
+@pytest.mark.django_db
 class TestPatientDashboardConversationError:
     """Test dashboard handles conversation errors gracefully."""
 
