@@ -15,7 +15,7 @@ from apps.clinical.constants import (
     SEVERITY_ORANGE,
     SEVERITY_RED,
 )
-from apps.clinical.models import ClinicalAlert, ClinicalObservation
+from apps.clinical.models import ClinicalAlert, ClinicalObservation, PatientClinicalSnapshot
 from apps.clinical.rules import RuleResult, rule_bp_trend_3day, rule_epro_activity_correlation
 from apps.clinical.services import ClinicalDataService
 
@@ -300,6 +300,61 @@ class TestHealthCardNonPatient:
         request.user = user
         response = health_card_fragment(request)
         assert response.content == b""
+
+
+class TestProcessObservationDirect:
+    """Cover _process_observation directly (normally called via on_commit)."""
+
+    def test_process_observation_runs_full_pipeline(self, patient, settings):
+        settings.ENABLE_CLINICAL_DATA = True
+        # Insert a critical HR observation first
+        _obs(patient, CONCEPT_HEART_RATE, 125)  # RED threshold
+        # Call _process_observation directly
+        ClinicalDataService._process_observation(patient)
+        # Should have created an alert and snapshot
+        assert ClinicalAlert.objects.filter(patient=patient).exists()
+        assert PatientClinicalSnapshot.objects.filter(patient=patient).exists()
+        # Triage should be updated
+        patient.refresh_from_db()
+        assert patient.status == "red"
+
+    def test_process_observation_handles_exception(self, patient, settings):
+        """Covers the except block in _process_observation."""
+        settings.ENABLE_CLINICAL_DATA = True
+        # Should not raise even if patient has no data
+        ClinicalDataService._process_observation(patient)
+
+
+class TestVitalsTabLabsAndCharts:
+    """Cover the lab results and chart data paths in vitals_tab_fragment."""
+
+    def test_vitals_tab_with_labs_and_snapshot(self, patient, settings):
+        from django.test import RequestFactory
+
+        from apps.clinical.constants import CONCEPT_BNP
+        from apps.clinical.views import vitals_tab_fragment
+        from apps.clinicians.models import Clinician
+
+        settings.ENABLE_CLINICAL_DATA = True
+
+        # Create clinician with access
+        from apps.accounts.models import User
+
+        user = User.objects.create_user(username=f"labclin_{uuid.uuid4().hex[:8]}", password="test")
+        clinician = Clinician.objects.create(user=user, specialty="Cardiology")
+        clinician.hospitals.add(patient.hospital)
+
+        # Add vitals + labs + snapshot
+        _obs(patient, CONCEPT_HEART_RATE, 72)
+        _obs(patient, CONCEPT_BNP, 250)
+        ClinicalDataService.compute_snapshot(patient)
+
+        rf = RequestFactory()
+        request = rf.get(f"/clinical/clinician/patient/{patient.pk}/vitals/")
+        request.user = user
+        response = vitals_tab_fragment(request, patient.pk)
+        assert response.status_code == 200
+        assert b"BNP" in response.content
 
 
 class TestComputeDataCompleteness:
