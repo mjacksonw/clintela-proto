@@ -57,7 +57,7 @@ def patient(db, hospital):
 
     user = User.objects.create_user(
         username=f"rules_{uuid.uuid4().hex[:8]}",
-        password="testpass123",
+        password="testpass123",  # pragma: allowlist secret
         first_name="Rule",
         last_name="Test",
     )
