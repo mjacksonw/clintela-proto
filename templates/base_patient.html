@@ -4,14 +4,10 @@
 
 {% block body %}
 <div x-data="{
-        sidebarOpen: window.innerWidth >= 1024,
         mobileOverlay: false,
-        tabletExpanded: false,
 
         get showSidebar() {
-            if (window.innerWidth < 768) return false;
-            if (window.innerWidth < 1024) return this.tabletExpanded;
-            return true;
+            return window.innerWidth >= 1024;
         },
 
         openMobileChat() {
@@ -39,29 +35,25 @@
 
     <div class="flex flex-1 overflow-hidden" style="height: calc(100vh - 64px);">
 
-        <!-- Chat sidebar — desktop (always visible) + tablet (collapsible) -->
+        <!-- Dashboard content area (left on desktop, full-width on mobile/tablet) -->
+        <main role="main"
+              id="main-content"
+              tabindex="-1"
+              aria-label="{% trans "Recovery dashboard" %}"
+              class="w-full lg:flex-1 overflow-y-auto min-h-0"
+              style="background-color: var(--color-bg);">
+            <div class="max-w-[670px] mx-auto px-4 md:px-6 py-6 md:py-8 pb-24 md:pb-12">
+                {% include "components/_messages.html" %}
+                {% block dashboard_content %}{% endblock %}
+            </div>
+        </main>
+
+        <!-- Chat panel — desktop (always visible, right side) -->
         <aside role="complementary"
                aria-label="{% trans "Chat with your care team" %}"
-               class="hidden md:flex flex-col border-r flex-shrink-0 overflow-hidden min-h-0 transition-all duration-300 ease-out"
-               style="background-color: var(--color-surface); border-color: var(--color-border);"
-               :class="showSidebar ? 'w-[360px]' : 'w-16'">
-
-            <!-- Collapsed tablet state — icon only -->
-            <template x-if="!showSidebar && window.innerWidth >= 768">
-                <button @click="tabletExpanded = true"
-                        class="flex items-center justify-center w-full h-full hover:bg-warm-50"
-                        aria-label="{% trans "Open chat sidebar" %}"
-                        title="Open chat">
-                    <i data-lucide="message-circle" class="w-6 h-6 text-secondary"></i>
-                </button>
-            </template>
-
-            <!-- Expanded sidebar content -->
-            <template x-if="showSidebar">
-                <div class="flex flex-col h-full min-h-0 w-[360px]">
-                    {% include "components/_chat_sidebar.html" %}
-                </div>
-            </template>
+               class="hidden lg:flex flex-col w-full lg:max-w-[700px] border-l overflow-hidden min-h-0"
+               style="background-color: var(--color-surface); border-color: var(--color-border);">
+            {% include "components/_chat_sidebar.html" %}
         </aside>
 
         <!-- Mobile chat overlay -->
@@ -72,7 +64,7 @@
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="translate-y-0"
              x-transition:leave-end="translate-y-full"
-             class="md:hidden fixed inset-0 z-50 flex flex-col"
+             class="lg:hidden fixed inset-0 z-50 flex flex-col"
              style="background-color: var(--color-surface);"
              role="dialog"
              aria-modal="true"
@@ -96,26 +88,13 @@
                 {% include "components/_chat_sidebar.html" %}
             </div>
         </div>
-
-        <!-- Dashboard content area -->
-        <main role="main"
-              id="main-content"
-              tabindex="-1"
-              aria-label="{% trans "Recovery dashboard" %}"
-              class="flex-1 overflow-y-auto min-h-0"
-              style="background-color: var(--color-bg);">
-            <div class="max-w-patient mx-auto px-4 md:px-6 py-6 md:py-8 pb-24 md:pb-12">
-                {% include "components/_messages.html" %}
-                {% block dashboard_content %}{% endblock %}
-            </div>
-        </main>
     </div>
 
     <!-- Mobile FAB — chat button -->
     <button id="chat-fab"
             @click="openMobileChat()"
             x-show="!mobileOverlay"
-            class="md:hidden fixed bottom-4 right-4 z-40 w-14 h-14 rounded-full bg-primary text-white
+            class="lg:hidden fixed bottom-4 right-4 z-40 w-14 h-14 rounded-full bg-primary text-white
                    shadow-lg flex items-center justify-center
                    hover:bg-primary-700 active:scale-95 transition-all"
             aria-label="{% trans "Open chat" %}">
@@ -123,17 +102,6 @@
     </button>
 
     {% include "components/_dev_toolbar.html" %}
-
-    <!-- Tablet collapse button (when expanded) -->
-    <button x-show="tabletExpanded && window.innerWidth >= 768 && window.innerWidth < 1024"
-            @click="tabletExpanded = false"
-            class="hidden md:block lg:hidden fixed bottom-4 left-[368px] z-40 w-10 h-10 rounded-full
-                   shadow-md flex items-center justify-center"
-            style="background-color: var(--color-surface); border: 1px solid var(--color-border);"
-            aria-label="{% trans "Collapse chat sidebar" %}"
-            x-cloak>
-        <i data-lucide="panel-left-close" class="w-4 h-4" style="color: var(--color-text-secondary);"></i>
-    </button>
 </div>
 {% endblock %}
 
