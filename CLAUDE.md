@@ -28,6 +28,36 @@ Use the /browse skill from gstack for all web browsing. Never use mcp__claude-in
 - `/unfreeze` - Remove edit restrictions
 - `/gstack-upgrade` - Upgrade gstack to latest version
 
+## Development
+
+### Virtual Environment
+
+The project uses a `.venv` managed by UV. Always activate it before running commands:
+
+    source .venv/bin/activate
+
+Or prefix commands with `uv run` (e.g., `uv run python manage.py runserver 8001`).
+
+### Worktrees
+
+Git worktrees (`.claude/worktrees/`) need their own venv. After entering a worktree, run:
+
+    uv sync
+
+This creates a `.venv` in the worktree with all dependencies installed.
+
+### Demo Logins
+
+Reset demo data (creates all accounts and fixtures):
+
+    ENABLE_CLINICAL_DATA=True python manage.py reset_demo
+
+| Role          | URL                              | Credentials                          |
+|---------------|----------------------------------|--------------------------------------|
+| Clinician     | `/clinician/login/`              | `dr_smith` / `testpass123`           |
+| Administrator | `/admin-dashboard/login/`        | `admin_test` / `testpass123`         |
+| Patient       | Run `python manage.py seed_demo_patients` — prints auth URLs with magic-link tokens. Verify with patient DOB. |
+
 ## Care Philosophy
 
 Always read `docs/philosophy.md` before writing patient-facing features. The core principle: **help the patient be known**. Every interaction should make the patient feel known, not processed.
