@@ -357,6 +357,84 @@ class TestVitalsTabLabsAndCharts:
         assert b"BNP" in response.content
 
 
+class TestVitalsTabPadding:
+    """Verify vitals tab sections have consistent horizontal padding."""
+
+    def test_alerts_section_has_padding(self):
+        """Active alerts section should have px-4 side padding."""
+        from django.template.loader import render_to_string
+
+        html = render_to_string(
+            "clinical/vitals_tab.html",
+            {
+                "has_data": True,
+                "snapshot": None,
+                "alerts": [
+                    {
+                        "severity": "yellow",
+                        "title": "Test",
+                        "created_at": "2026-01-01",
+                        "description": "desc",
+                        "rule_rationale": "",
+                    }
+                ],
+                "chart_data": {},
+                "data_completeness_pct": 50,
+                "lab_results": [],
+            },
+        )
+        # The alerts wrapper div should have px-4
+        assert 'class="mb-6 px-4"' in html
+
+    def test_chart_grid_has_padding(self):
+        """Vitals chart grid should have px-4 side padding."""
+        from django.template.loader import render_to_string
+
+        html = render_to_string(
+            "clinical/vitals_tab.html",
+            {
+                "has_data": True,
+                "snapshot": None,
+                "alerts": [],
+                "chart_data": {},
+                "data_completeness_pct": 50,
+                "lab_results": [],
+            },
+        )
+        assert 'id="vitals-chart-grid"' in html
+        assert "px-4" in html.split('id="vitals-chart-grid"')[1].split(">")[0]
+
+    def test_lab_results_has_padding(self):
+        """Lab results section should have px-4 side padding."""
+        from django.template.loader import render_to_string
+
+        html = render_to_string(
+            "clinical/vitals_tab.html",
+            {
+                "has_data": True,
+                "snapshot": None,
+                "alerts": [],
+                "chart_data": {},
+                "data_completeness_pct": 50,
+                "lab_results": [
+                    {
+                        "name": "BNP",
+                        "value": 250,
+                        "unit": "pg/mL",
+                        "at": "2026-01-01",
+                        "is_abnormal": False,
+                        "source": "EHR",
+                    }
+                ],
+            },
+        )
+        # Lab results wrapper should contain px-4
+        assert "Lab Results" in html
+        # Find the div wrapping lab results — it should have px-4
+        lab_section = html.split("Lab Results")[0].rsplit("<div", 1)[1]
+        assert "px-4" in lab_section
+
+
 class TestComputeDataCompleteness:
     """Cover data completeness with partial data."""
 
