@@ -20,6 +20,7 @@ class Command(BaseCommand):
             ("create_test_admin", "Creating test admin..."),
             ("create_cardiology_service", "Creating cardiology service (45 patients)..."),
             ("seed_demo_data", "Seeding hand-crafted demo fixtures..."),
+            ("seed_clinical_data", "Seeding clinical vitals & alerts (4 cardiac scenarios)..."),
         ]
 
         for cmd, msg in steps:
