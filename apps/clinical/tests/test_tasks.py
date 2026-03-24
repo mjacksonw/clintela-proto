@@ -25,7 +25,7 @@ def patient(db, hospital):
 
     user = User.objects.create_user(
         username=f"task_{uuid.uuid4().hex[:8]}",
-        password="testpass123",
+        password="testpass123",  # pragma: allowlist secret
         first_name="Task",
         last_name="Test",
     )
@@ -62,7 +62,7 @@ class TestComputeAllSnapshots:
         for _i in range(3):
             user = User.objects.create_user(
                 username=f"multi_{uuid.uuid4().hex[:8]}",
-                password="testpass123",
+                password="testpass123",  # pragma: allowlist secret
             )
             p = Patient.objects.create(
                 user=user,
