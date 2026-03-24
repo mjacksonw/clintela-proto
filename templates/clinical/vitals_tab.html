@@ -38,7 +38,7 @@
 
 {# 2. Active alerts #}
 {% if alerts %}
-<div class="mb-6">
+<div class="mb-6 px-4">
     <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Active Alerts</h4>
     <div class="space-y-2">
         {% for alert in alerts %}
@@ -75,11 +75,11 @@
 
 {# 3. Vital sign charts — rendered server-side, Chart.js init via inline JS #}
 {{ chart_data|json_script:"chart-data" }}
-<div id="vitals-chart-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
+<div id="vitals-chart-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 px-4"></div>
 
 {# 4. Lab results #}
 {% if lab_results %}
-<div>
+<div class="px-4">
     <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Lab Results</h4>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
