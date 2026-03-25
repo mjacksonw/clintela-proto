@@ -12,6 +12,25 @@ urlpatterns = [
     path("logout/", views.clinician_logout_view, name="logout"),
     # Dashboard
     path("dashboard/", views.dashboard_view, name="dashboard"),
+    # Dashboard with deep-link routing
+    # Uses 'initial_patient_id' to avoid clinician_required IDOR check
+    # (which returns 403 for missing/unauthorized patients). The dashboard
+    # view validates access itself and falls back to empty state.
+    path(
+        "dashboard/patient/<int:initial_patient_id>/",
+        views.dashboard_view,
+        name="dashboard_patient",
+    ),
+    path(
+        "dashboard/patient/<int:initial_patient_id>/<str:tab>/",
+        views.dashboard_view,
+        name="dashboard_patient_tab",
+    ),
+    path(
+        "dashboard/patient/<int:initial_patient_id>/<str:tab>/<str:subview>/",
+        views.dashboard_view,
+        name="dashboard_patient_tab_subview",
+    ),
     # Patient list (HTMX fragment)
     path("patients/", views.patient_list_fragment, name="patient_list"),
     # Patient detail tabs (HTMX fragments)

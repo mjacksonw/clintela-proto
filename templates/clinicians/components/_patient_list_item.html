@@ -2,6 +2,7 @@
 {% with p=item.patient %}
 <button class="w-full text-left px-3 py-2.5 border-b hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
         style="border-color: var(--color-border);"
+        data-patient-id="{{ p.id }}"
         role="option"
         aria-label="{{ p.user.get_full_name }}, {{ p.get_status_display }} triage, {{ item.patient.pending_escalation_count|default:0 }} pending escalation{{ item.patient.pending_escalation_count|pluralize }}"
         :class="selectedPatientId === '{{ p.id }}' ? 'bg-gray-100 dark:bg-gray-800 border-l-2 border-l-teal-500' : ''"

@@ -19,6 +19,9 @@ function clinicianDashboard() {
         // Notification state
         notificationPermission: Notification.permission || 'default',
 
+        // URL routing guard
+        _restoringFromUrl: false,
+
         // Take-control inactivity timer (30 min)
         _takeControlTimer: null,
         TAKE_CONTROL_TIMEOUT_MS: 30 * 60 * 1000,
@@ -37,6 +40,41 @@ function clinicianDashboard() {
 
             // Connect to dashboard WebSocket if hospital data is available
             this._connectDashboardWs();
+
+            // Restore state from URL path (deep link / bookmark / refresh)
+            const el = this.$el;
+            const initialPatient = el.dataset.initialPatient;
+            const initialTab = el.dataset.initialTab || 'details';
+            const initialSubview = el.dataset.initialSubview;
+
+            if (initialPatient) {
+                this.$nextTick(() => {
+                    this._restoringFromUrl = true;
+                    this.selectedPatientId = initialPatient;
+                    this.activeTab = initialTab;
+                    this._loadTab(initialPatient, initialTab);
+                    this._loadChat(initialPatient);
+                    if (initialSubview && initialTab === 'surveys') {
+                        const url = `/patient/surveys/clinician/instance/${initialSubview}/results/`;
+                        setTimeout(() => {
+                            htmx.ajax('GET', url, {
+                                target: document.getElementById('detail-panel'),
+                                swap: 'innerHTML'
+                            });
+                        }, 100);
+                    }
+                    this._highlightPatientInList(initialPatient);
+                    this._restoringFromUrl = false;
+                });
+            }
+
+            // Handle browser back/forward
+            window.addEventListener('popstate', () => {
+                if (!this._restoreFromUrl()) {
+                    this.selectedPatientId = null;
+                    this.activeTab = 'details';
+                }
+            });
         },
 
         // ---------------------------------------------------------------
@@ -53,6 +91,9 @@ function clinicianDashboard() {
             // Load chat panel
             this._loadChat(patientId);
 
+            // Update browser URL
+            if (!this._restoringFromUrl) this._updateUrl();
+
             // Focus center panel
             this.$nextTick(() => {
                 const main = document.getElementById('main-content');
@@ -68,6 +109,7 @@ function clinicianDashboard() {
             if (!this.selectedPatientId) return;
             this.activeTab = tab;
             this._loadTab(this.selectedPatientId, tab);
+            if (!this._restoringFromUrl) this._updateUrl();
         },
 
         _loadTab(patientId, tab) {
@@ -159,6 +201,7 @@ function clinicianDashboard() {
                         this.chatDrawerOpen = false;
                     } else {
                         this.selectedPatientId = null;
+                        this._updateUrl();
                     }
                     break;
             }
@@ -187,6 +230,82 @@ function clinicianDashboard() {
         _acknowledgeFirstEscalation() {
             const ackBtn = document.querySelector('[hx-post*="acknowledge"]');
             if (ackBtn) ackBtn.click();
+        },
+
+        // ---------------------------------------------------------------
+        // URL routing (pushState / popstate)
+        // ---------------------------------------------------------------
+
+        _buildPath(patientId, tab, subview) {
+            if (!patientId) return '/clinician/dashboard/';
+            let path = `/clinician/dashboard/patient/${patientId}/${tab || 'details'}/`;
+            if (subview) path += `${subview}/`;
+            return path;
+        },
+
+        _updateUrl(opts = {}) {
+            const path = this._buildPath(
+                this.selectedPatientId,
+                this.activeTab,
+                opts.subview
+            );
+            history.pushState({ patientId: this.selectedPatientId, tab: this.activeTab, subview: opts.subview || null }, '', path);
+        },
+
+        _restoreFromUrl() {
+            const match = window.location.pathname.match(
+                /^\/clinician\/dashboard\/patient\/(\d+)(?:\/(\w+))?(?:\/(.+?))?\/?$/
+            );
+            if (!match) return false;
+
+            const [, patientId, tab, subview] = match;
+            const validTabs = ['details', 'care_plan', 'research', 'surveys', 'tools', 'vitals'];
+            const resolvedTab = (tab && validTabs.includes(tab)) ? tab : 'details';
+
+            this._restoringFromUrl = true;
+            this.selectedPatientId = patientId;
+            this.activeTab = resolvedTab;
+            this._loadTab(patientId, resolvedTab);
+            this._loadChat(patientId);
+
+            if (subview && resolvedTab === 'surveys') {
+                const url = `/patient/surveys/clinician/instance/${subview}/results/`;
+                setTimeout(() => {
+                    htmx.ajax('GET', url, {
+                        target: document.getElementById('detail-panel'),
+                        swap: 'innerHTML'
+                    });
+                }, 100);
+            }
+
+            this._highlightPatientInList(patientId);
+            this._restoringFromUrl = false;
+            return true;
+        },
+
+        _highlightPatientInList(patientId) {
+            const tryHighlight = () => {
+                const item = document.querySelector(`[data-patient-id="${patientId}"]`);
+                if (item) { item.scrollIntoView({ block: 'nearest' }); return true; }
+                return false;
+            };
+            if (!tryHighlight()) {
+                document.addEventListener('htmx:afterSettle', function handler() {
+                    tryHighlight();
+                    document.removeEventListener('htmx:afterSettle', handler);
+                });
+            }
+        },
+
+        navigateToSurveyResult(instanceId) {
+            this._updateUrl({ subview: instanceId });
+        },
+
+        backToSurveys() {
+            if (!this.selectedPatientId) return;
+            this.activeTab = 'surveys';
+            this._loadTab(this.selectedPatientId, 'surveys');
+            this._updateUrl();
         },
 
         // ---------------------------------------------------------------

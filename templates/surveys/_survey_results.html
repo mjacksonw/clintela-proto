@@ -4,6 +4,12 @@ Clinician survey results detail view — shown in the detail panel.
 {% endcomment %}
 
 <div style="padding: 16px;">
+    <button @click="backToSurveys()"
+            class="flex items-center gap-1 text-xs font-medium mb-3"
+            style="color: var(--color-primary);">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        Back to Surveys
+    </button>
     <!-- Header -->
     <div class="flex items-start justify-between mb-4">
         <div>
