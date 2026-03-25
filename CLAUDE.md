@@ -13,15 +13,21 @@ Use the /browse skill from gstack for all web browsing. Never use mcp__claude-in
 - `/design-consultation` - Design consultant mode: Build complete design system from scratch
 - `/review` - Paranoid staff engineer mode: Find bugs that pass CI but blow up in production
 - `/ship` - Release engineer mode: Sync main, run tests, review diff, bump version, commit, push, create PR
+- `/land-and-deploy` - Land and deploy mode
+- `/canary` - Canary deployment mode
+- `/benchmark` - Benchmark mode
 - `/browse` - QA engineer mode: Browser automation, screenshots, console checks
 - `/qa` - QA + fix engineer mode: Test app, find bugs, fix with atomic commits
 - `/qa-only` - QA reporter mode: Report-only QA testing, never fixes
 - `/design-review` - Design audit mode
 - `/setup-browser-cookies` - Session manager mode: Import cookies from real browser
+- `/setup-deploy` - Deploy setup mode
 - `/retro` - Engineering manager mode: Team-aware retrospective with per-person praise
 - `/investigate` - Debug and investigate errors
 - `/document-release` - Technical writer mode: Update README, ARCHITECTURE, CONTRIBUTING, project docs
 - `/codex` - Second opinion / adversarial code review
+- `/cso` - Chief of staff mode
+- `/autoplan` - Auto-planning mode
 - `/careful` - Extra caution mode for production systems
 - `/freeze` - Scope edits to one module/directory
 - `/guard` - Maximum safety mode (destructive warnings + edit restrictions)
