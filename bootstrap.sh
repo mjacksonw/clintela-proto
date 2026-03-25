@@ -52,7 +52,21 @@ warn()  { echo -e "    ${YELLOW}$1${NC}"; }
 fail()  { echo -e "    ${RED}$1${NC}"; }
 
 # ---------------------------------------------------------------------------
-# 1. System packages
+# 1. Sudoers (passwordless sudo for dev commands)
+# ---------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ ! -f /etc/sudoers.d/clintela-dev ]; then
+  step "Setting up passwordless sudo for dev commands"
+  sudo "$SCRIPT_DIR/setup-sudoers.sh"
+  ok "Sudoers configured"
+else
+  step "Sudoers"
+  ok "Already configured (/etc/sudoers.d/clintela-dev)"
+fi
+
+# ---------------------------------------------------------------------------
+# 2. System packages
 # ---------------------------------------------------------------------------
 step "Installing system packages"
 
@@ -256,6 +270,14 @@ if $WITH_CLAUDE_CODE; then
 fi
 
 # ---------------------------------------------------------------------------
+# Deploy key check
+# ---------------------------------------------------------------------------
+DEPLOY_KEY_MISSING=false
+if [ ! -f "$HOME/.ssh/clintela_deploy" ]; then
+  DEPLOY_KEY_MISSING=true
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
@@ -286,5 +308,11 @@ if [ -f .env ] && grep -q "your-ollama-api-key-here" .env 2>/dev/null; then
   echo -e "  ${YELLOW}Reminder: Edit .env to add your API keys${NC}"
   echo "    - OLLAMA_API_KEY (for LLM chat)"
   echo "    - LANGSMITH_API_KEY (optional, for tracing)"
+  echo ""
+fi
+if $DEPLOY_KEY_MISSING; then
+  echo -e "  ${YELLOW}Recommendation: Set up a GitHub deploy key${NC}"
+  echo "    ./setup-deploy-key.sh"
+  echo "    (Avoids needing ssh -A for git pull/push)"
   echo ""
 fi
