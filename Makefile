@@ -119,7 +119,23 @@ clean: ## Clean up cache files and temporary files
 	rm -f bandit-report.json
 	@echo "Cleanup complete!"
 
-# Docker Commands
+# Backing Services (dev-on-host workflow)
+bootstrap: ## Bootstrap full dev environment from scratch
+	./bootstrap.sh
+
+services-up: ## Start backing services (db, redis, ollama)
+	docker compose -f docker-compose.services.yml up -d
+
+services-down: ## Stop backing services
+	docker compose -f docker-compose.services.yml down
+
+services-logs: ## Tail backing service logs
+	docker compose -f docker-compose.services.yml logs -f
+
+services-ps: ## Show backing service status
+	docker compose -f docker-compose.services.yml ps
+
+# Docker Commands (full-stack — runs Django in container)
 docker-up: ## Start Docker development environment
 	docker-compose up -d
 
@@ -192,5 +208,5 @@ run: dev ## Alias for 'make dev'
 t: test ## Alias for 'make test'
 fmt: format ## Alias for 'make format'
 fix: lint-fix ## Alias for 'make lint-fix'
-up: docker-up ## Alias for 'make docker-up'
-down: docker-down ## Alias for 'make docker-down'
+up: services-up ## Alias for 'make services-up'
+down: services-down ## Alias for 'make services-down'

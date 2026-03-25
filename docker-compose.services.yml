@@ -1,0 +1,56 @@
+# Backing services only — for dev-on-host workflow.
+# Django runs on the host for hot-reload and debugger access.
+#
+# Usage:
+#   docker compose -f docker-compose.services.yml up -d
+#   make services-up  (shorthand)
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: clintela-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-clintela}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clintela}
+      POSTGRES_DB: ${POSTGRES_DB:-clintela}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-clintela} -d ${POSTGRES_DB:-clintela}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: clintela-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama
+    container_name: clintela-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
