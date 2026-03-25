@@ -119,7 +119,7 @@ const clintelaChat = (() => {
                 <div class="px-4 py-2.5 text-white text-lg leading-relaxed"
                      style="background-color: var(--color-primary);
                             border-radius: 16px 16px 4px 16px;">
-                    ${escapeHtml(text)}
+                    ${clintelaMarkdown.escapeHtml(text)}
                 </div>
                 <div class="text-xs mt-1 text-right" style="color: var(--color-text-secondary);">
                     just now
@@ -144,14 +144,14 @@ const clintelaChat = (() => {
         bubble.innerHTML = `
             <div class="max-w-[85%]">
                 <div class="text-xs mb-1 flex items-center gap-1" style="color: var(--color-text-secondary);">
-                    <span>\u2695 ${escapeHtml(name)}</span>
+                    <span>\u2695 ${clintelaMarkdown.escapeHtml(name)}</span>
                 </div>
                 <div class="agent-message-content px-4 py-2.5 text-lg leading-relaxed"
                      style="background-color: var(--color-surface);
                             border: 1px solid var(--color-border);
                             border-radius: 16px 16px 16px 4px;"
-                     data-raw-content="${escapeHtml(message.content)}">
-                    ${escapeHtml(message.content)}
+                     data-raw-content="${clintelaMarkdown.escapeHtml(message.content)}">
+                    ${clintelaMarkdown.escapeHtml(message.content)}
                 </div>
                 <div class="text-xs mt-1" style="color: var(--color-text-secondary);">
                     just now
@@ -175,7 +175,7 @@ const clintelaChat = (() => {
                 <div class="px-4 py-2.5 text-lg leading-relaxed"
                      style="background-color: #FEE2E2; color: #991B1B;
                             border-radius: 16px 16px 16px 4px;">
-                    ${escapeHtml(text)}
+                    ${clintelaMarkdown.escapeHtml(text)}
                     <button onclick="clintelaChat.retry()" class="block mt-2 text-sm underline hover:no-underline">
                         Try again
                     </button>
@@ -330,7 +330,9 @@ const clintelaChat = (() => {
         setChipsDisabled(true);
     }
 
-    function onAfterSwap(event) {
+    function onAfterRequest(event) {
+        // Fires on the form element after any response (success or error).
+        // Cleans up typing indicator and inflight state reliably.
         hideTyping();
 
         const form = event.target;
@@ -340,26 +342,6 @@ const clintelaChat = (() => {
         }
 
         setChipsDisabled(false);
-
-        // Render markdown in new agent messages
-        renderAgentMessages();
-
-        // Re-init Lucide icons
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-
-        // Check for escalation
-        const container = messagesEl();
-        if (container) {
-            checkEscalation(container);
-            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-        }
-
-        // Notify sound
-        playNotifySound();
-
-        // Focus back to textarea
-        const textarea = document.getElementById('chat-textarea');
-        if (textarea) textarea.focus();
     }
 
     function onError(event) {
@@ -386,21 +368,14 @@ const clintelaChat = (() => {
             container.scrollTop = container.scrollHeight;
         }
 
-        // Handle ALL chat form responses. Use afterSettle (fires after DOM
-        // is updated) so new message bubbles are in the DOM for markdown
-        // rendering and scroll.
+        // Post-swap work: render markdown, scroll, play sound.
+        // afterSettle fires on the swap target (#messages), so check elt.id
+        // matches the messages container. Typing/inflight cleanup is handled
+        // by onAfterRequest (fires on the form).
         document.body.addEventListener('htmx:afterSettle', (event) => {
-            if (event.detail.elt?.id !== 'chat-form') return;
+            if (event.detail.elt?.id !== 'messages') return;
             const xhr = event.detail.xhr;
             if (!xhr || xhr.status !== 200) return;
-
-            hideTyping();
-            const formEl = document.getElementById('chat-form');
-            if (formEl) {
-                const alpineData = Alpine.$data(formEl);
-                if (alpineData) alpineData.inflight = false;
-            }
-            setChipsDisabled(false);
 
             // If non-empty response (AI message was swapped in), do post-swap work
             if (xhr.responseText.trim()) {
@@ -434,7 +409,7 @@ const clintelaChat = (() => {
         retry,
         toggleSound,
         onBeforeRequest,
-        onAfterSwap,
+        onAfterRequest,
         onError,
         appendIncomingBubble,
     };

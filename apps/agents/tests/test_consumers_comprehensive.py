@@ -943,7 +943,7 @@ class TestClinicianDashboardConsumerConnect:
 
         # Verify group joined
         assert consumer.hospital_id == "123"
-        assert consumer.room_group_name == "hospital_123"
+        assert "hospital_123" in consumer.room_group_names
         mock_channel_layer.group_add.assert_called_once_with(
             "hospital_123",
             "test-channel-1",
@@ -990,7 +990,7 @@ class TestClinicianDashboardConsumerDisconnect:
         consumer.channel_layer = mock_channel_layer
         consumer.channel_name = "test-channel-1"
         consumer.hospital_id = "123"
-        consumer.room_group_name = "hospital_123"
+        consumer.room_group_names = ["hospital_123"]
 
         await consumer.disconnect(1000)
 
@@ -1028,7 +1028,7 @@ class TestClinicianDashboardConsumerEscalationAlert:
         await consumer.escalation_alert(event)
 
         assert len(sent_messages) == 1
-        assert sent_messages[0]["type"] == "escalation"
+        assert sent_messages[0]["type"] == "escalation_alert"
         assert sent_messages[0]["patient_id"] == event["patient_id"]
         assert sent_messages[0]["patient_name"] == event["patient_name"]
         assert sent_messages[0]["severity"] == event["severity"]
@@ -1059,7 +1059,7 @@ class TestClinicianDashboardConsumerEscalationAlert:
         await consumer.escalation_alert(event)
 
         assert len(sent_messages) == 1
-        assert sent_messages[0]["type"] == "escalation"
+        assert sent_messages[0]["type"] == "escalation_alert"
 
 
 @pytest.mark.django_db
@@ -1089,7 +1089,7 @@ class TestClinicianDashboardConsumerPatientStatusUpdate:
         await consumer.patient_status_update(event)
 
         assert len(sent_messages) == 1
-        assert sent_messages[0]["type"] == "status_update"
+        assert sent_messages[0]["type"] == "patient_status_update"
         assert sent_messages[0]["patient_id"] == event["patient_id"]
         assert sent_messages[0]["old_status"] == event["old_status"]
         assert sent_messages[0]["new_status"] == event["new_status"]
@@ -1117,7 +1117,7 @@ class TestClinicianDashboardConsumerPatientStatusUpdate:
         await consumer.patient_status_update(event)
 
         assert len(sent_messages) == 1
-        assert sent_messages[0]["type"] == "status_update"
+        assert sent_messages[0]["type"] == "patient_status_update"
         assert sent_messages[0]["new_status"] == "red"
 
 

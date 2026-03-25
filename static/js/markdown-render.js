@@ -65,6 +65,7 @@
 
     // Expose globally
     root.clintelaMarkdown = {
+        escapeHtml: escapeHtml,
         render: renderMarkdown,
         renderAgentMessages: renderAgentMessages,
     };

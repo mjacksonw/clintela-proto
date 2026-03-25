@@ -9,6 +9,7 @@ import time
 from typing import Any
 
 from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
@@ -32,6 +33,33 @@ def _record_cross_channel(patient, channel, direction, content):
         )
     except Exception:
         logger.debug("messages_app.Message not available, skipping cross-channel record")
+
+
+def _notify_clinician_dashboard(patient, message_data):
+    """Broadcast a chat event to the clinician dashboard WebSocket group.
+
+    Sends a ``patient_message`` event to ``hospital_{id}`` so the
+    clinician dashboard JS refreshes the chat panel in real time.
+    Gracefully degrades if the channel layer is unavailable.
+    """
+    try:
+        hospital_id = patient.hospital_id
+        if not hospital_id:
+            return
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"hospital_{hospital_id}",
+            {
+                "type": "patient_message",
+                "patient_id": str(patient.id),
+                "message": message_data,
+            },
+        )
+    except Exception:
+        logger.warning(
+            "Channel layer unavailable for dashboard notify, patient=%s",
+            patient.id,
+        )
 
 
 def _handle_paused_message(conversation, content, channel, start_time):
@@ -197,11 +225,22 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):  
         if translated_input:
             content_for_llm = translated_input
 
-    ConversationService.add_message(
+    user_msg = ConversationService.add_message(
         conversation=conversation,
         role="user",
         content=content,
         metadata=metadata,
+    )
+
+    # Notify clinician dashboard of the new patient message
+    _notify_clinician_dashboard(
+        patient,
+        {
+            "id": str(user_msg.id),
+            "role": "user",
+            "content": content,
+            "created_at": user_msg.created_at.isoformat(),
+        },
     )
 
     # Also record in messages_app for cross-channel threading
@@ -272,6 +311,18 @@ def process_patient_message(patient, content, channel="chat", audio_url=None):  
         agent_message.source_language = "en"
         agent_message.translated = True
         agent_message.save(update_fields=["original_content", "source_language", "translated"])
+
+    # Notify clinician dashboard of the agent response
+    _notify_clinician_dashboard(
+        patient,
+        {
+            "id": str(agent_message.id),
+            "role": "assistant",
+            "content": response_text,
+            "agent_type": agent_type,
+            "created_at": agent_message.created_at.isoformat(),
+        },
+    )
 
     # Store RAG citations if available
     rag_result = result.get("rag_result")

@@ -251,7 +251,7 @@ class ClinicianDashboardConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """Handle WebSocket connection with clinician auth verification."""
         self.hospital_id = self.scope["url_route"]["kwargs"].get("hospital_id")
-        self.room_group_name = f"hospital_{self.hospital_id}"
+        self.room_group_names = []
 
         # Verify user is authenticated clinician with access to this hospital
         user = self.scope.get("user")
@@ -278,27 +278,30 @@ class ClinicianDashboardConsumer(AsyncWebsocketConsumer):
             logger.warning("WebSocket auth failed: no clinician profile")
             return
 
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name,
-        )
+        # Join ALL hospital groups the clinician has access to so they
+        # receive broadcasts for patients at any of their hospitals.
+        for hid in hospital_ids:
+            group_name = f"hospital_{hid}"
+            self.room_group_names.append(group_name)
+            await self.channel_layer.group_add(group_name, self.channel_name)
 
         await self.accept()
-        logger.info(f"Clinician dashboard connected for hospital {self.hospital_id}")
+        logger.info(
+            "Clinician dashboard connected for hospitals %s",
+            [int(h) for h in hospital_ids],
+        )
 
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection."""
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name,
-        )
+        for group_name in getattr(self, "room_group_names", []):
+            await self.channel_layer.group_discard(group_name, self.channel_name)
 
     async def escalation_alert(self, event):
         """Handle escalation alert."""
         await self.send(
             text_data=json.dumps(
                 {
-                    "type": "escalation",
+                    "type": "escalation_alert",
                     "patient_id": event["patient_id"],
                     "patient_name": event["patient_name"],
                     "severity": event["severity"],
@@ -313,7 +316,7 @@ class ClinicianDashboardConsumer(AsyncWebsocketConsumer):
         await self.send(
             text_data=json.dumps(
                 {
-                    "type": "status_update",
+                    "type": "patient_status_update",
                     "patient_id": event["patient_id"],
                     "old_status": event["old_status"],
                     "new_status": event["new_status"],

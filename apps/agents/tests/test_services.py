@@ -1,6 +1,9 @@
 """Tests for agent services."""
 
+from unittest.mock import MagicMock, patch
+
 from apps.agents.agents import calculate_confidence_score
+from apps.agents.services import _notify_clinician_dashboard
 
 
 class TestConfidenceScoring:
@@ -42,3 +45,46 @@ class TestConfidenceScoring:
         for response, agent_type in test_cases:
             score = calculate_confidence_score(response, agent_type)
             assert 0.0 <= score <= 1.0
+
+
+class TestNotifyClinicianDashboard:
+    """Tests for _notify_clinician_dashboard WebSocket broadcast."""
+
+    @patch("apps.agents.services.get_channel_layer")
+    def test_sends_patient_message_to_hospital_group(self, mock_get_layer):
+        mock_layer = MagicMock()
+        mock_layer.group_send = MagicMock()
+        mock_get_layer.return_value = mock_layer
+
+        patient = MagicMock()
+        patient.hospital_id = 42
+        patient.id = "abc-123"
+
+        message_data = {"role": "user", "content": "hello"}
+        _notify_clinician_dashboard(patient, message_data)
+
+        mock_layer.group_send.assert_called_once()
+        call_args = mock_layer.group_send.call_args
+        assert call_args[0][0] == "hospital_42"
+        payload = call_args[0][1]
+        assert payload["type"] == "patient_message"
+        assert payload["patient_id"] == "abc-123"
+        assert payload["message"] == message_data
+
+    @patch("apps.agents.services.get_channel_layer")
+    def test_skips_when_no_hospital(self, mock_get_layer):
+        patient = MagicMock()
+        patient.hospital_id = None
+
+        _notify_clinician_dashboard(patient, {"role": "user", "content": "hi"})
+
+        mock_get_layer.assert_not_called()
+
+    @patch("apps.agents.services.get_channel_layer", side_effect=Exception("no redis"))
+    def test_handles_channel_layer_error_gracefully(self, mock_get_layer):
+        patient = MagicMock()
+        patient.hospital_id = 1
+        patient.id = "xyz"
+
+        # Should not raise
+        _notify_clinician_dashboard(patient, {"role": "user", "content": "test"})
