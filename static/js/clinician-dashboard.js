@@ -55,13 +55,7 @@ function clinicianDashboard() {
                     this._loadTab(initialPatient, initialTab);
                     this._loadChat(initialPatient);
                     if (initialSubview && initialTab === 'surveys') {
-                        const url = `/patient/surveys/clinician/instance/${initialSubview}/results/`;
-                        setTimeout(() => {
-                            htmx.ajax('GET', url, {
-                                target: document.getElementById('detail-panel'),
-                                swap: 'innerHTML'
-                            });
-                        }, 100);
+                        this._loadSubviewAfterTab(initialSubview);
                     }
                     this._highlightPatientInList(initialPatient);
                     this._restoringFromUrl = false;
@@ -269,18 +263,22 @@ function clinicianDashboard() {
             this._loadChat(patientId);
 
             if (subview && resolvedTab === 'surveys') {
-                const url = `/patient/surveys/clinician/instance/${subview}/results/`;
-                setTimeout(() => {
-                    htmx.ajax('GET', url, {
-                        target: document.getElementById('detail-panel'),
-                        swap: 'innerHTML'
-                    });
-                }, 100);
+                this._loadSubviewAfterTab(subview);
             }
 
             this._highlightPatientInList(patientId);
             this._restoringFromUrl = false;
             return true;
+        },
+
+        _loadSubviewAfterTab(subviewId) {
+            const panel = document.getElementById('detail-panel');
+            if (!panel) return;
+            const url = `/patient/surveys/clinician/instance/${subviewId}/results/`;
+            panel.addEventListener('htmx:afterSettle', function handler() {
+                panel.removeEventListener('htmx:afterSettle', handler);
+                htmx.ajax('GET', url, { target: panel, swap: 'innerHTML' });
+            });
         },
 
         _highlightPatientInList(patientId) {
