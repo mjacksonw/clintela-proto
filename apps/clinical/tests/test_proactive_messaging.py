@@ -1,6 +1,8 @@
 """Tests for proactive patient messaging — _maybe_notify_patient() and send_proactive_patient_message task."""
 
-from datetime import timedelta
+import zoneinfo
+from datetime import datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
@@ -55,6 +57,13 @@ def non_patient_facing_alert(patient):
 
 
 class TestMaybeNotifyPatient:
+    @pytest.fixture(autouse=True)
+    def _mock_outside_quiet_hours(self):
+        """Ensure tests run outside quiet hours (9pm-8am)."""
+        noon = datetime(2026, 3, 25, 12, 0, 0, tzinfo=zoneinfo.ZoneInfo("UTC"))
+        with patch("apps.clinical.services.timezone.localtime", return_value=noon):
+            yield
+
     def test_notify_patient_missing_weight_rule(self, patient, patient_facing_alert):
         """missing_weight alert triggers proactive patient message."""
         ClinicalDataService._maybe_notify_patient(patient_facing_alert)

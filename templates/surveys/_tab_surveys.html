@@ -70,7 +70,8 @@ Top: sparklines per instrument. Middle: recent completions. Bottom: assignments.
                                style="color: var(--color-primary);"
                                hx-get="{% url 'surveys:results' instance.id %}"
                                hx-target="#detail-panel"
-                               hx-swap="innerHTML">
+                               hx-swap="innerHTML"
+                               @click="navigateToSurveyResult('{{ instance.id }}')">
                                 View
                             </a>
                         </td>

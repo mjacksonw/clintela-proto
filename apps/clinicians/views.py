@@ -68,9 +68,26 @@ def clinician_logout_view(request):
 
 
 @clinician_required
-def dashboard_view(request):
+def dashboard_view(request, initial_patient_id=None, tab=None, subview=None):
     """Main three-panel dashboard."""
+    from apps.patients.models import Patient
+
     clinician = request.clinician
+
+    # Validate initial state from URL path
+    validated_patient_id = None
+    initial_tab = "details"
+    initial_subview = None
+    valid_tabs = {"details", "care_plan", "research", "surveys", "tools", "vitals"}
+
+    if initial_patient_id:
+        hospital_ids = clinician.hospitals.values_list("id", flat=True)
+        if Patient.objects.filter(id=initial_patient_id, hospital_id__in=hospital_ids).exists():
+            validated_patient_id = initial_patient_id
+            if tab and tab in valid_tabs:
+                initial_tab = tab
+            if subview:
+                initial_subview = subview
 
     # Handoff summary
     last_login = request.user.last_login
@@ -104,6 +121,9 @@ def dashboard_view(request):
             "next_appointment": next_appointment,
             "hospital_id": hospital_id,
             "pending_escalation_count": pending_escalation_count,
+            "initial_patient_id": validated_patient_id,
+            "initial_tab": initial_tab,
+            "initial_subview": initial_subview,
         },
     )
 

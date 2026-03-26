@@ -78,6 +78,67 @@ class DashboardViewTest(ViewTestBase):
         assert response.status_code == 302
 
 
+class DashboardUrlRoutingTest(ViewTestBase):
+    """Tests for path-based URL routing deep links."""
+
+    def test_dashboard_with_valid_patient(self):
+        response = self.client.get(f"/clinician/dashboard/patient/{self.patient.id}/")
+        assert response.status_code == 200
+        assert response.context["initial_patient_id"] == self.patient.id
+        assert response.context["initial_tab"] == "details"
+        assert response.context["initial_subview"] is None
+
+    def test_dashboard_with_valid_patient_and_tab(self):
+        response = self.client.get(f"/clinician/dashboard/patient/{self.patient.id}/surveys/")
+        assert response.status_code == 200
+        assert response.context["initial_patient_id"] == self.patient.id
+        assert response.context["initial_tab"] == "surveys"
+
+    def test_dashboard_with_valid_patient_tab_and_subview(self):
+        response = self.client.get(f"/clinician/dashboard/patient/{self.patient.id}/surveys/some-uuid/")
+        assert response.status_code == 200
+        assert response.context["initial_patient_id"] == self.patient.id
+        assert response.context["initial_tab"] == "surveys"
+        assert response.context["initial_subview"] == "some-uuid"
+
+    def test_dashboard_with_nonexistent_patient(self):
+        response = self.client.get("/clinician/dashboard/patient/99999/")
+        assert response.status_code == 200
+        assert response.context["initial_patient_id"] is None
+
+    def test_dashboard_with_unauthorized_patient(self):
+        """Patient from a different hospital should not be accessible."""
+        other_hospital = Hospital.objects.create(name="Other Hospital", code=_code())
+        other_pat_user = User.objects.create_user(
+            username="pat_other",
+            password="testpass",  # pragma: allowlist secret
+            role="patient",
+        )
+        other_patient = Patient.objects.create(
+            user=other_pat_user,
+            hospital=other_hospital,
+            status="green",
+            lifecycle_status="post_op",
+            surgery_type="Hip Replacement",
+            date_of_birth=_DOB,
+            leaflet_code=_lc(),
+        )
+        response = self.client.get(f"/clinician/dashboard/patient/{other_patient.id}/")
+        assert response.status_code == 200
+        assert response.context["initial_patient_id"] is None
+
+    def test_dashboard_with_invalid_tab(self):
+        response = self.client.get(f"/clinician/dashboard/patient/{self.patient.id}/bogus/")
+        assert response.status_code == 200
+        assert response.context["initial_patient_id"] == self.patient.id
+        assert response.context["initial_tab"] == "details"
+
+    def test_dashboard_surveys_tab_button_rendered(self):
+        response = self.client.get("/clinician/dashboard/")
+        content = response.content.decode()
+        assert "switchTab('surveys')" in content
+
+
 class AppointmentToastLayoutTest(ViewTestBase):
     """Next-appointment toast must not use fixed positioning (would overlap chat input)."""
 
