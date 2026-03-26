@@ -65,7 +65,9 @@ class TestMaybeNotifyPatient:
     @patch("apps.clinical.services.ClinicalDataService.PATIENT_FACING_RULES", {"test_rule": "missing_data"})
     def test_patient_facing_rule_dispatches(self):
         """Patient-facing rules dispatch a Celery task."""
-        from datetime import date
+        from datetime import date, datetime
+
+        import zoneinfo
 
         from apps.accounts.models import User
         from apps.patients.models import Hospital, Patient
@@ -78,9 +80,12 @@ class TestMaybeNotifyPatient:
         alert.rule_name = "test_rule"
         alert.patient = patient
 
-        with patch("apps.clinical.tasks.send_proactive_patient_message.delay") as mock_delay:
+        # Mock localtime to noon (outside quiet hours 9pm-8am)
+        noon = datetime(2026, 3, 25, 12, 0, 0, tzinfo=zoneinfo.ZoneInfo("UTC"))
+        with patch("apps.clinical.services.timezone.localtime", return_value=noon), \
+             patch("apps.clinical.tasks.send_proactive_patient_message") as mock_task:
             ClinicalDataService._maybe_notify_patient(alert)
-            mock_delay.assert_called_once()
+            mock_task.delay.assert_called_once()
 
 
 @pytest.mark.django_db
