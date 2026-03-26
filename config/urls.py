@@ -23,6 +23,7 @@ from django.views.generic import TemplateView
 from ninja import NinjaAPI
 
 # Import API routers
+from apps.accounts.views_dev import demo_login_view
 from apps.agents.api import router as agents_router
 
 api = NinjaAPI(version="1.0.0")
@@ -42,6 +43,9 @@ urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),
     # path("caregivers/", include("apps.caregivers.urls")),
 ]
+
+# Demo login — always registered; view-level guard returns 404 when not DEBUG
+urlpatterns += [path("demo-login/", demo_login_view, name="demo_login")]
 
 # Serve static and media files in development
 if settings.DEBUG:

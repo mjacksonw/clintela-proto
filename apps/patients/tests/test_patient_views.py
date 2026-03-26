@@ -297,8 +297,8 @@ class TestPatientDashboardIntegration:
 class TestPatientDashboardDebugMode:
     """Test dashboard in DEBUG mode."""
 
-    def test_dashboard_includes_all_patients_in_debug(self, settings):
-        """In DEBUG mode, dashboard includes all_patients in context."""
+    def test_dashboard_includes_demo_patients_in_debug(self, settings):
+        """In DEBUG mode, dashboard includes demo_patients from context processor."""
         settings.DEBUG = True
 
         user = User.objects.create_user(username="debuguser", password="testpass")
@@ -319,10 +319,10 @@ class TestPatientDashboardDebugMode:
         response = client.get(reverse("patients:dashboard"))
 
         assert response.status_code == 200
-        assert "all_patients" in response.context
+        assert "demo_patients" in response.context
 
-    def test_dashboard_no_all_patients_when_not_debug(self, settings):
-        """In non-DEBUG mode, all_patients not in context."""
+    def test_dashboard_no_demo_patients_when_not_debug(self, settings):
+        """In non-DEBUG mode, demo_patients not in context."""
         settings.DEBUG = False
 
         user = User.objects.create_user(username="nondebuguser", password="testpass")
@@ -343,7 +343,7 @@ class TestPatientDashboardDebugMode:
         response = client.get(reverse("patients:dashboard"))
 
         assert response.status_code == 200
-        assert "all_patients" not in response.context
+        assert "demo_patients" not in response.context
 
 
 @pytest.mark.django_db
