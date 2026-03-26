@@ -19,9 +19,7 @@ class TestDashboardDeepLinks:
         authenticated_clinician_page.goto(f"{live_server.url}{DASHBOARD_PATH}")
         expect(authenticated_clinician_page.locator("[role='tablist']")).to_be_attached()
 
-    def test_deep_link_with_patient(
-        self, authenticated_clinician_page: Page, live_server, test_patient
-    ):
+    def test_deep_link_with_patient(self, authenticated_clinician_page: Page, live_server, test_patient):
         """Deep link with patient ID sets data attributes for JS restoration."""
         url = f"{live_server.url}/clinician/dashboard/patient/{test_patient.id}/"
         authenticated_clinician_page.goto(url)
@@ -29,9 +27,7 @@ class TestDashboardDeepLinks:
         expect(root).to_be_attached()
         assert root.get_attribute("data-initial-patient") == str(test_patient.id)
 
-    def test_deep_link_with_patient_and_tab(
-        self, authenticated_clinician_page: Page, live_server, test_patient
-    ):
+    def test_deep_link_with_patient_and_tab(self, authenticated_clinician_page: Page, live_server, test_patient):
         """Deep link with patient + tab sets correct data attributes."""
         url = f"{live_server.url}/clinician/dashboard/patient/{test_patient.id}/surveys/"
         authenticated_clinician_page.goto(url)
@@ -39,18 +35,14 @@ class TestDashboardDeepLinks:
         assert root.get_attribute("data-initial-patient") == str(test_patient.id)
         assert root.get_attribute("data-initial-tab") == "surveys"
 
-    def test_deep_link_with_invalid_patient(
-        self, authenticated_clinician_page: Page, live_server
-    ):
+    def test_deep_link_with_invalid_patient(self, authenticated_clinician_page: Page, live_server):
         """Deep link with nonexistent patient renders empty dashboard."""
         url = f"{live_server.url}/clinician/dashboard/patient/99999/"
         authenticated_clinician_page.goto(url)
         root = authenticated_clinician_page.locator("[data-initial-patient]")
         assert root.get_attribute("data-initial-patient") == ""
 
-    def test_deep_link_with_invalid_tab(
-        self, authenticated_clinician_page: Page, live_server, test_patient
-    ):
+    def test_deep_link_with_invalid_tab(self, authenticated_clinician_page: Page, live_server, test_patient):
         """Deep link with bogus tab falls back to details."""
         url = f"{live_server.url}/clinician/dashboard/patient/{test_patient.id}/bogus/"
         authenticated_clinician_page.goto(url)
@@ -81,15 +73,11 @@ class TestSurveysTabButton:
 class TestUrlRoutingJsMethods:
     """Test that URL routing JS methods are loaded in the dashboard."""
 
-    def test_routing_methods_in_js(
-        self, authenticated_clinician_page: Page, live_server
-    ):
+    def test_routing_methods_in_js(self, authenticated_clinician_page: Page, live_server):
         """Dashboard JS includes all URL routing methods."""
         authenticated_clinician_page.goto(f"{live_server.url}{DASHBOARD_PATH}")
         # The JS file is loaded as an external script; check it defines the methods
-        result = authenticated_clinician_page.evaluate(
-            "typeof clinicianDashboard === 'function'"
-        )
+        result = authenticated_clinician_page.evaluate("typeof clinicianDashboard === 'function'")
         assert result is True
 
 
@@ -97,9 +85,7 @@ class TestUrlRoutingJsMethods:
 class TestKeyboardHelp:
     """Test keyboard help shows correct number of shortcuts."""
 
-    def test_keyboard_help_has_six_keys(
-        self, authenticated_clinician_page: Page, live_server
-    ):
+    def test_keyboard_help_has_six_keys(self, authenticated_clinician_page: Page, live_server):
         """Keyboard help shows 6 tab shortcuts (1-6)."""
         authenticated_clinician_page.goto(f"{live_server.url}{DASHBOARD_PATH}")
         # The keyboard help contains kbd elements for tab switching

@@ -95,9 +95,7 @@ class DashboardUrlRoutingTest(ViewTestBase):
         assert response.context["initial_tab"] == "surveys"
 
     def test_dashboard_with_valid_patient_tab_and_subview(self):
-        response = self.client.get(
-            f"/clinician/dashboard/patient/{self.patient.id}/surveys/some-uuid/"
-        )
+        response = self.client.get(f"/clinician/dashboard/patient/{self.patient.id}/surveys/some-uuid/")
         assert response.status_code == 200
         assert response.context["initial_patient_id"] == self.patient.id
         assert response.context["initial_tab"] == "surveys"
@@ -112,7 +110,9 @@ class DashboardUrlRoutingTest(ViewTestBase):
         """Patient from a different hospital should not be accessible."""
         other_hospital = Hospital.objects.create(name="Other Hospital", code=_code())
         other_pat_user = User.objects.create_user(
-            username="pat_other", password="testpass", role="patient"  # pragma: allowlist secret
+            username="pat_other",
+            password="testpass",  # pragma: allowlist secret
+            role="patient",
         )
         other_patient = Patient.objects.create(
             user=other_pat_user,

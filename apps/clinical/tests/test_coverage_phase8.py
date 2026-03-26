@@ -81,8 +81,10 @@ class TestMaybeNotifyPatient:
 
         # Mock localtime to noon (outside quiet hours 9pm-8am)
         noon = datetime(2026, 3, 25, 12, 0, 0, tzinfo=zoneinfo.ZoneInfo("UTC"))
-        with patch("apps.clinical.services.timezone.localtime", return_value=noon), \
-             patch("apps.clinical.tasks.send_proactive_patient_message") as mock_task:
+        with (
+            patch("apps.clinical.services.timezone.localtime", return_value=noon),
+            patch("apps.clinical.tasks.send_proactive_patient_message") as mock_task,
+        ):
             ClinicalDataService._maybe_notify_patient(alert)
             mock_task.delay.assert_called_once()
 
