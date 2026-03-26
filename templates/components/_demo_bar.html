@@ -8,6 +8,10 @@
 
     <div class="px-3 py-2 flex flex-wrap items-center gap-2 min-h-[44px]">
 
+        <!-- DEMO badge -->
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+              style="background: #2563EB; color: #FFFFFF;">Demo</span>
+
         <!-- PRIMARY: Role dropdown (two-level: role → user) -->
         <div x-data="{ open: false, role: null }"
              @keydown.escape.window="open = false; role = null"
