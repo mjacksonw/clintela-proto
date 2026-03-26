@@ -226,6 +226,18 @@ uv sync
 ok "Python dependencies installed (.venv created)"
 
 # ---------------------------------------------------------------------------
+# 8b. Pre-commit hooks
+# ---------------------------------------------------------------------------
+step "Installing pre-commit hooks"
+
+if [ -f .pre-commit-config.yaml ]; then
+  .venv/bin/pre-commit install
+  ok "Pre-commit hooks installed (ruff lint/format, security, Django checks)"
+else
+  warn "No .pre-commit-config.yaml found — skipping"
+fi
+
+# ---------------------------------------------------------------------------
 # 9. Database migrations
 # ---------------------------------------------------------------------------
 step "Running database migrations"
