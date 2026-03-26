@@ -65,9 +65,8 @@ class TestMaybeNotifyPatient:
     @patch("apps.clinical.services.ClinicalDataService.PATIENT_FACING_RULES", {"test_rule": "missing_data"})
     def test_patient_facing_rule_dispatches(self):
         """Patient-facing rules dispatch a Celery task."""
-        from datetime import date, datetime
-
         import zoneinfo
+        from datetime import date, datetime
 
         from apps.accounts.models import User
         from apps.patients.models import Hospital, Patient

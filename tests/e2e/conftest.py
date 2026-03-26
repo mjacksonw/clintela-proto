@@ -3,7 +3,7 @@
 import os
 
 import pytest
-from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_KEY
+from django.contrib.auth import BACKEND_SESSION_KEY, HASH_SESSION_KEY, SESSION_KEY
 from django.contrib.sessions.backends.db import SessionStore
 from playwright.sync_api import Page
 
