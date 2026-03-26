@@ -72,7 +72,12 @@ step "Installing system packages"
 
 sudo apt-get update -qq
 
-PKGS=(git curl wget build-essential libpq-dev libmagic1 python3-dev)
+PKGS=(git curl wget build-essential libpq-dev libmagic1 python3-dev
+      # Playwright E2E test dependencies (headless Chromium)
+      libxcomposite1 libxrandr2 libxfixes3 libgbm1
+      libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2 libxdamage1
+      libxkbcommon0 libpango-1.0-0 libcairo2 libasound2t64
+      libatspi2.0-0t64 libnspr4 libnss3)
 MISSING=()
 for pkg in "${PKGS[@]}"; do
   if ! dpkg -s "$pkg" &>/dev/null; then
