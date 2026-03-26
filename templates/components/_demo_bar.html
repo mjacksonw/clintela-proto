@@ -1,0 +1,240 @@
+{% if debug %}
+<!-- Demo Bar — DEBUG only -->
+<style>:root { --dev-toolbar-h: 44px; }</style>
+<div role="toolbar"
+     aria-label="Demo controls"
+     class="fixed bottom-0 left-0 right-0 z-50 font-mono text-xs"
+     style="background: #1E293B; color: #94A3B8; border-top: 2px solid #0D9488;">
+
+    <div class="px-3 py-2 flex flex-wrap items-center gap-2 min-h-[44px]">
+
+        <!-- PRIMARY: Role dropdown (two-level: role → user) -->
+        <div x-data="{ open: false, role: null }"
+             @keydown.escape.window="open = false; role = null"
+             class="relative">
+            <button @click="open = !open; if (!open) role = null"
+                    class="px-3 py-1.5 rounded flex items-center gap-1.5 min-h-[36px]"
+                    style="background: #334155; color: #E2E8F0;"
+                    aria-haspopup="true"
+                    :aria-expanded="open">
+                {% if request.session.authenticated and current_patient_id %}
+                    <i data-lucide="user" class="w-4 h-4" style="color: #0D9488;"></i>
+                    {% for p in demo_patients %}
+                        {% if p.id|stringformat:"s" == current_patient_id %}
+                            <span>{{ p.user.get_full_name|default:p.user.username }}</span>
+                        {% endif %}
+                    {% endfor %}
+                {% elif request.user.is_authenticated and request.user.role == "clinician" %}
+                    <i data-lucide="stethoscope" class="w-4 h-4" style="color: #0D9488;"></i>
+                    <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+                {% elif request.user.is_authenticated and request.user.role == "admin" %}
+                    <i data-lucide="shield" class="w-4 h-4" style="color: #0D9488;"></i>
+                    <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+                {% else %}
+                    <span>Sign in as...</span>
+                {% endif %}
+                <i data-lucide="chevron-up" class="w-3 h-3" x-show="!open"></i>
+                <i data-lucide="chevron-down" class="w-3 h-3" x-show="open" x-cloak></i>
+            </button>
+
+            <!-- Dropdown (opens upward, two levels) -->
+            <div x-show="open"
+                 x-cloak
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0 translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-100"
+                 x-transition:leave-start="opacity-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 translate-y-2"
+                 class="absolute bottom-full left-0 mb-1 w-56 rounded-lg shadow-xl"
+                 style="background: #1E293B; border: 1px solid #334155;">
+
+                {% if demo_patients or demo_clinicians or demo_admins %}
+
+                    <!-- Level 1: Role picker -->
+                    <div x-show="!role">
+                        <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider" style="color: #64748B;">Switch role</div>
+                        {% if demo_patients %}
+                        <button @click="role = 'patient'"
+                                class="w-full text-left px-3 py-2 flex items-center justify-between min-h-[36px] hover:bg-[#334155] transition-colors"
+                                style="color: #E2E8F0;">
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="user" class="w-3.5 h-3.5" style="color: #64748B;"></i>
+                                Patient
+                            </span>
+                            <span class="flex items-center gap-1" style="color: #64748B;">
+                                <span class="text-[10px]">{{ demo_patients|length }}</span>
+                                <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                            </span>
+                        </button>
+                        {% endif %}
+                        {% if demo_clinicians %}
+                        <button @click="role = 'clinician'"
+                                class="w-full text-left px-3 py-2 flex items-center justify-between min-h-[36px] hover:bg-[#334155] transition-colors"
+                                style="color: #E2E8F0; border-top: 1px solid #334155;">
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="stethoscope" class="w-3.5 h-3.5" style="color: #64748B;"></i>
+                                Clinician
+                            </span>
+                            <span class="flex items-center gap-1" style="color: #64748B;">
+                                <span class="text-[10px]">{{ demo_clinicians|length }}</span>
+                                <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                            </span>
+                        </button>
+                        {% endif %}
+                        {% if demo_admins %}
+                        <button @click="role = 'admin'"
+                                class="w-full text-left px-3 py-2 flex items-center justify-between min-h-[36px] hover:bg-[#334155] transition-colors"
+                                style="color: #E2E8F0; border-top: 1px solid #334155;">
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="shield" class="w-3.5 h-3.5" style="color: #64748B;"></i>
+                                Admin
+                            </span>
+                            <span class="flex items-center gap-1" style="color: #64748B;">
+                                <span class="text-[10px]">{{ demo_admins|length }}</span>
+                                <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                            </span>
+                        </button>
+                        {% endif %}
+                    </div>
+
+                    <!-- Level 2: User list (per role) -->
+
+                    <!-- Patients -->
+                    {% if demo_patients %}
+                    <div x-show="role === 'patient'" x-cloak class="max-h-64 overflow-y-auto">
+                        <button @click="role = null"
+                                class="w-full text-left px-3 py-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-wider hover:bg-[#334155] transition-colors"
+                                style="color: #64748B;">
+                            <i data-lucide="chevron-left" class="w-3 h-3"></i>
+                            Patients
+                        </button>
+                        {% for p in demo_patients %}
+                        <form method="post" action="{% url 'demo_login' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="role" value="patient">
+                            <input type="hidden" name="user_id" value="{{ p.id }}">
+                            <button type="submit"
+                                    class="w-full text-left px-3 py-2 flex items-center gap-2 min-h-[36px] hover:bg-[#334155] transition-colors"
+                                    style="color: #E2E8F0;">
+                                {% if p.id|stringformat:"s" == current_patient_id %}
+                                    <span class="w-2 h-2 rounded-full inline-block" style="background: #0D9488;"></span>
+                                {% else %}
+                                    <span class="w-2 h-2 inline-block"></span>
+                                {% endif %}
+                                {{ p.user.get_full_name|default:p.user.username }}
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Clinicians -->
+                    {% if demo_clinicians %}
+                    <div x-show="role === 'clinician'" x-cloak class="max-h-64 overflow-y-auto">
+                        <button @click="role = null"
+                                class="w-full text-left px-3 py-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-wider hover:bg-[#334155] transition-colors"
+                                style="color: #64748B;">
+                            <i data-lucide="chevron-left" class="w-3 h-3"></i>
+                            Clinicians
+                        </button>
+                        {% for c in demo_clinicians %}
+                        <form method="post" action="{% url 'demo_login' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="role" value="clinician">
+                            <input type="hidden" name="user_id" value="{{ c.user.id }}">
+                            <button type="submit"
+                                    class="w-full text-left px-3 py-2 flex items-center gap-2 min-h-[36px] hover:bg-[#334155] transition-colors"
+                                    style="color: #E2E8F0;">
+                                {% if request.user.is_authenticated and request.user.id == c.user.id %}
+                                    <span class="w-2 h-2 rounded-full inline-block" style="background: #0D9488;"></span>
+                                {% else %}
+                                    <span class="w-2 h-2 inline-block"></span>
+                                {% endif %}
+                                {{ c.user.get_full_name|default:c.user.username }}
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Admins -->
+                    {% if demo_admins %}
+                    <div x-show="role === 'admin'" x-cloak class="max-h-64 overflow-y-auto">
+                        <button @click="role = null"
+                                class="w-full text-left px-3 py-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-wider hover:bg-[#334155] transition-colors"
+                                style="color: #64748B;">
+                            <i data-lucide="chevron-left" class="w-3 h-3"></i>
+                            Admins
+                        </button>
+                        {% for a in demo_admins %}
+                        <form method="post" action="{% url 'demo_login' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="role" value="admin">
+                            <input type="hidden" name="user_id" value="{{ a.id }}">
+                            <button type="submit"
+                                    class="w-full text-left px-3 py-2 flex items-center gap-2 min-h-[36px] hover:bg-[#334155] transition-colors"
+                                    style="color: #E2E8F0;">
+                                {% if request.user.is_authenticated and request.user.id == a.id %}
+                                    <span class="w-2 h-2 rounded-full inline-block" style="background: #0D9488;"></span>
+                                {% else %}
+                                    <span class="w-2 h-2 inline-block"></span>
+                                {% endif %}
+                                {{ a.get_full_name|default:a.username }}
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                {% else %}
+                    <div class="px-3 py-3 text-center" style="color: #64748B;">
+                        No demo users — run <code class="px-1 rounded" style="background: #334155;">reset_demo</code>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- SECONDARY: Current auth status -->
+        <span class="hidden sm:inline" style="color: #64748B;">
+            {% if request.session.authenticated and current_patient_id %}
+                Patient · ID {{ current_patient_id }}
+            {% elif request.user.is_authenticated %}
+                {{ request.user.get_role_display|default:request.user.role }} · {{ request.user.username }}
+            {% else %}
+                Not authenticated
+            {% endif %}
+        </span>
+
+        <!-- Spacer -->
+        <div class="flex-1"></div>
+
+        <!-- TERTIARY: Role-specific actions -->
+        {% if request.session.authenticated and current_patient_id %}
+            <form method="post" action="{% url 'patients:dev_actions' %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="clear_conversation">
+                <button type="submit"
+                        class="px-2 py-1.5 rounded min-h-[36px] text-xs"
+                        style="background: #7F1D1D; color: #FCA5A5;">
+                    Clear Chat
+                </button>
+            </form>
+
+            <form method="post" action="{% url 'patients:dev_actions' %}" class="hidden sm:inline-flex gap-1 items-center">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="simulate_sms">
+                <input type="text" name="sms_text" placeholder="Simulate SMS..."
+                       class="px-2 py-1.5 rounded text-xs border w-36"
+                       style="background: #334155; color: #E2E8F0; border-color: #475569;"
+                       required>
+                <button type="submit"
+                        class="px-2 py-1.5 rounded min-h-[36px] text-xs whitespace-nowrap"
+                        style="background: #1E3A5F; color: #93C5FD;">
+                    Send
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

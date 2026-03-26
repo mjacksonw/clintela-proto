@@ -45,6 +45,9 @@ urlpatterns = [
 
 # Serve static and media files in development
 if settings.DEBUG:
+    from apps.accounts.views_dev import demo_login_view
+
+    urlpatterns += [path("demo-login/", demo_login_view, name="demo_login")]
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
