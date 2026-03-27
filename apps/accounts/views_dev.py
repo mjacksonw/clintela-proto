@@ -77,3 +77,19 @@ def demo_login_view(request):
         response = None
 
     return response or redirect("/")
+
+
+def protected_gate_view(request):
+    """Set the demo_access cookie and redirect to home.
+
+    This view is only registered when PROTECTED=True (see config/urls.py).
+    No DEBUG guard — this works in any environment where PROTECTED is enabled.
+    """
+    response = redirect("/")
+    response.set_cookie(
+        "demo_access",
+        "1",
+        max_age=2592000,  # 30 days
+        httponly=True,
+    )
+    return response

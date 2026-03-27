@@ -23,7 +23,7 @@ from django.views.generic import TemplateView
 from ninja import NinjaAPI
 
 # Import API routers
-from apps.accounts.views_dev import demo_login_view
+from apps.accounts.views_dev import demo_login_view, protected_gate_view
 from apps.agents.api import router as agents_router
 
 api = NinjaAPI(version="1.0.0")
@@ -46,6 +46,16 @@ urlpatterns = [
 
 # Demo login — always registered; view-level guard returns 404 when not DEBUG
 urlpatterns += [path("demo-login/", demo_login_view, name="demo_login")]
+
+# Protected environment gate — only registered when PROTECTED=True
+if settings.PROTECTED:
+    urlpatterns += [
+        path(
+            f"auth/{settings.PROTECTED_GATE_PATH}/",
+            protected_gate_view,
+            name="protected_gate",
+        )
+    ]
 
 # Serve static and media files in development
 if settings.DEBUG:

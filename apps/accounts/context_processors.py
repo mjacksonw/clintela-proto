@@ -13,6 +13,7 @@ def demo_bar_context(request):
     from apps.patients.models import Patient
 
     return {
+        "show_demo_bar": True,
         "demo_patients": Patient.objects.select_related("user").order_by("user__last_name", "user__first_name"),
         "demo_clinicians": Clinician.objects.select_related("user").filter(is_active=True).order_by("user__last_name"),
         "demo_admins": User.objects.filter(role="admin", is_active=True).order_by("last_name"),

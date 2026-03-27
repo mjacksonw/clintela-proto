@@ -22,6 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # =============================================================================
 env = environ.Env(
     DEBUG=(bool, False),
+    PROTECTED=(bool, False),
+    PROTECTED_GATE_PATH=(str, "letmein"),
     ALLOWED_HOSTS=(list, []),
     CSRF_COOKIE_SECURE=(bool, True),
     SESSION_COOKIE_SECURE=(bool, True),
@@ -39,6 +41,8 @@ environ.Env.read_env(BASE_DIR / ".env")
 # =============================================================================
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
+PROTECTED = env("PROTECTED")
+PROTECTED_GATE_PATH = env("PROTECTED_GATE_PATH")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
 # =============================================================================
@@ -86,6 +90,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "apps.accounts.middleware.ProtectedEnvironmentMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
