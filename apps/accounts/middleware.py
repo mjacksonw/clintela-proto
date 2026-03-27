@@ -43,5 +43,5 @@ class ProtectedEnvironmentMiddleware:
             "<p>This environment requires access. Contact the demo administrator for the access URL.</p>"
             "</body></html>",
             status=401,
-            content_type="text/html",
+            content_type="text/html; charset=utf-8",
         )
