@@ -64,13 +64,75 @@ Our care philosophy: **"Help the patient be known."** Every interaction should m
 
 Clintela isn't one feature — it's four capabilities that no other platform combines:
 
-1. **Agent-augmented care team with diverse expertise.** Not a single chatbot, but a team of specialist agents (cardiology, pharmacy, nutrition, PT, social work, palliative care) that retrieve clinical evidence before responding and can be extended per institution. The patient experiences a care team, not a search engine.
+1. **Agent-augmented care team with diverse expertise.** Not a single chatbot, but a team of specialist agents that retrieve clinical evidence before responding and can be extended per institution. The patient experiences a care team, not a search engine. *(Details below.)*
 
-2. **24/7 monitoring via ePROs and wearable data.** Six validated clinical instruments (PHQ-2, KCCQ-12, SAQ-7, AFEQT, PROMIS, daily symptom check) combined with wearable vitals flowing through a 16-rule deterministic engine. Clinicians see alerts with plain-language rationale. Patients see trends on their My Health card. No monitoring gaps between clinic visits.
+2. **24/7 monitoring via ePROs and wearable data.** Six validated clinical instruments combined with wearable vitals flowing through a 16-rule deterministic engine. No monitoring gaps between clinic visits. *(Details below.)*
 
-3. **Virtual support group.** 7 AI personas modeled as recovery alumni, providing emotional peer support grounded in [Yalom's therapeutic factors](https://en.wikipedia.org/wiki/Group_psychotherapy#Therapeutic_factors). Zero direct competitors in healthcare multi-persona peer support. Wellness classification, not SaMD. *(Details below.)*
+3. **Virtual support group.** 7 AI personas modeled as recovery alumni, providing emotional peer support grounded in [Yalom's therapeutic factors](https://en.wikipedia.org/wiki/Group_psychotherapy#Therapeutic_factors). Zero direct competitors in healthcare. *(Details below.)*
 
-4. **Clinician and administrator visibility.** Real-time clinician dashboard with severity-sorted patient lists, take-control chat, shift handoff, and keyboard-driven workflow. Admin KPI dashboard with CMS readmission rate tracking, outcome/engagement/operations cards, pathway administration, and CSV export. Clinicians and administrators see what's happening — they don't have to go looking for it.
+4. **Clinician and administrator visibility.** Real-time dashboards that surface what's happening — clinicians and administrators don't have to go looking for it. *(Details below.)*
+
+### Agent-Augmented Care Team Deep-Dive
+
+Post-discharge patients don't need a chatbot. They need a care team — one that remembers their surgery, understands their medications, and can answer questions at 2am that span cardiology, nutrition, and emotional well-being. Clintela provides this through a multi-agent system where each specialist retrieves clinical evidence before responding.
+
+**How it works:** A [LangGraph](https://langchain-ai.github.io/langgraph/)-based supervisor routes patient messages to the right specialist. Each specialist queries a RAG knowledge base (ACC guidelines, clinical research, hospital protocols) via [pgvector](https://github.com/pgvector/pgvector) hybrid search before generating a response. Confidence scoring determines whether the response goes to the patient or escalates to a human clinician.
+
+| Agent | Domain | What It Does |
+|-------|--------|-------------|
+| Care Coordinator | Holistic care | Primary patient interface — translates clinical guidance into warm, plain language |
+| Nurse Triage | Clinical assessment | Symptom evaluation, severity classification, deterministic escalation |
+| Cardiology | Cardiac risk | Post-surgical cardiac recovery, medication effects, activity guidance |
+| Pharmacy | Medications | Reconciliation, interactions, adherence support, side effect education |
+| Nutrition | Diet | Post-surgical dietary restrictions, meal planning, fluid management |
+| PT/Rehab | Mobility | Exercise progression, activity restrictions, rehabilitation milestones |
+| Social Work | SDOH | Resource navigation, transportation, insurance, caregiver support |
+| Palliative Care | Symptom management | Pain management, goals of care, quality of life |
+| Documentation | Clinical records | Structured summaries, handoff notes, chart-ready drafts |
+
+**Why it matters:**
+- **Evidence-grounded, not hallucinated.** Every specialist response is backed by RAG retrieval from clinical knowledge bases. Hybrid search (0.7 semantic + 0.3 keyword) with pgvector HNSW indexing. Each cited document tracked with similarity score
+- **Confidence-gated safety.** Responses below 0.70 confidence auto-escalate to human clinicians. Confidence scoring accounts for LLM completion quality, RAG evidence strength, and clinical keyword detection
+- **Extensible per institution.** Knowledge sources are tenant-scoped — hospitals can add their own protocols alongside global ACC guidelines. The specialist registry is a simple mapping; adding a new specialist is configuration, not architecture
+- **Full audit trail.** Every agent interaction logged with HIPAA-compliant audit records: agent type, routing decision, confidence score, cited documents, escalation triggers. Required for [CMS quality reporting](https://www.cms.gov/medicare/quality) and institutional compliance
+- **Multi-channel, multi-language.** Same agent team accessible via web chat, SMS (Twilio with signature validation), and voice (Whisper transcription). Real-time translation between English and Spanish with original content preserved
+
+### 24/7 Monitoring Deep-Dive
+
+Between clinic visits, patients are invisible to their care team. A weight gain of 3kg over 3 days — a classic CHF decompensation signal — goes unnoticed until the patient is back in the ER. Clintela closes this gap with two complementary monitoring systems: patient-reported outcomes (ePROs) and a clinical intelligence engine that processes vitals in real time.
+
+**Patient-reported outcomes:** Six validated clinical instruments, each with deterministic scoring and automatic escalation thresholds:
+
+| Instrument | Domain | Questions | Escalation Trigger |
+|-----------|--------|-----------|-------------------|
+| [PHQ-2](https://www.apa.org/pi/about/publications/caregivers/practice-settings/assessment/tools/patient-health) | Depression screening | 2 | Score ≥ 3 |
+| [KCCQ-12](https://cvoutcomes.org/pages/kccq-12) | Heart failure quality of life | 12 | Domain score decline |
+| [SAQ-7](https://cvoutcomes.org/pages/saq-7) | Angina frequency/stability | 7 | Frequency worsening |
+| AFEQT | Atrial fibrillation quality of life | 18 | Symptom/concern escalation |
+| [PROMIS](https://www.healthmeasures.net/explore-measurement-systems/promis) | General functional status | Adaptive | Below population norms |
+| Daily Symptom Check | Post-surgical symptom tracking | 5-8 | Any red-flag symptom |
+
+**Clinical intelligence engine:** 16 deterministic rules organized in four categories — no ML black box, every alert includes a plain-language rationale explaining why it fired:
+
+| Category | Rules | Example |
+|----------|-------|---------|
+| **Threshold** (critical + warning) | 7 | HR > 120 or < 50 → RED alert, SpO2 < 90% → RED alert |
+| **Trend** | 4 | Weight gain > 2kg in 3 days (fluid retention), activity drop > 30% in 7 days |
+| **Missing data** | 2 | No weight in 3+ days, no heart rate in 2+ days |
+| **Combination** | 3 | CHF decompensation: weight gain + elevated HR + elevated RR + shortness of breath → ORANGE |
+
+**How the pipeline works:**
+1. **Ingest:** ClinicalObservation records arrive from wearables, manual entry, or EHR — each tagged with [OMOP concept IDs](https://ohdsi.github.io/CommonDataModel/) (12 cardiac concepts mapped)
+2. **Compute:** PatientClinicalSnapshot aggregates latest vitals, computes trajectory via linear regression slope analysis, calculates risk score (0-100)
+3. **Detect:** 16 rules evaluate against snapshot — threshold checks, 3-day and 7-day trend windows, cross-vital combinations
+4. **Alert:** ClinicalAlert created with severity color, rule rationale ([FDA CDS-compliant](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software)), and trigger data. Broadcast to clinician dashboard via WebSocket
+5. **Act:** Proactive patient messaging triggered for actionable alerts. Clinician notification for clinical alerts
+
+**Why it matters:**
+- **No monitoring gaps.** Continuous data flow from ePROs + wearables means the care team sees deterioration in hours, not days
+- **Deterministic and auditable.** Every alert has a rule_rationale field with algorithmic logic, input sources, clinical evidence, and patient-specific context — designed for FDA 2026 CDS compliance
+- **Patient-facing too.** The My Health card shows patients their own vitals with sparkline charts and warm trajectory messaging ("Your heart rate has been steady this week"). Patients become partners in their recovery, not passive subjects
+- **ePRO-clinical correlation.** Rule 16 cross-references declining activity levels with worsening ePRO symptom scores — catching patterns that neither data source reveals alone
 
 ### Virtual Support Group Deep-Dive
 
@@ -96,6 +158,40 @@ Post-surgical cardiac patients face isolation and uncertainty during recovery. C
 - 3-layer crisis detection (keyword scan → router-level → per-persona guardrail) with automatic clinician escalation
 - Clinicians see engagement summaries by default. Thread access only on escalation for clinical context
 - AI transparency: onboarding discloses "AI companions inspired by real recovery journeys"
+
+### Clinician & Administrator Visibility Deep-Dive
+
+Clinical AI is only as valuable as the clinician's ability to see what it's doing. If a nurse has to dig through logs to find out which patients are deteriorating, the system has failed. Clintela's clinician and administrator interfaces are designed so that the most important information finds the right person — they don't have to go looking for it.
+
+**Clinician dashboard — three-panel design:**
+
+| Panel | Purpose | Key Features |
+|-------|---------|-------------|
+| **Patient list** | Severity-sorted overview | Triage color dots (red/orange/yellow/green), unread message badges, pending escalation count, search by name/MRN, sort by severity/alpha/last contact |
+| **Patient detail** | Six-tab deep dive | Details (timeline, escalations), Care Plan (pathway milestones), Research (clinician-to-AI chat), Surveys (ePRO scores + trends), Tools (lifecycle, consent, caregivers), Vitals (Chart.js trends, active alerts with rule rationale) |
+| **Chat** | Real-time communication | Read AI conversation history, inject clinician messages, take-control mode |
+
+**Take-control mode:** When a clinician needs to speak directly to a patient, they take control of the chat thread. The AI pauses, the patient sees messages from a named clinician, and a [compare-and-swap](https://en.wikipedia.org/wiki/Compare-and-swap) lock prevents race conditions. Automatic 30-minute timeout releases stale locks (e.g., browser crash). This is the bridge between AI-assisted and human care.
+
+**Keyboard-driven workflow:** Designed for nurses managing 20-30 patients per shift — `j`/`k` navigate the patient list, `1`-`6` switch tabs, `e` acknowledges an escalation, `/` searches, `?` shows help. Every common action is one keystroke away.
+
+**Shift handoff:** At login, clinicians see a computed summary of everything that changed since their last session: new escalations, resolved escalations, status changes, missed check-ins. No more "what happened overnight?" guesswork.
+
+**Administrator KPI dashboard:**
+
+| Category | Cards | What It Measures |
+|----------|-------|-----------------|
+| **Hero metric** | CMS readmission rate | Cohort-based rate with period tabs (7/30/60/90/120 days), sparkline trend |
+| **Outcomes** | Discharge to community, follow-up completion, functional improvement | Clinical effectiveness — are patients recovering? |
+| **Engagement** | Program engagement, message volume, check-in completion | Patient participation — are patients using the system? |
+| **Operations** | Escalation response time, census by triage color, pathway performance | Operational health — is the team keeping up? |
+
+**Why it matters:**
+- **Real-time, not batch.** WebSocket escalation alerts and desktop notifications mean critical events reach clinicians in seconds, not on the next dashboard refresh. The clinician dashboard subscribes to hospital-level event groups
+- **Operational alerts.** SLA breaches, stale escalations, and inactive patients surface automatically in an alerts bar — the administrator doesn't need to query for problems
+- **Pathway administration.** Administrators can view per-pathway effectiveness stats, per-milestone check-in rates, and toggle pathways active/inactive. This is the foundation for hospital-administered pathway building (Horizon 3)
+- **Export and print.** CSV export with [formula injection protection](https://owasp.org/www-community/attacks/CSV_Injection) for board presentations. Print-friendly CSS stylesheet for browser "Save as PDF." Dark mode across all views for night-shift clinicians
+- **Deep-linkable.** Every patient, tab, and subview has a stable URL. Clinicians can share specific views via link or bookmark their most critical patients
 
 ### Regulatory & Reimbursement Pathway
 
