@@ -107,6 +107,14 @@
 {% block extra_js %}
 <script src="{% static 'js/chat.js' %}?v=5"></script>
 <script src="{% static 'js/notifications.js' %}?v=5"></script>
+{% if ENABLE_SUPPORT_GROUP %}
+<script>
+    window.__sgPersonas = {{ sg_personas_json|safe }};
+    window.__sgOnboarded = {{ sg_onboarded|yesno:"true,false" }};
+    window.__sgPatientId = "{{ patient.id }}";
+</script>
+<script src="{% static 'js/support-group.js' %}?v=1"></script>
+{% endif %}
 {% if ENABLE_CLINICAL_DATA %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 {% endif %}

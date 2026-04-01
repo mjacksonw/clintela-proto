@@ -826,14 +826,13 @@ class TestScheduleProactiveCheckins:
 
 
 class TestCleanupOldConversations:
-    """Tests for cleanup_old_conversations task."""
+    """Tests for cleanup_old_conversations task (now a no-op — retains all history)."""
 
     @pytest.mark.django_db(transaction=True)
     def test_cleanup_old_conversations_success(self):
-        """Test successful cleanup of old conversations."""
+        """Test cleanup is a no-op and retains all conversations."""
         patient = PatientFactory()
 
-        # Create old completed conversation - use update() to bypass auto_now
         old_conversation = AgentConversationFactory(
             patient=patient,
             status="completed",
@@ -841,37 +840,17 @@ class TestCleanupOldConversations:
         AgentConversation.objects.filter(id=old_conversation.id).update(
             created_at=timezone.now() - timedelta(days=35), updated_at=timezone.now() - timedelta(days=35)
         )
-        old_conversation.refresh_from_db()
-
-        # Create recent completed conversation (should not be deleted)
-        recent_conversation = AgentConversationFactory(
-            patient=patient,
-            status="completed",
-        )
-
-        # Create old active conversation (should not be deleted - wrong status)
-        active_conversation = AgentConversationFactory(
-            patient=patient,
-            status="active",
-        )
-        AgentConversation.objects.filter(id=active_conversation.id).update(
-            created_at=timezone.now() - timedelta(days=35), updated_at=timezone.now() - timedelta(days=35)
-        )
-        active_conversation.refresh_from_db()
 
         result = cleanup_old_conversations(days=30)
 
-        assert result["deleted"] == 1
-        assert not AgentConversation.objects.filter(id=old_conversation.id).exists()
-        assert AgentConversation.objects.filter(id=recent_conversation.id).exists()
-        assert AgentConversation.objects.filter(id=active_conversation.id).exists()
+        assert result["deleted"] == 0
+        assert AgentConversation.objects.filter(id=old_conversation.id).exists()
 
     @pytest.mark.django_db(transaction=True)
     def test_cleanup_old_conversations_escalated(self):
-        """Test cleanup includes escalated conversations."""
+        """Test cleanup retains escalated conversations."""
         patient = PatientFactory()
 
-        # Create old escalated conversation - use update() to bypass auto_now
         old_escalated = AgentConversationFactory(
             patient=patient,
             status="escalated",
@@ -879,19 +858,17 @@ class TestCleanupOldConversations:
         AgentConversation.objects.filter(id=old_escalated.id).update(
             created_at=timezone.now() - timedelta(days=40), updated_at=timezone.now() - timedelta(days=40)
         )
-        old_escalated.refresh_from_db()
 
         result = cleanup_old_conversations(days=30)
 
-        assert result["deleted"] == 1
-        assert not AgentConversation.objects.filter(id=old_escalated.id).exists()
+        assert result["deleted"] == 0
+        assert AgentConversation.objects.filter(id=old_escalated.id).exists()
 
     @pytest.mark.django_db(transaction=True)
     def test_cleanup_old_conversations_no_old_conversations(self):
         """Test when there are no old conversations to clean."""
         patient = PatientFactory()
 
-        # Create only recent conversations
         AgentConversationFactory(
             patient=patient,
             status="completed",
@@ -903,10 +880,9 @@ class TestCleanupOldConversations:
 
     @pytest.mark.django_db(transaction=True)
     def test_cleanup_old_conversations_custom_days(self):
-        """Test cleanup with custom days parameter."""
+        """Test cleanup is a no-op regardless of days parameter."""
         patient = PatientFactory()
 
-        # Create conversation that's 20 days old - use update() to bypass auto_now
         conversation = AgentConversationFactory(
             patient=patient,
             status="completed",
@@ -914,15 +890,10 @@ class TestCleanupOldConversations:
         AgentConversation.objects.filter(id=conversation.id).update(
             created_at=timezone.now() - timedelta(days=20), updated_at=timezone.now() - timedelta(days=20)
         )
-        conversation.refresh_from_db()
 
-        # With 30 days threshold, should not be deleted
-        result = cleanup_old_conversations(days=30)
-        assert result["deleted"] == 0
-
-        # With 15 days threshold, should be deleted
         result = cleanup_old_conversations(days=15)
-        assert result["deleted"] == 1
+        assert result["deleted"] == 0
+        assert AgentConversation.objects.filter(id=conversation.id).exists()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -1203,10 +1174,9 @@ class TestTaskEdgeCases:
 
     @pytest.mark.django_db(transaction=True)
     def test_cleanup_old_conversations_zero_days(self):
-        """Test cleanup with zero days (should delete all completed)."""
+        """Test cleanup is a no-op even with zero days."""
         patient = PatientFactory()
 
-        # Create completed conversation from yesterday
         conversation = AgentConversationFactory(
             patient=patient,
             status="completed",
@@ -1217,7 +1187,8 @@ class TestTaskEdgeCases:
 
         result = cleanup_old_conversations(days=0)
 
-        assert result["deleted"] == 1
+        assert result["deleted"] == 0
+        assert AgentConversation.objects.filter(id=conversation.id).exists()
 
     @pytest.mark.django_db(transaction=True)
     def test_generate_conversation_summaries_long_transcript(self):

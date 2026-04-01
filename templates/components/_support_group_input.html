@@ -1,0 +1,28 @@
+{% load i18n %}
+<!-- Support group chat input — sends via WebSocket, not HTMX -->
+
+<div class="px-3 py-2 border-t flex-shrink-0" style="border-color: var(--color-border);">
+    <div class="flex items-end gap-2">
+        <textarea x-ref="sgInput"
+                  @keydown.enter.prevent="if (!$event.shiftKey) { sendMessage($refs.sgInput.value); $refs.sgInput.value = ''; $refs.sgInput.style.height = '44px'; }"
+                  @input="$refs.sgInput.style.height = '44px'; $refs.sgInput.style.height = $refs.sgInput.scrollHeight + 'px'"
+                  :disabled="!sgConnected"
+                  class="flex-1 px-3 py-2 text-sm rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[44px] max-h-[120px]"
+                  style="background-color: var(--color-surface);
+                         border: 1px solid var(--color-border);
+                         color: var(--color-text);"
+                  placeholder="{% trans 'Message your support group...' %}"
+                  rows="1"
+                  aria-label="{% trans 'Support group message' %}"></textarea>
+
+        <!-- Send button -->
+        <button type="button"
+                @click="sendMessage($refs.sgInput.value); $refs.sgInput.value = ''; $refs.sgInput.style.height = '44px'"
+                :disabled="!sgConnected"
+                class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-50"
+                style="background-color: var(--color-primary);"
+                aria-label="{% trans 'Send message' %}">
+            <i data-lucide="send" class="w-5 h-5 text-white"></i>
+        </button>
+    </div>
+</div>

@@ -624,3 +624,43 @@ def build_safety_hardened_prompt(base_prompt: str, patient_message: str) -> str:
         + '\n"""\n'
         + SAFETY_PROMPT_SUFFIX
     )
+
+
+# =============================================================================
+# Support Group Prompts
+# =============================================================================
+
+CELEBRATION_PROMPT_TEMPLATE = """\
+The patient just completed a recovery milestone: {milestone_title} (day {milestone_day}).
+Respond with a warm, celebratory message in character. Keep it to 1-2 sentences.
+Be genuine and specific to what the milestone means for their recovery.
+"""
+
+
+MEMORY_SUMMARIZATION_PROMPT = """\
+You are summarizing what persona {persona_name} should remember about this patient \
+from their support group conversations. Compress the key facts into a brief summary \
+(under 300 tokens). Focus on:
+- Patient's emotional state and concerns
+- Topics they've discussed
+- What resonated with them
+- Any personal details they shared
+
+Current memory (may be empty):
+{current_memory}
+
+Recent conversation:
+{recent_messages}
+
+Write a compressed summary preserving the most important facts.
+"""
+
+
+ENGAGEMENT_SUMMARY_PROMPT = """\
+Summarize the recent support group conversations for this patient in 1-2 sentences. \
+Focus on the main topics discussed and the patient's emotional trajectory. \
+This summary is for their care team clinician.
+
+Recent messages:
+{recent_messages}
+"""

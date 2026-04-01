@@ -59,14 +59,16 @@ def patient_dashboard_view(request):
     if not patient:
         return redirect("accounts:start")
 
-    # Load conversation history for chat sidebar
+    # Load care team conversation history for chat sidebar
     messages = []
+    sg_onboarded = False
     try:
         from apps.agents.models import AgentConversation
 
         conversation = (
             AgentConversation.objects.filter(
                 patient=patient,
+                conversation_type="care_team",
                 status__in=("active", "escalated"),
                 clinician__isnull=True,
             )
@@ -78,6 +80,12 @@ def patient_dashboard_view(request):
                 "citations__knowledge_doc__source",
             ).order_by("created_at")[:50]
             messages = list(msg_objects)
+
+        # Support group onboarding: server-side authoritative check
+        sg_onboarded = AgentConversation.objects.filter(
+            patient=patient,
+            conversation_type="support_group",
+        ).exists()
     except Exception:
         logger.exception("Failed to load conversation history")
 
@@ -90,6 +98,7 @@ def patient_dashboard_view(request):
         "chat_messages": messages,
         "days_post_op": days_post_op,
         "suggestion_chips": suggestion_chips,
+        "sg_onboarded": sg_onboarded,
         "debug": settings.DEBUG,
     }
 

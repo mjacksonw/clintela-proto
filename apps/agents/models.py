@@ -8,6 +8,11 @@ from django.db import models
 class AgentConversation(models.Model):
     """Enhanced conversation tracking for agent-patient interactions."""
 
+    CONVERSATION_TYPE_CHOICES = [
+        ("care_team", "Care Team"),
+        ("support_group", "Support Group"),
+    ]
+
     AGENT_TYPES = [
         ("supervisor", "Supervisor"),
         ("care_coordinator", "Care Coordinator"),
@@ -44,12 +49,26 @@ class AgentConversation(models.Model):
         related_name="research_conversations",
         help_text="Set for clinician research conversations",
     )
+    conversation_type = models.CharField(
+        max_length=20,
+        choices=CONVERSATION_TYPE_CHOICES,
+        default="care_team",
+    )
     agent_type = models.CharField(max_length=30, choices=AGENT_TYPES, default="supervisor")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+
+    # Support group: atomic generation counter for task staleness detection.
+    # Increment via queryset.update(generation_id=F('generation_id') + 1),
+    # NOT .save(). Then refresh_from_db() before passing to Celery.
+    generation_id = models.IntegerField(default=0)
 
     # JSONB fields for flexible agent state
     context = models.JSONField(default=dict, blank=True)
     tool_invocations = models.JSONField(default=list, blank=True)
+
+    # Per-persona memory summaries for support group conversations.
+    # Keyed by persona_id, each value is a compressed summary string.
+    persona_memories = models.JSONField(default=dict, blank=True)
 
     # LLM metadata
     llm_metadata = models.JSONField(default=dict, blank=True)
@@ -99,6 +118,8 @@ class AgentMessage(models.Model):
 
     # Agent metadata
     agent_type = models.CharField(max_length=30, choices=AgentConversation.AGENT_TYPES, blank=True)
+    persona_id = models.CharField(max_length=20, null=True, blank=True)  # noqa: DJ001 — NULL used by UniqueConstraint condition
+    generation_id = models.IntegerField(null=True, blank=True)
     routing_decision = models.CharField(max_length=50, blank=True)
     confidence_score = models.FloatField(null=True, blank=True)
 
@@ -128,6 +149,19 @@ class AgentMessage(models.Model):
         ordering = ["created_at"]
         indexes = [
             models.Index(fields=["conversation", "created_at"], name="idx_agent_msg_conv_created"),
+            models.Index(
+                fields=["conversation", "persona_id", "created_at"],
+                name="idx_agent_msg_persona",
+            ),
+        ]
+        constraints = [
+            # Prevent duplicate persona responses per generation cycle (idempotency guard
+            # for Celery retries). Only applies to support group messages (persona_id set).
+            models.UniqueConstraint(
+                fields=["conversation", "persona_id", "generation_id"],
+                condition=models.Q(persona_id__isnull=False),
+                name="uq_agent_msg_persona_generation",
+            ),
         ]
 
     def __str__(self):
@@ -257,6 +291,10 @@ class Escalation(models.Model):
     # Context for clinician
     conversation_summary = models.TextField(blank=True)
     patient_context = models.JSONField(default=dict, blank=True)
+    conversation_excerpt = models.TextField(
+        blank=True,
+        help_text="Verbatim triggering message + recent messages for SG escalations",
+    )
 
     # Assignment
     assigned_to = models.ForeignKey(
@@ -282,6 +320,32 @@ class Escalation(models.Model):
 
     def __str__(self):
         return f"{self.severity} - {self.patient} - {self.status}"
+
+
+class SupportGroupReaction(models.Model):
+    """Emoji reaction from a persona on a support group message."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    message = models.ForeignKey(
+        AgentMessage,
+        on_delete=models.CASCADE,
+        related_name="reactions",
+    )
+    persona_id = models.CharField(max_length=20)
+    emoji = models.CharField(max_length=10)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "agents_support_group_reaction"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["message", "persona_id"],
+                name="uq_reaction_message_persona",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.persona_id} reacted {self.emoji} on {self.message_id}"
 
 
 class MessageCitation(models.Model):

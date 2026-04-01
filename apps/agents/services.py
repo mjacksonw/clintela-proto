@@ -390,22 +390,26 @@ class ConversationService:
     def get_or_create_conversation(
         patient: Patient,
         agent_type: str = "supervisor",
+        conversation_type: str = "care_team",
     ) -> AgentConversation:
         """Get existing active conversation or create new one.
 
         Args:
             patient: Patient instance
             agent_type: Type of agent for this conversation
+            conversation_type: "care_team" or "support_group"
 
         Returns:
             AgentConversation instance
         """
         # Look for active or escalated conversation with lock
         # (single-conversation-per-patient model: only "completed" triggers a fresh start)
+        # Filter by conversation_type to prevent cross-contamination
         conversation = (
             AgentConversation.objects.filter(
                 patient=patient,
                 status__in=("active", "escalated"),
+                conversation_type=conversation_type,
                 clinician__isnull=True,
             )
             .select_for_update()
@@ -419,15 +423,17 @@ class ConversationService:
         conversation = AgentConversation.objects.create(
             patient=patient,
             agent_type=agent_type,
+            conversation_type=conversation_type,
             status="active",
             context={},
         )
 
-        # Create initial state
-        ConversationState.objects.create(
-            conversation=conversation,
-            patient_summary=f"{patient.user.first_name} {patient.user.last_name}",
-        )
+        # Create initial state (care team only; support group doesn't use ConversationState)
+        if conversation_type == "care_team":
+            ConversationState.objects.create(
+                conversation=conversation,
+                patient_summary=f"{patient.user.first_name} {patient.user.last_name}",
+            )
 
         return conversation
 
