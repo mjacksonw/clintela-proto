@@ -31,7 +31,7 @@ Clintela is an AI-powered post-surgical care coordination platform that helps pa
 
 ### The Problem
 
-Hospital 30-day readmission rates cost the U.S. healthcare system [over $26 billion annually](https://www.cms.gov/Medicare/Medicare-Fee-for-Service-Payment/AcuteInpatientPPS/Readmissions-Reduction-Program). CMS penalizes hospitals with above-average readmission rates, creating ~$500M/year in penalties industry-wide. Yet [up to 27% of readmissions are preventable](https://pubmed.ncbi.nlm.nih.gov/27285204/). The gap: after discharge, patients enter a monitoring black box. They miss warning signs, have questions that go unanswered at 2am, struggle to follow discharge instructions, and face recovery alone.
+Hospital 30-day readmission rates cost the U.S. healthcare system [over $26 billion annually](https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps/hospital-readmissions-reduction-program-hrrp). CMS penalizes hospitals with above-average readmission rates, creating ~$500M/year in penalties industry-wide. Yet [a median 27% of readmissions are preventable](https://pubmed.ncbi.nlm.nih.gov/21444623/). The gap: after discharge, patients enter a monitoring black box. They miss warning signs, have questions that go unanswered at 2am, struggle to follow discharge instructions, and face recovery alone.
 
 Clinician capacity can't fill this gap. A nurse managing 30 post-discharge patients can't provide continuous monitoring and emotional support to each one. The result: patients feel processed, not known.
 
@@ -90,7 +90,7 @@ Post-surgical cardiac patients face isolation and uncertainty during recovery. C
 
 **Why it matters:**
 - **Zero direct competitors** in healthcare multi-persona peer support
-- Clinical evidence strong: peer support improves cardiac recovery outcomes ([Mended Hearts](https://mendedhearts.org/) visiting model, [AHA scientific statement on social isolation and CVD](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001141))
+- Clinical evidence strong: peer support improves cardiac recovery outcomes ([Mended Hearts](https://mendedhearts.org/) visiting model, [AHA scientific statement on social isolation and CVD](https://www.ahajournals.org/doi/10.1161/JAHA.122.026493))
 - **Regulatory path clear:** wellness/peer support classification, not SaMD (Software as a Medical Device) — no diagnostic or treatment claims
 - Mood-adaptive routing selects which personas respond based on patient emotional state
 - 3-layer crisis detection (keyword scan → router-level → per-persona guardrail) with automatic clinician escalation
@@ -100,7 +100,7 @@ Post-surgical cardiac patients face isolation and uncertainty during recovery. C
 ### Regulatory & Reimbursement Pathway
 
 **CMS 2026 changes directly benefit us:**
-- As of January 1, 2026, CMS reduced minimum RPM data collection to **2 days** (down from 16) and shortened management time requirements ([CY2026 PFS Final Rule](https://www.cms.gov/medicare/payment/fee-schedules/physician/federal-register-notices)). This makes shorter post-discharge monitoring episodes billable, expanding our addressable use cases.
+- As of January 1, 2026, CMS reduced minimum RPM data collection to **2 days** (down from 16) and shortened management time requirements ([CMS Physician Fee Schedule](https://www.cms.gov/medicare/payment/fee-schedules/physician)). This makes shorter post-discharge monitoring episodes billable, expanding our addressable use cases.
 - RPM and RTM billing codes (CPT 99453-99458, 98975-98981) now cover the exact workflow Clintela enables: continuous remote monitoring with clinical escalation.
 
 **Our regulatory positioning:**
@@ -113,7 +113,7 @@ Post-surgical cardiac patients face isolation and uncertainty during recovery. C
 Three trends converging:
 1. **LLM capability** has crossed the clinical utility threshold. Multi-agent orchestration, RAG-backed evidence retrieval, and natural language interaction are production-ready. See [Hippocratic AI's Polaris](https://www.hippocraticai.com/) and [Google's AMIE](https://research.google/blog/amie-a-research-ai-system-for-diagnostic-medical-reasoning-and-conversations/) for parallel evidence.
 2. **[OMOP CDM](https://ohdsi.github.io/CommonDataModel/) standardization** enables interoperability. Our 12 OMOP concept IDs map directly to Epic-to-OMOP pipelines, eliminating ETL for the most common cardiac vitals and labs.
-3. **CMS financial pressure** is increasing. The [Hospital Readmissions Reduction Program](https://www.cms.gov/Medicare/Medicare-Fee-for-Service-Payment/AcuteInpatientPPS/Readmissions-Reduction-Program) penalizes hospitals, and the 2026 billing changes make continuous post-discharge monitoring immediately economically viable.
+3. **CMS financial pressure** is increasing. The [Hospital Readmissions Reduction Program](https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps/hospital-readmissions-reduction-program-hrrp) penalizes hospitals, and the 2026 billing changes make continuous post-discharge monitoring immediately economically viable.
 
 ---
 
