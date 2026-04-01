@@ -1,6 +1,6 @@
 """Tests for support group router, crisis detection, and orchestrator."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from asgiref.sync import sync_to_async
@@ -422,3 +422,352 @@ class TestSupportGroupOrchestrator:
         # Also verify a persona_id not in the fallback map returns default
         backstory = get_procedure_backstory("totally_unknown_procedure", "nonexistent")
         assert backstory == "heart surgery"  # default from .get(..., "heart surgery")
+
+
+# =========================================================================
+# Orchestrator internal method tests (coverage boost)
+# =========================================================================
+
+
+class TestOrchestratorInternals:
+    """Tests for SupportGroupOrchestrator helper methods."""
+
+    @pytest.mark.asyncio
+    async def test_handle_crisis_creates_escalation(self):
+        """_handle_crisis creates message + escalation atomically."""
+        from apps.agents.models import AgentMessage, Escalation
+
+        @sync_to_async
+        def _setup():
+            patient = PatientFactory()
+            conversation = AgentConversationFactory(
+                patient=patient,
+                conversation_type="support_group",
+                generation_id=0,
+            )
+            return patient, conversation
+
+        patient, conversation = await _setup()
+
+        llm = _make_mock_llm()
+        orchestrator = SupportGroupOrchestrator(llm_client=llm)
+
+        result = await orchestrator._handle_crisis(patient, conversation, "I want to end it all", source="keyword")
+
+        assert result["type"] == "crisis_detected"
+        assert result["escalate"] is True
+        assert result["source"] == "keyword"
+
+        # Verify DB records created
+        @sync_to_async
+        def _verify():
+            assert AgentMessage.objects.filter(conversation=conversation, content="I want to end it all").exists()
+            esc = Escalation.objects.filter(patient=patient, conversation=conversation).first()
+            assert esc is not None
+            assert esc.severity == "critical"
+            assert "keyword" in esc.reason
+            assert "[TRIGGERING MESSAGE]" in esc.conversation_excerpt
+
+        await _verify()
+
+    @pytest.mark.asyncio
+    async def test_build_patient_context_basic(self):
+        """_build_patient_context returns name, procedure, days_post_op."""
+
+        @sync_to_async
+        def _setup():
+            patient = PatientFactory()
+            return patient
+
+        patient = await _setup()
+
+        llm = _make_mock_llm()
+        orchestrator = SupportGroupOrchestrator(llm_client=llm)
+        ctx = orchestrator._build_patient_context(patient)
+
+        assert "name" in ctx
+        assert "procedure" in ctx
+        assert "days_post_op" in ctx
+
+    @pytest.mark.asyncio
+    async def test_get_conversation_history(self):
+        """_get_conversation_history returns recent messages as dicts."""
+
+        @sync_to_async
+        def _setup():
+            from apps.agents.tests.factories import AgentMessageFactory
+
+            patient = PatientFactory()
+            conv = AgentConversationFactory(
+                patient=patient,
+                conversation_type="support_group",
+            )
+            AgentMessageFactory(conversation=conv, role="user", content="Hello group")
+            AgentMessageFactory(conversation=conv, role="assistant", content="Hi there!", persona_id="maria")
+            return conv
+
+        conv = await _setup()
+
+        llm = _make_mock_llm()
+        orchestrator = SupportGroupOrchestrator(llm_client=llm)
+        history = await orchestrator._get_conversation_history(conv)
+
+        assert len(history) == 2
+        assert history[0]["role"] == "user"
+        assert history[0]["content"] == "Hello group"
+        assert history[1]["persona_id"] == "maria"
+
+    @pytest.mark.asyncio
+    async def test_get_recent_messages_text(self):
+        """_get_recent_messages_text returns formatted text."""
+
+        @sync_to_async
+        def _setup():
+            from apps.agents.tests.factories import AgentMessageFactory
+
+            patient = PatientFactory()
+            conv = AgentConversationFactory(
+                patient=patient,
+                conversation_type="support_group",
+            )
+            AgentMessageFactory(conversation=conv, role="user", content="I feel tired")
+            AgentMessageFactory(conversation=conv, role="assistant", content="That's normal", persona_id="maria")
+            return conv
+
+        conv = await _setup()
+
+        llm = _make_mock_llm()
+        orchestrator = SupportGroupOrchestrator(llm_client=llm)
+        text = await orchestrator._get_recent_messages_text(conv, limit=5)
+
+        assert "Patient: I feel tired" in text
+        assert "maria: That's normal" in text
+
+    @pytest.mark.asyncio
+    async def test_generate_persona_response_happy(self):
+        """_generate_persona_response returns LLM content."""
+        from apps.agents.personas import get_persona
+
+        persona = get_persona("maria")
+        llm = _make_mock_llm(generate_return={"content": "Oh sweetheart, you're doing great!"})
+        orchestrator = SupportGroupOrchestrator(llm_client=llm)
+
+        response = await orchestrator._generate_persona_response(
+            persona=persona,
+            system_prompt="You are Maria.",
+            patient_message="I walked today!",
+            history=[
+                {"role": "user", "content": "Hello", "persona_id": None},
+                {"role": "assistant", "content": "Hi!", "persona_id": "maria"},
+            ],
+            plan_intent="celebrate progress",
+        )
+
+        assert response == "Oh sweetheart, you're doing great!"
+        llm.generate.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_generate_persona_response_failure(self):
+        """_generate_persona_response returns fallback on LLM error."""
+        from apps.agents.personas import get_persona
+
+        persona = get_persona("maria")
+        llm = AsyncMock()
+        llm.generate = AsyncMock(side_effect=Exception("LLM down"))
+        orchestrator = SupportGroupOrchestrator(llm_client=llm)
+
+        response = await orchestrator._generate_persona_response(
+            persona=persona,
+            system_prompt="You are Maria.",
+            patient_message="Hello",
+            history=[],
+        )
+
+        assert "gathering my thoughts" in response
+
+    @pytest.mark.asyncio
+    async def test_save_message(self):
+        """_save_message persists an AgentMessage."""
+        from apps.agents.models import AgentMessage
+
+        @sync_to_async
+        def _setup():
+            patient = PatientFactory()
+            conv = AgentConversationFactory(
+                patient=patient,
+                conversation_type="support_group",
+                generation_id=1,
+            )
+            return conv
+
+        conv = await _setup()
+
+        llm = _make_mock_llm()
+        orchestrator = SupportGroupOrchestrator(llm_client=llm)
+        msg = await orchestrator._save_message(
+            conversation=conv,
+            role="assistant",
+            content="Test response",
+            persona_id="james",
+            generation_id=1,
+        )
+
+        assert msg.persona_id == "james"
+        assert msg.generation_id == 1
+
+        @sync_to_async
+        def _verify():
+            assert AgentMessage.objects.filter(id=msg.id).exists()
+
+        await _verify()
+
+    @pytest.mark.asyncio
+    async def test_schedule_followups(self):
+        """_schedule_followups calls Celery delay for each followup."""
+        from apps.agents.support_group import FollowupPlan
+
+        @sync_to_async
+        def _setup():
+            patient = PatientFactory()
+            conv = AgentConversationFactory(
+                patient=patient,
+                conversation_type="support_group",
+                generation_id=1,
+            )
+            return conv
+
+        conv = await _setup()
+
+        plan = GroupResponsePlan(
+            crisis_detected=False,
+            patient_mood="neutral",
+            primary_responder="maria",
+            followups=[
+                FollowupPlan(persona_id="james", delay=60, intent="share experience"),
+                FollowupPlan(persona_id="tony", delay=90, intent="lighten mood"),
+            ],
+            reactions=[],
+            silent=["linda", "robert", "diane", "priya"],
+        )
+
+        llm = _make_mock_llm()
+        orchestrator = SupportGroupOrchestrator(llm_client=llm)
+
+        with patch("apps.agents.tasks.deliver_support_group_followup") as mock_task:
+            mock_task.delay = MagicMock()
+            await orchestrator._schedule_followups(conv, plan, {"name": "Alice"})
+
+        assert mock_task.delay.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_schedule_reactions(self):
+        """_schedule_reactions calls Celery delay for each reaction."""
+        from apps.agents.support_group import ReactionPlan
+
+        @sync_to_async
+        def _setup():
+            from apps.agents.tests.factories import AgentMessageFactory
+
+            patient = PatientFactory()
+            conv = AgentConversationFactory(
+                patient=patient,
+                conversation_type="support_group",
+                generation_id=1,
+            )
+            msg = AgentMessageFactory(conversation=conv, role="assistant", content="Hi!", persona_id="maria")
+            return conv, msg
+
+        conv, msg = await _setup()
+
+        plan = GroupResponsePlan(
+            crisis_detected=False,
+            patient_mood="neutral",
+            primary_responder="maria",
+            followups=[],
+            reactions=[
+                ReactionPlan(persona_id="tony", emoji="thumbs_up", delay=20),
+            ],
+            silent=["james", "linda", "robert", "diane", "priya"],
+        )
+
+        llm = _make_mock_llm()
+        orchestrator = SupportGroupOrchestrator(llm_client=llm)
+
+        with patch("apps.agents.tasks.deliver_support_group_reaction") as mock_task:
+            mock_task.delay = MagicMock()
+            await orchestrator._schedule_reactions(msg, plan, conv.generation_id)
+
+        assert mock_task.delay.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_process_message_router_crisis(self):
+        """Router returning crisis_detected=True triggers escalation."""
+
+        @sync_to_async
+        def _setup():
+            patient = PatientFactory()
+            conversation = AgentConversationFactory(
+                patient=patient,
+                conversation_type="support_group",
+                generation_id=0,
+            )
+            conversation.persona_memories = {}
+            conversation.save()
+            return patient, conversation
+
+        patient, conversation = await _setup()
+
+        crisis_plan = GroupResponsePlan(
+            crisis_detected=True,
+            patient_mood="distressed",
+            primary_responder="maria",
+            followups=[],
+            reactions=[],
+            silent=["james", "linda", "tony", "priya", "robert", "diane"],
+        )
+
+        llm = _make_mock_llm()
+        orchestrator = SupportGroupOrchestrator(llm_client=llm)
+
+        with (
+            patch.object(
+                orchestrator.router,
+                "plan_group_response",
+                new_callable=AsyncMock,
+                return_value=crisis_plan,
+            ),
+            patch.object(
+                orchestrator,
+                "_handle_crisis",
+                new_callable=AsyncMock,
+                return_value={"type": "crisis_detected", "escalate": True, "source": "router"},
+            ) as mock_crisis,
+        ):
+            result = await orchestrator.process_message(
+                patient=patient,
+                conversation=conversation,
+                message="I feel hopeless",
+            )
+
+        assert result["escalate"] is True
+        mock_crisis.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_router_crisis_recheck_returns_true(self):
+        """_crisis_recheck returns True when LLM says crisis."""
+        llm = AsyncMock()
+        llm.generate_json = AsyncMock(return_value={"crisis": True})
+        router = SupportGroupRouter(llm_client=llm)
+
+        result = await router._crisis_recheck("I want to die")
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_router_crisis_recheck_failure(self):
+        """_crisis_recheck returns False on LLM failure."""
+        llm = AsyncMock()
+        llm.generate_json = AsyncMock(side_effect=Exception("timeout"))
+        router = SupportGroupRouter(llm_client=llm)
+
+        result = await router._crisis_recheck("I want to die")
+        assert result is False
