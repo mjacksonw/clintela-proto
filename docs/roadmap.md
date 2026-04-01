@@ -23,7 +23,7 @@ Clintela is an AI-powered post-surgical care coordination platform that helps pa
 - Multi-channel access: web chat, SMS (Twilio), voice (Whisper)
 - Internationalization: English + Spanish with real-time chat translation
 
-**The next 20 weeks** focus on three horizons: production-ready HIPAA deployment at our AMC partner (weeks 1-4), real clinical data integration from wearables and EHR (weeks 5-10), and scale through predictive intelligence and multi-site deployment (weeks 11-20).
+**The next 20 weeks** focus on three horizons: production-ready HIPAA deployment readiness for our AMC partner (weeks 1-4), real clinical data integration from wearables and EHR (weeks 5-10), and scale through predictive intelligence and multi-site deployment (weeks 11-20).
 
 ---
 
@@ -31,7 +31,7 @@ Clintela is an AI-powered post-surgical care coordination platform that helps pa
 
 ### The Problem
 
-Hospital 30-day readmission rates cost the U.S. healthcare system over $26 billion annually. CMS penalizes hospitals with above-average readmission rates, creating ~$500M/year in penalties industry-wide. Yet many readmissions are preventable. The gap: after discharge, patients enter a monitoring black box. They miss warning signs, have questions that go unanswered at 2am, struggle to follow discharge instructions, and face recovery alone.
+Hospital 30-day readmission rates cost the U.S. healthcare system [over $26 billion annually](https://www.cms.gov/Medicare/Medicare-Fee-for-Service-Payment/AcuteInpatientPPS/Readmissions-Reduction-Program). CMS penalizes hospitals with above-average readmission rates, creating ~$500M/year in penalties industry-wide. Yet [up to 27% of readmissions are preventable](https://pubmed.ncbi.nlm.nih.gov/27285204/). The gap: after discharge, patients enter a monitoring black box. They miss warning signs, have questions that go unanswered at 2am, struggle to follow discharge instructions, and face recovery alone.
 
 Clinician capacity can't fill this gap. A nurse managing 30 post-discharge patients can't provide continuous monitoring and emotional support to each one. The result: patients feel processed, not known.
 
@@ -60,9 +60,21 @@ Our care philosophy: **"Help the patient be known."** Every interaction should m
 
 **Our unique position:** Nobody else combines multi-agent clinical AI with specialist mediation, an AI peer support group, and a real-time clinician dashboard. The mental health chatbot wave (Wysa, Woebot, Ash) proves the 1:1 AI companion model works, but they're all single-agent. We're building a *team*.
 
-### Virtual Support Group: The Headline Feature
+### Four Headline Capabilities
 
-Post-surgical cardiac patients face isolation and uncertainty during recovery. Clinical AI provides medical support, but patients lack the emotional validation that comes from peers who've been there. Real peer support groups are logistically hard. Our virtual support group solves this.
+Clintela isn't one feature — it's four capabilities that no other platform combines:
+
+1. **Agent-augmented care team with diverse expertise.** Not a single chatbot, but a team of specialist agents (cardiology, pharmacy, nutrition, PT, social work, palliative care) that retrieve clinical evidence before responding and can be extended per institution. The patient experiences a care team, not a search engine.
+
+2. **24/7 monitoring via ePROs and wearable data.** Six validated clinical instruments (PHQ-2, KCCQ-12, SAQ-7, AFEQT, PROMIS, daily symptom check) combined with wearable vitals flowing through a 16-rule deterministic engine. Clinicians see alerts with plain-language rationale. Patients see trends on their My Health card. No monitoring gaps between clinic visits.
+
+3. **Virtual support group.** 7 AI personas modeled as recovery alumni, providing emotional peer support grounded in [Yalom's therapeutic factors](https://en.wikipedia.org/wiki/Group_psychotherapy#Therapeutic_factors). Zero direct competitors in healthcare multi-persona peer support. Wellness classification, not SaMD. *(Details below.)*
+
+4. **Clinician and administrator visibility.** Real-time clinician dashboard with severity-sorted patient lists, take-control chat, shift handoff, and keyboard-driven workflow. Admin KPI dashboard with CMS readmission rate tracking, outcome/engagement/operations cards, pathway administration, and CSV export. Clinicians and administrators see what's happening — they don't have to go looking for it.
+
+### Virtual Support Group Deep-Dive
+
+Post-surgical cardiac patients face isolation and uncertainty during recovery. Clinical AI provides medical support, but patients lack the emotional validation that comes from peers who've been there. Real peer support groups are logistically hard — scheduling, facilitation, patient matching. Our virtual support group solves this.
 
 **What it is:** 7 AI personas modeled as recovery alumni (not concurrent patients) who've been through surgery and come out the other side. Each has a distinct therapeutic role grounded in Yalom's therapeutic factors:
 
@@ -78,8 +90,8 @@ Post-surgical cardiac patients face isolation and uncertainty during recovery. C
 
 **Why it matters:**
 - **Zero direct competitors** in healthcare multi-persona peer support
-- Clinical evidence strong: peer support improves recovery outcomes (Mended Hearts model)
-- **Regulatory path clear:** wellness/peer support classification, not SaMD (Software as a Medical Device)
+- Clinical evidence strong: peer support improves cardiac recovery outcomes ([Mended Hearts](https://mendedhearts.org/) visiting model, [AHA scientific statement on social isolation and CVD](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001141))
+- **Regulatory path clear:** wellness/peer support classification, not SaMD (Software as a Medical Device) — no diagnostic or treatment claims
 - Mood-adaptive routing selects which personas respond based on patient emotional state
 - 3-layer crisis detection (keyword scan → router-level → per-persona guardrail) with automatic clinician escalation
 - Clinicians see engagement summaries by default. Thread access only on escalation for clinical context
@@ -88,20 +100,20 @@ Post-surgical cardiac patients face isolation and uncertainty during recovery. C
 ### Regulatory & Reimbursement Pathway
 
 **CMS 2026 changes directly benefit us:**
-- As of January 1, 2026, CMS reduced minimum RPM data collection to **2 days** (down from 16) and shortened management time requirements. This makes shorter post-discharge monitoring episodes billable, expanding our addressable use cases.
-- RPM and RTM billing codes now cover the exact workflow Clintela enables: continuous remote monitoring with clinical escalation.
+- As of January 1, 2026, CMS reduced minimum RPM data collection to **2 days** (down from 16) and shortened management time requirements ([CY2026 PFS Final Rule](https://www.cms.gov/medicare/payment/fee-schedules/physician/federal-register-notices)). This makes shorter post-discharge monitoring episodes billable, expanding our addressable use cases.
+- RPM and RTM billing codes (CPT 99453-99458, 98975-98981) now cover the exact workflow Clintela enables: continuous remote monitoring with clinical escalation.
 
 **Our regulatory positioning:**
-- **Clinical Intelligence Layer** = Clinical Decision Support (CDS). Our 16 deterministic rules with plain-language rationale are designed for FDA CDS compliance. No ML black box.
+- **Clinical Intelligence Layer** = Clinical Decision Support (CDS). Our 16 deterministic rules with plain-language rationale are designed for [FDA CDS guidance](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software) compliance — meeting all four criteria for non-device CDS. No ML black box.
 - **Virtual Support Group** = wellness/peer support, not SaMD. No diagnostic or treatment claims. Clear of FDA device classification.
 - **Agent system** = care coordination tool augmenting clinical teams, not replacing clinical judgment. All escalations route to human clinicians.
 
 ### Why Now
 
 Three trends converging:
-1. **LLM capability** has crossed the clinical utility threshold. Multi-agent orchestration, RAG-backed evidence retrieval, and natural language interaction are production-ready.
-2. **OMOP CDM standardization** enables interoperability. Our 12 OMOP concept IDs map directly to Epic-to-OMOP pipelines, eliminating ETL for the most common cardiac vitals and labs.
-3. **CMS financial pressure** is increasing. Hospitals need continuous post-discharge monitoring to avoid readmission penalties. The 2026 billing changes make this immediately economically viable.
+1. **LLM capability** has crossed the clinical utility threshold. Multi-agent orchestration, RAG-backed evidence retrieval, and natural language interaction are production-ready. See [Hippocratic AI's Polaris](https://www.hippocraticai.com/) and [Google's AMIE](https://research.google/blog/amie-a-research-ai-system-for-diagnostic-medical-reasoning-and-conversations/) for parallel evidence.
+2. **[OMOP CDM](https://ohdsi.github.io/CommonDataModel/) standardization** enables interoperability. Our 12 OMOP concept IDs map directly to Epic-to-OMOP pipelines, eliminating ETL for the most common cardiac vitals and labs.
+3. **CMS financial pressure** is increasing. The [Hospital Readmissions Reduction Program](https://www.cms.gov/Medicare/Medicare-Fee-for-Service-Payment/AcuteInpatientPPS/Readmissions-Reduction-Program) penalizes hospitals, and the 2026 billing changes make continuous post-discharge monitoring immediately economically viable.
 
 ---
 
@@ -229,7 +241,7 @@ Memory & State Management
 | Specialists | 6 RAG-backed (respond) | 9+ with debate capability | Debate protocol, new agents |
 | Operational | — | Admin Assistant, Cost Minimizer | H2-3 |
 | Safety | Dual-layer detection (regex + LLM) | + Independent safety verifier | Fresh-eyes pattern (H2) |
-| Memory | Conversation context + clinical snapshot | 3-layer model | State Buffer, Consolidator, Longitudinal (H2-3) |
+| Memory | Conversation context + clinical snapshot | 3-layer model | State Buffer (H2), Consolidator + Longitudinal (H3) |
 
 ### Production Readiness Signals
 
@@ -244,7 +256,7 @@ Memory & State Management
 
 ### Horizon 1: Production Readiness (Weeks 1-4)
 
-**Gate:** HIPAA-compliant deployment at AMC partner. All critical-path tests green. <2s p95 response time.
+**Gate:** HIPAA-compliant deployment readiness for AMC partner. All critical-path tests green. <2s p95 response time.
 
 | Item | Description | Status | Dependency |
 |------|-------------|--------|------------|
@@ -271,6 +283,8 @@ Memory & State Management
 | **Discharge Instructions (EHR)** | Pull from Epic via FHIR discharge summary / care plan resources → extraction pipeline | Depends on FHIR | EHR integration |
 | **Additional Languages** | Mandarin, Vietnamese, Haitian Creole | i18n infrastructure exists | Translation review |
 | **Caregiver Dashboard** | Read-only recovery view for family members | Models exist | None |
+| **Patient State Buffer** | FHIR-shaped shared memory writable by all agents — foundational layer for memory architecture. Rule-based contradiction detection | Not started | Agent framework stable |
+| **Clinical Pathway Review** | Clinical team reviews and validates care pathways. Structured feedback loop, pathway versioning, clinician sign-off workflow | Not started | Clinical team engagement |
 
 ### Horizon 3: Scale & Intelligence (Weeks 11-20)
 
@@ -280,7 +294,8 @@ Memory & State Management
 |------|-------------|--------|------------|
 | **Predictive Risk Scoring** | Pre-discharge ML models for readmission risk prediction | Not started | 12+ months AMC historical data |
 | **Native Mobile App** | iOS/Android with HealthKit integration, push notifications, offline mode | Not started | V1 clinical validation |
-| **Memory Architecture** | Patient State Buffer (FHIR-shaped shared memory), Care Plan Consolidator (periodic reconciliation), Longitudinal Memory (contradiction detection, rule-based → ML) | Not started | Agent framework stable |
+| **Memory Architecture (Phase 2)** | Care Plan Consolidator (periodic background reconciliation of agent outputs), Longitudinal Memory (pruned patient history, ML-augmented contradiction detection). Builds on Patient State Buffer from H2 | Not started | Patient State Buffer (H2) |
+| **Pathway & ePRO Builder** | Hospital administrators build, deploy, and manage their own clinical pathways and associated ePRO instruments. Pathway effectiveness analytics, per-milestone check-in rates | Not started | Clinical pathway review (H2) |
 | **Multi-Site Benchmarking** | Anonymized cross-hospital metrics comparison | Not started | Multiple deployments |
 | **Agent Marketplace** | Plugin architecture for custom specialist agents | Interfaces designed | Partner interest |
 | **Advanced Anomaly Detection** | ML-augmented pattern detection + weekly digest emails | Not started | Sufficient observation data |
@@ -341,7 +356,10 @@ Both teams can work independently until the Horizon 2 integration point:
 | Wearable Integration | | x |
 | EHR Integration | partial | partial |
 | Predictive Risk Scoring | | x |
-| Memory Architecture | x | |
+| Patient State Buffer (H2) | x | |
+| Clinical Pathway Review (H2) | x | |
+| Memory Architecture Phase 2 (H3) | x | |
+| Pathway & ePRO Builder (H3) | x | |
 
 ---
 
