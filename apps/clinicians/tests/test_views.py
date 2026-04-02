@@ -105,6 +105,7 @@ class DashboardUrlRoutingTest(ViewTestBase):
         response = self.client.get("/clinician/dashboard/patient/99999/")
         assert response.status_code == 200
         assert response.context["initial_patient_id"] is None
+        assert response.context["deep_link_patient_unavailable"] is True
 
     def test_dashboard_with_unauthorized_patient(self):
         """Patient from a different hospital should not be accessible."""
@@ -126,6 +127,12 @@ class DashboardUrlRoutingTest(ViewTestBase):
         response = self.client.get(f"/clinician/dashboard/patient/{other_patient.id}/")
         assert response.status_code == 200
         assert response.context["initial_patient_id"] is None
+        assert response.context["deep_link_patient_unavailable"] is True
+        assert b"not in your panel" in response.content
+
+    def test_dashboard_deep_link_ok_has_no_banner_flag(self):
+        response = self.client.get(f"/clinician/dashboard/patient/{self.patient.id}/")
+        assert response.context["deep_link_patient_unavailable"] is False
 
     def test_dashboard_with_invalid_tab(self):
         response = self.client.get(f"/clinician/dashboard/patient/{self.patient.id}/bogus/")

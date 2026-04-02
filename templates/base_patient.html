@@ -33,7 +33,8 @@
 
     {% include "components/_header.html" %}
 
-    <div class="flex flex-1 overflow-hidden" style="height: calc(100vh - 64px);">
+    <div class="flex flex-1 overflow-hidden min-h-0"
+         style="height: calc(100vh - 64px - var(--dev-toolbar-h, 0px));">
 
         <!-- Dashboard content area (left on desktop, full-width on mobile/tablet) -->
         <main role="main"
@@ -67,7 +68,8 @@
              class="lg:hidden fixed inset-0 z-50 flex flex-col"
              style="background-color: var(--color-surface);"
              role="dialog"
-             aria-modal="true"
+             :aria-modal="mobileOverlay"
+             :aria-hidden="!mobileOverlay"
              aria-label="{% trans "Chat" %}"
              x-cloak>
 
@@ -113,7 +115,7 @@
     window.__sgOnboarded = {{ sg_onboarded|yesno:"true,false" }};
     window.__sgPatientId = "{{ patient.id }}";
 </script>
-<script src="{% static 'js/support-group.js' %}?v=1"></script>
+<script src="{% static 'js/support-group.js' %}?v=2"></script>
 {% endif %}
 {% if ENABLE_CLINICAL_DATA %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>

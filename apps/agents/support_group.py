@@ -7,6 +7,7 @@ then generates the primary response and schedules followups via Celery.
 import logging
 from typing import Literal
 
+from asgiref.sync import sync_to_async
 from django.db import transaction
 from django.db.models import F
 from pydantic import BaseModel, field_validator
@@ -237,8 +238,8 @@ class SupportGroupOrchestrator:
         # 3. Increment generation_id atomically
         await self._increment_generation_id(conversation)
 
-        # 4. Build context
-        patient_context = self._build_patient_context(patient)
+        # 4. Build context (ORM access must run in sync context — async consumer)
+        patient_context = await sync_to_async(self._build_patient_context)(patient)
         history = await self._get_conversation_history(conversation)
 
         # 5. Router call (Layer 2 crisis detection)

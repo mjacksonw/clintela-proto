@@ -6,9 +6,9 @@
         {% trans "Your support group is here" %}
     </h3>
 
-    <!-- Persona mini-cards with tap-to-prefill -->
+    <!-- Persona mini-cards with tap-to-prefill (starters live in support-group.js — SG_STARTERS) -->
     <div class="grid grid-cols-2 gap-2 w-full max-w-sm">
-        <button type="button" @click="$refs.sgInput.value = 'I remember how scary those first days were. How are you holding up?'; $refs.sgInput.focus()"
+        <button type="button" @click="prefillStarter('maria')"
                 class="flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-left transition-colors hover:opacity-80"
                 style="border-color: var(--color-border); background: var(--color-surface);">
             <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background-color: #8B5CF6;">MG</div>
@@ -18,7 +18,7 @@
             </div>
         </button>
 
-        <button type="button" @click="$refs.sgInput.value = 'I just had my surgery and I\\'m not sure what to expect.'; $refs.sgInput.focus()"
+        <button type="button" @click="prefillStarter('james')"
                 class="flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-left transition-colors hover:opacity-80"
                 style="border-color: var(--color-border); background: var(--color-surface);">
             <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background-color: #0891B2;">JW</div>
@@ -28,7 +28,7 @@
             </div>
         </button>
 
-        <button type="button" @click="$refs.sgInput.value = 'I have some questions about my recovery timeline.'; $refs.sgInput.focus()"
+        <button type="button" @click="prefillStarter('linda')"
                 class="flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-left transition-colors hover:opacity-80"
                 style="border-color: var(--color-border); background: var(--color-surface);">
             <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background-color: #059669;">LK</div>
@@ -38,7 +38,7 @@
             </div>
         </button>
 
-        <button type="button" @click="$refs.sgInput.value = 'I could use some cheering up today.'; $refs.sgInput.focus()"
+        <button type="button" @click="prefillStarter('tony')"
                 class="flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-left transition-colors hover:opacity-80"
                 style="border-color: var(--color-border); background: var(--color-surface);">
             <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background-color: #EA580C;">TR</div>
@@ -48,7 +48,7 @@
             </div>
         </button>
 
-        <button type="button" @click="$refs.sgInput.value = 'I\\'m feeling overwhelmed by everything.'; $refs.sgInput.focus()"
+        <button type="button" @click="prefillStarter('priya')"
                 class="flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-left transition-colors hover:opacity-80"
                 style="border-color: var(--color-border); background: var(--color-surface);">
             <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background-color: #DB2777;">PS</div>
@@ -58,7 +58,7 @@
             </div>
         </button>
 
-        <button type="button" @click="$refs.sgInput.value = 'What\\'s a good daily routine for recovery?'; $refs.sgInput.focus()"
+        <button type="button" @click="prefillStarter('robert')"
                 class="flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-left transition-colors hover:opacity-80"
                 style="border-color: var(--color-border); background: var(--color-surface);">
             <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background-color: #4F46E5;">RH</div>
@@ -68,7 +68,7 @@
             </div>
         </button>
 
-        <button type="button" @click="$refs.sgInput.value = 'I\\'m not sure how I feel about all this.'; $refs.sgInput.focus()"
+        <button type="button" @click="prefillStarter('diane')"
                 class="col-span-2 flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-left transition-colors hover:opacity-80"
                 style="border-color: var(--color-border); background: var(--color-surface);">
             <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white flex-shrink-0" style="background-color: #0D9488;">DM</div>

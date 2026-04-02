@@ -59,6 +59,17 @@
 
     {% include "clinicians/components/_header.html" %}
 
+    {% if deep_link_patient_unavailable %}
+    <div class="px-4 py-2.5 text-sm border-b flex items-center justify-between gap-3 flex-shrink-0"
+         style="background-color: #FEF3C7; color: #92400E; border-color: var(--color-border);"
+         role="alert">
+        <span>This patient is not in your panel or you do not have access. Choose someone from the list.</span>
+        <a href="{% url 'clinicians:dashboard' %}"
+           class="font-medium underline whitespace-nowrap shrink-0"
+           style="color: var(--color-primary);">Open dashboard</a>
+    </div>
+    {% endif %}
+
     <!-- Three-panel layout -->
     <div class="flex flex-1 overflow-hidden" style="height: calc(100vh - 56px);">
 

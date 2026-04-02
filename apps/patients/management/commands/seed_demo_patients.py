@@ -154,16 +154,19 @@ class Command(BaseCommand):
     help = "Create 4 demo patients with rich backstories and preferences"
 
     def handle(self, *args, **options):
-        # Create or get hospital
-        hospital, _ = Hospital.objects.get_or_create(
-            code="DEMO",
-            defaults={
-                "name": "Metro General Hospital",
-                "address": "500 First Avenue, New York, NY 10016",
-                "phone": "212-555-0100",
-                "is_active": True,
-            },
-        )
+        # Use the same hospital as the main demo fixtures (clinicians, patient list) — code SJMC.
+        # A separate DEMO hospital left demo patients invisible to dr_smith and broke deep links.
+        hospital = Hospital.objects.filter(code="SJMC").first()
+        if not hospital:
+            hospital, _ = Hospital.objects.get_or_create(
+                code="DEMO",
+                defaults={
+                    "name": "Metro General Hospital",
+                    "address": "500 First Avenue, New York, NY 10016",
+                    "phone": "212-555-0100",
+                    "is_active": True,
+                },
+            )
         self.stdout.write(f"Hospital: {hospital.name}")
 
         for profile in DEMO_PATIENTS:

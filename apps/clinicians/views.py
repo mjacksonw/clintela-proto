@@ -89,6 +89,9 @@ def dashboard_view(request, initial_patient_id=None, tab=None, subview=None):
             if subview:
                 initial_subview = subview
 
+    # True when URL named a patient the clinician cannot open (wrong hospital / missing row)
+    deep_link_patient_unavailable = bool(initial_patient_id and validated_patient_id is None)
+
     # Handoff summary
     last_login = request.user.last_login
     is_first_login = last_login is None
@@ -124,6 +127,7 @@ def dashboard_view(request, initial_patient_id=None, tab=None, subview=None):
             "initial_patient_id": validated_patient_id,
             "initial_tab": initial_tab,
             "initial_subview": initial_subview,
+            "deep_link_patient_unavailable": deep_link_patient_unavailable,
         },
     )
 
@@ -181,27 +185,42 @@ def patient_detail_fragment(request, patient_id):
     timeline = TimelineService.get_timeline(patient)
 
     # Pending escalations
-    escalations = Escalation.objects.filter(
-        patient=patient,
-        status__in=["pending", "acknowledged"],
-    ).order_by("-created_at")
+    escalations = (
+        Escalation.objects.filter(
+            patient=patient,
+            status__in=["pending", "acknowledged"],
+        )
+        .select_related("conversation")
+        .order_by("-created_at")
+    )
 
-    # HIPAA audit: log when clinician views escalation with support group context
+    # HIPAA audit: once per clinician per escalation, only for support-group escalations
     from apps.agents.models import AgentAuditLog
 
     for esc in escalations:
-        if esc.conversation_excerpt:
-            AgentAuditLog.objects.create(
-                patient=patient,
-                action="escalation_viewed",
-                agent_type="support_group",
-                details={
-                    "escalation_id": str(esc.id),
-                    "clinician_id": request.clinician.id,
-                    "clinician_name": request.user.get_full_name(),
-                    "has_conversation_excerpt": True,
-                },
-            )
+        if not esc.conversation_excerpt or esc.conversation_id is None:
+            continue
+        if esc.conversation.conversation_type != "support_group":
+            continue
+        if AgentAuditLog.objects.filter(
+            patient=patient,
+            action="escalation_viewed",
+            agent_type="support_group",
+            details__escalation_id=str(esc.id),
+            details__clinician_id=request.clinician.id,
+        ).exists():
+            continue
+        AgentAuditLog.objects.create(
+            patient=patient,
+            action="escalation_viewed",
+            agent_type="support_group",
+            details={
+                "escalation_id": str(esc.id),
+                "clinician_id": request.clinician.id,
+                "clinician_name": request.user.get_full_name() or "",
+                "has_conversation_excerpt": True,
+            },
+        )
 
     # Notes
     notes = ClinicianNote.objects.filter(patient=patient).order_by("-created_at")[:20]

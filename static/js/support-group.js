@@ -7,6 +7,17 @@
  * Used as an Alpine.js component: x-data="supportGroupChat()"
  */
 
+/** Conversation starters for persona chips (keeps Alpine templates free of escaped quotes). */
+const SG_STARTERS = {
+  maria: "I remember how scary those first days were. How are you holding up?",
+  james: "I just had my surgery and I'm not sure what to expect.",
+  linda: "I have some questions about my recovery timeline.",
+  tony: "I could use some cheering up today.",
+  priya: "I'm feeling overwhelmed by everything.",
+  robert: "What's a good daily routine for recovery?",
+  diane: "I'm not sure how I feel about all this.",
+};
+
 function supportGroupChat() {
   return {
     // Tab state
@@ -227,6 +238,13 @@ function supportGroupChat() {
       this.sgOnboarded = true;
       localStorage.setItem('sg_onboarded', 'true');
       // Server-side conversation created on first message send
+    },
+
+    prefillStarter(key) {
+      const text = SG_STARTERS[key];
+      if (!text || !this.$refs.sgInput) return;
+      this.$refs.sgInput.value = text;
+      this.$refs.sgInput.focus();
     },
 
     // -- Profile card --

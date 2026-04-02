@@ -51,7 +51,7 @@ class PatientWebSocketMixin:
     @database_sync_to_async
     def _get_patient(self, patient_id: str) -> Patient | None:
         try:
-            return Patient.objects.get(id=patient_id)
+            return Patient.objects.select_related("user", "preferences").get(id=patient_id)
         except Patient.DoesNotExist:
             return None
 
