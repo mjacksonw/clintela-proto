@@ -60,6 +60,17 @@ function supportGroupChat() {
       this._connect();
     },
 
+    destroy() {
+      if (this._reconnectTimer) {
+        clearTimeout(this._reconnectTimer);
+        this._reconnectTimer = null;
+      }
+      if (this._ws) {
+        this._ws.close();
+        this._ws = null;
+      }
+    },
+
     // -- Tab management --
 
     switchTab(tab) {
