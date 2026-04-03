@@ -9,7 +9,7 @@
       hx-on::after-request="clintelaChat.onAfterRequest(event)"
       hx-on::response-error="clintelaChat.onError(event)"
       class="px-4 pt-3 border-t flex-shrink-0"
-      style="border-color: var(--color-border); background-color: var(--color-bg); padding-bottom: calc(0.75rem + var(--dev-toolbar-h, 0px));"
+      style="border-color: var(--color-border); background-color: var(--color-bg); padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px) + var(--dev-toolbar-h, 0px));"
       x-data="{ message: '', inflight: false }">
 
     <label for="chat-textarea" class="sr-only">{% trans "Ask me anything about your recovery" %}</label>
@@ -25,7 +25,7 @@
                   maxlength="2000"
                   rows="1"
                   :disabled="inflight"
-                  class="flex-1 resize-none rounded-xl px-3 py-2 text-sm leading-normal
+                  class="flex-1 resize-none rounded-xl px-3 py-2.5 text-base leading-6
                          border transition-colors focus:border-primary focus:ring-0 focus:outline-none
                          disabled:opacity-50"
                   style="background-color: var(--color-bg);

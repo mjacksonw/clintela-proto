@@ -2,16 +2,17 @@
 <!-- Support group chat input — sends via WebSocket, not HTMX -->
 
 <div class="px-3 pt-3 border-t flex-shrink-0"
-     style="border-color: var(--color-border); padding-bottom: calc(0.75rem + var(--dev-toolbar-h, 0px));">
+     style="border-color: var(--color-border); padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px) + var(--dev-toolbar-h, 0px));">
     <div class="flex items-end gap-2">
         <textarea x-ref="sgInput"
                   @keydown.enter.prevent="if (!$event.shiftKey) { sendMessage($refs.sgInput.value); $refs.sgInput.value = ''; $refs.sgInput.style.height = '44px'; }"
-                  @input="$refs.sgInput.style.height = '44px'; $refs.sgInput.style.height = $refs.sgInput.scrollHeight + 'px'"
+                  @input="$refs.sgInput.style.height = '44px'; $refs.sgInput.style.height = Math.min($refs.sgInput.scrollHeight, 120) + 'px'"
                   :disabled="!sgConnected"
-                  class="flex-1 px-3 py-2 text-sm rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[44px] max-h-[120px]"
+                  class="flex-1 px-3 py-3 text-sm leading-5 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[44px] max-h-[120px]"
                   style="background-color: var(--color-surface);
                          border: 1px solid var(--color-border);
-                         color: var(--color-text);"
+                         color: var(--color-text);
+                         line-height: 1.25rem;"
                   placeholder="{% trans 'Message your support group...' %}"
                   rows="1"
                   aria-label="{% trans 'Support group message' %}"></textarea>

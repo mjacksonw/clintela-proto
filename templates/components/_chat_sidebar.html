@@ -2,7 +2,7 @@
 {% load i18n %}
 <!-- Chat sidebar with Care Team + Support Group tabs -->
 
-<div x-data="supportGroupChat()" class="flex flex-col h-full">
+<div x-data="supportGroupChat()" class="flex flex-col h-full min-h-0">
 
     <!-- Tab bar -->
     <div role="tablist" class="flex border-b flex-shrink-0" style="border-color: var(--color-border);">
@@ -35,15 +35,7 @@
     </div>
 
     <!-- Care Team tab panel -->
-    <div x-show="activeTab === 'care_team'" role="tabpanel" class="flex-1 flex flex-col overflow-hidden">
-        <!-- Chat label -->
-        <div class="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
-             style="border-color: var(--color-border);">
-            <span class="text-sm font-semibold" style="color: var(--color-text-secondary);">
-                {% trans "Chat" %}
-            </span>
-        </div>
-
+    <div x-show="activeTab === 'care_team'" role="tabpanel" class="flex-1 flex flex-col overflow-hidden min-h-0">
         <!-- Offline banner -->
         <div id="offline-banner"
              class="hidden px-4 py-2 text-sm font-medium text-center"
@@ -76,7 +68,7 @@
              role="log"
              aria-live="polite"
              aria-label="{% trans 'Chat messages' %}"
-             class="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 custom-scrollbar">
+             class="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 custom-scrollbar">
             {% if chat_messages %}
                 {% for msg in chat_messages %}
                     {% include "components/_message_bubble.html" with message=msg %}
@@ -109,25 +101,23 @@
     </div>
 
     <!-- Support Group tab panel -->
-    <div x-show="activeTab === 'support_group'" role="tabpanel" class="flex-1 flex flex-col overflow-hidden">
-        <!-- AI disclosure badge -->
-        <div class="flex items-center justify-center py-1.5 flex-shrink-0" style="background: var(--color-bg);">
+    <div x-show="activeTab === 'support_group'" role="tabpanel" class="flex-1 flex flex-col overflow-hidden min-h-0">
+        <!-- Status label (full-width bar — no nested pill) -->
+        <div class="flex items-center justify-center px-4 py-3 border-b flex-shrink-0"
+             style="background: var(--color-bg); border-color: var(--color-border);">
             <template x-if="sgConnecting">
-                <span class="text-xs font-medium px-2 py-0.5 rounded-full"
-                      style="background: var(--color-border); color: var(--color-text-secondary);">
-                    {% trans "Connecting..." %}
+                <span class="text-sm font-semibold" style="color: var(--color-text-secondary);">
+                    {% trans "Connecting…" %}
                 </span>
             </template>
             <template x-if="!sgConnecting && sgConnected">
-                <span class="text-xs font-medium px-2 py-0.5 rounded-full"
-                      style="background: var(--color-border); color: var(--color-text-secondary);">
+                <span class="text-sm font-semibold" style="color: var(--color-text-secondary);">
                     {% trans "AI Support Group" %}
                 </span>
             </template>
             <template x-if="!sgConnecting && !sgConnected">
-                <span class="text-xs font-medium px-2 py-0.5 rounded-full"
-                      style="background: #FEF3C7; color: #92400E;">
-                    {% trans "Reconnecting..." %}
+                <span class="text-sm font-semibold" style="color: #92400E;">
+                    {% trans "Reconnecting…" %}
                 </span>
             </template>
         </div>
@@ -139,7 +129,7 @@
 
         <!-- Support group content (post-onboarding) -->
         <template x-if="sgOnboarded">
-            <div class="flex-1 flex flex-col overflow-hidden">
+            <div class="flex-1 flex flex-col overflow-hidden min-h-0">
                 <!-- SG offline banner -->
                 <div id="sg-offline-banner"
                      x-show="!sgConnected && !sgConnecting" x-cloak
