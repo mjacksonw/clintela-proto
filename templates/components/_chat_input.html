@@ -10,10 +10,10 @@
       hx-on::response-error="clintelaChat.onError(event)"
       class="px-4 pt-3 border-t flex-shrink-0"
       style="border-color: var(--color-border); background-color: var(--color-bg); padding-bottom: calc(0.75rem + var(--dev-toolbar-h, 0px));"
-      x-data="{ message: '', inflight: false }">
+      x-data="patientChatComposer()">
 
     <label for="chat-textarea" class="sr-only">{% trans "Ask me anything about your recovery" %}</label>
-    <div class="flex items-end gap-2" x-data="voiceRecorder()">
+    <div class="flex items-end gap-2">
         <!-- Auto-growing textarea (hidden during recording on mobile) -->
         <textarea name="message"
                   id="chat-textarea"
@@ -99,5 +99,5 @@
     </div>
 </form>
 
-<!-- Voice recorder script -->
-<script src="{% static 'js/voice-recorder.js' %}"></script>
+<!-- Voice recorder + patientChatComposer (single Alpine scope for #chat-form) -->
+<script src="{% static 'js/voice-recorder.js' %}?v=2"></script>
