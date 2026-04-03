@@ -1,0 +1,192 @@
+/**
+ * WebView CSS polish — makes the Django patient interface feel native in a mobile app.
+ *
+ * Applied globally when running inside the Capacitor WebView.
+ * These rules handle:
+ *   - Safe area insets (notch, home indicator, status bar)
+ *   - Overscroll behavior (no rubber-banding into white)
+ *   - Touch callout suppression (no long-press menus on links)
+ *   - Text size adjustment (prevent iOS auto-zoom on inputs)
+ *   - Haptic touch targets (44px minimum)
+ *   - Splash screen → content transition
+ */
+
+/* ─── Safe Area ─────────────────────────────────────────────────── */
+
+:root {
+  --safe-area-top: env(safe-area-inset-top);
+  --safe-area-bottom: env(safe-area-inset-bottom);
+  --safe-area-left: env(safe-area-inset-left);
+  --safe-area-right: env(safe-area-inset-right);
+}
+
+html {
+  /* Prevent iOS rubber-band overscroll showing white underneath */
+  overscroll-behavior: none;
+
+  /* Prevent auto text size adjustment on rotation */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  /* Apply safe area padding */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+
+  /* Prevent pull-to-refresh on the WebView (Capacitor handles it) */
+  overscroll-behavior-y: contain;
+
+  /* Warm gray background matching Capacitor config */
+  background-color: #fafaf9;
+}
+
+/* ─── Touch Behavior ────────────────────────────────────────────── */
+
+/* Suppress long-press context menus (feels native) */
+a,
+button,
+img {
+  -webkit-touch-callout: none;
+}
+
+/* Disable text selection on UI elements (not content) */
+nav,
+header,
+footer,
+.btn,
+.button,
+[role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in content areas */
+main,
+article,
+.chat-message,
+.care-plan-content,
+p {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Minimum touch target size (44px per WCAG / Apple HIG) */
+a,
+button,
+input[type="submit"],
+input[type="button"],
+[role="button"],
+.clickable {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Prevent iOS zoom on input focus (requires 16px minimum) */
+input,
+textarea,
+select {
+  font-size: max(16px, 1em);
+}
+
+/* ─── Scrolling ─────────────────────────────────────────────────── */
+
+/* Smooth momentum scrolling */
+.scroll-container,
+main,
+[data-scroll] {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Hide scrollbars on mobile (cleaner native feel) */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  scrollbar-width: none;
+}
+
+/* ─── Status Bar Area ───────────────────────────────────────────── */
+
+/* Transparent status bar overlay area */
+.status-bar-spacer {
+  height: env(safe-area-inset-top);
+  background-color: #fafaf9;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+}
+
+/* ─── Bottom Navigation Safe Area ───────────────────────────────── */
+
+/* Prevent bottom nav from sitting under the home indicator */
+.bottom-nav,
+.tab-bar,
+nav[aria-label="navigation"] {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ─── Offline Banner ────────────────────────────────────────────── */
+
+.offline-banner {
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  height: 32px;
+  background-color: #d97706;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-family: "Satoshi", -apple-system, BlinkMacSystemFont, sans-serif;
+  z-index: 9998;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+
+.offline-banner.visible {
+  transform: translateY(0);
+}
+
+/* ─── Haptic Feedback Indicators ────────────────────────────────── */
+
+/* Active state for tappable elements (subtle scale) */
+button:active,
+a:active,
+[role="button"]:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* ─── Dark Mode ─────────────────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #1c1917;
+  }
+
+  .status-bar-spacer {
+    background-color: #1c1917;
+  }
+}
+
+/* ─── Reduced Motion ────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
