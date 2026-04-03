@@ -309,6 +309,71 @@ async def test_receive_valid_message_processes():
     await communicator.disconnect()
 
 
+async def test_connect_sends_history():
+    """On connect, existing messages are sent as a history event."""
+    patient = await database_sync_to_async(PatientFactory)()
+    conv = await database_sync_to_async(AgentConversationFactory)(
+        patient=patient,
+        conversation_type="support_group",
+    )
+    # Create a user message and a persona message with a reaction
+    from apps.agents.tests.factories import AgentMessageFactory, SupportGroupReactionFactory
+
+    await database_sync_to_async(AgentMessageFactory)(conversation=conv, role="user", content="Hello group!")
+    persona_msg = await database_sync_to_async(AgentMessageFactory)(
+        conversation=conv, role="assistant", content="Welcome!", persona_id="maria"
+    )
+    await database_sync_to_async(SupportGroupReactionFactory)(message=persona_msg, persona_id="james", emoji="heart")
+
+    communicator = _build_communicator(
+        patient.id,
+        session={"patient_id": str(patient.id)},
+    )
+    connected, _ = await communicator.connect()
+    assert connected is True
+
+    # First message should be history
+    response = await communicator.receive_json_from(timeout=5)
+    assert response["type"] == "history"
+    assert len(response["messages"]) == 2
+
+    # Check user message
+    assert response["messages"][0]["type"] == "user"
+    assert response["messages"][0]["content"] == "Hello group!"
+
+    # Check persona message with reaction
+    assert response["messages"][1]["type"] == "persona"
+    assert response["messages"][1]["persona_id"] == "maria"
+    assert len(response["messages"][1]["reactions"]) == 1
+    assert response["messages"][1]["reactions"][0]["persona_id"] == "james"
+    assert response["messages"][1]["reactions"][0]["emoji"] == "heart"
+    assert "timestamp" in response["messages"][1]["reactions"][0]
+
+    await communicator.disconnect()
+
+
+async def test_connect_no_history_when_no_conversation():
+    """On connect with no prior conversation, no history event is sent."""
+    patient = await database_sync_to_async(PatientFactory)()
+    communicator = _build_communicator(
+        patient.id,
+        session={"patient_id": str(patient.id)},
+    )
+    connected, _ = await communicator.connect()
+    assert connected is True
+
+    # Should not receive any message (history is empty)
+    import asyncio
+
+    try:
+        await asyncio.wait_for(communicator.receive_json_from(), timeout=0.5)
+        raise AssertionError("Should not have received a message")
+    except TimeoutError:
+        pass  # Expected — no history to send
+
+    await communicator.disconnect()
+
+
 async def test_receive_crisis_message():
     """Crisis result shows escalation banner."""
     patient = await database_sync_to_async(PatientFactory)()
