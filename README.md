@@ -138,7 +138,8 @@ This repository contains the prototype implementation of Clintela's user interfa
 
 ## Documentation
 
-- [Design System](./DESIGN.md) — **Start here** — Visual design, typography, colors, components
+- [Product Roadmap](./docs/roadmap.md) — **Start here** — Strategic roadmap for team, partners, and investors
+- [Design System](./DESIGN.md) — Visual design, typography, colors, components
 - [Product Vision](./docs/vision.md)
 - [Clintela Foundation Design](./docs/designs/clintela-foundation.md) — Scope expansion plan from CEO review
 - [Engineering Review](./docs/engineering-review.md) — Architecture, diagrams, and implementation guide
