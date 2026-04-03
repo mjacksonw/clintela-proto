@@ -24,6 +24,43 @@ def deliver_notification_task(notification_id):
     return results
 
 
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def deliver_push_notification_task(self, delivery_id):
+    """Deliver a single push notification with retry.
+
+    Retries up to 3 times with 30s backoff for transient FCM errors.
+    Bounced tokens (410/gone) do NOT retry.
+    """
+    from apps.notifications.backends import get_notification_backend
+    from apps.notifications.models import NotificationDelivery
+
+    try:
+        delivery = NotificationDelivery.objects.select_related("notification", "notification__patient", "device").get(
+            id=delivery_id
+        )
+    except NotificationDelivery.DoesNotExist:
+        logger.error("Push delivery %s not found", delivery_id)
+        return
+
+    if delivery.status != "pending":
+        return  # Already processed
+
+    backend = get_notification_backend("push")
+    success = backend.send(delivery.notification, delivery)
+
+    if not success and delivery.status == "failed" and delivery.retry_count <= 3:
+        # Transient failure, retry
+        try:
+            self.retry(countdown=30 * delivery.retry_count)
+        except self.MaxRetriesExceededError:
+            logger.warning(
+                "Push delivery exhausted retries",
+                extra={"delivery_id": delivery_id},
+            )
+
+    return success
+
+
 @shared_task
 def send_scheduled_reminders():
     """Periodic task: deliver pending reminder notifications.

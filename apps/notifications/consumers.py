@@ -15,6 +15,7 @@ import logging
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,9 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
+        # Update last_active_at on connect
+        await self._update_last_active()
+
         # Send unread count on connect
         count = await self._get_unread_count()
         await self.send(
@@ -54,7 +58,9 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         """Handle client messages (mark_read)."""
         try:
             data = json.loads(text_data)
-            if data.get("action") == "mark_read":
+            action = data.get("action")
+
+            if action == "mark_read":
                 notification_id = data.get("notification_id")
                 if notification_id:
                     await self._mark_read(notification_id)
@@ -68,6 +74,9 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                             }
                         )
                     )
+            elif action == "heartbeat":
+                await self._update_last_active()
+                await self.send(text_data=json.dumps({"type": "heartbeat.ack"}))
         except (json.JSONDecodeError, KeyError):
             pass
 
@@ -134,6 +143,22 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             id=notification_id,
             patient_id=self.patient_id,
         ).update(is_read=True)
+
+    @database_sync_to_async
+    def _update_last_active(self):
+        """Update last_active_at on the patient's User record.
+
+        Called on connect and on every heartbeat (client sends every 30s).
+        Used by notification routing to suppress push when WS is active.
+        """
+        from apps.accounts.models import User
+        from apps.patients.models import Patient
+
+        try:
+            patient = Patient.objects.select_related("user").get(id=self.patient_id)
+            User.objects.filter(id=patient.user_id).update(last_active_at=timezone.now())
+        except Patient.DoesNotExist:
+            pass
 
 
 class ClinicianNotificationConsumer(AsyncWebsocketConsumer):

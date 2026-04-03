@@ -122,6 +122,30 @@ def send_proactive_patient_message(patient_id: int, rule_name: str, message_cate
     )
 
 
+@shared_task(name="clinical.process_patient_batch")
+def process_patient_batch(patient_id: str):
+    """Process clinical data after a batch health sync.
+
+    Runs rules engine + snapshot recomputation for a patient
+    after bulk observations are ingested from HealthKit / Health Connect.
+    Called asynchronously so the sync endpoint responds quickly.
+    """
+    from apps.clinical.services import ClinicalDataService
+    from apps.patients.models import Patient
+
+    try:
+        patient = Patient.objects.get(pk=patient_id)
+    except Patient.DoesNotExist:
+        logger.warning("Batch processing: patient %s not found", patient_id)
+        return
+
+    try:
+        ClinicalDataService.process_patient_batch(patient)
+        logger.info("Batch processing complete for patient %s", patient_id)
+    except Exception:
+        logger.exception("Batch processing failed for patient %s", patient_id)
+
+
 @shared_task(name="clinical.compute_all_snapshots")
 def compute_all_snapshots():
     """Nightly snapshot recomputation for all active patients.

@@ -95,6 +95,7 @@ OLLAMA_BASE_URL = "https://test.ollama.com/v1"
 # =============================================================================
 NOTIFICATION_BACKENDS = {
     "in_app": "apps.notifications.backends.LocMemBackend",
+    "push": "apps.notifications.backends.LocMemBackend",
     "sms": "apps.notifications.backends.LocMemBackend",
     "email": "apps.notifications.backends.LocMemBackend",
 }

@@ -373,6 +373,7 @@ if LANGSMITH_TRACING:
 # =============================================================================
 NOTIFICATION_BACKENDS = {
     "in_app": "apps.notifications.backends.InAppBackend",
+    "push": "apps.notifications.backends.PushBackend",
     "sms": "apps.notifications.backends.SMSBackend",
     "email": "apps.notifications.backends.EmailBackend",
 }
@@ -446,6 +447,17 @@ ENABLE_SMS = env.bool("ENABLE_SMS", default=False)
 ENABLE_VOICE = env.bool("ENABLE_VOICE", default=False)
 ENABLE_RAG = env.bool("ENABLE_RAG", default=False)
 ENABLE_CLINICAL_DATA = env.bool("ENABLE_CLINICAL_DATA", default=False)
+ENABLE_MOBILE_PUSH = env.bool("ENABLE_MOBILE_PUSH", default=False)
+
+# =============================================================================
+# MOBILE APP CONFIGURATION
+# =============================================================================
+APPLE_APP_ID = env("APPLE_APP_ID", default="TEAMID.com.clintela.app")
+ANDROID_PACKAGE_NAME = env("ANDROID_PACKAGE_NAME", default="com.clintela.app")
+ANDROID_CERT_FINGERPRINTS = env.list(
+    "ANDROID_CERT_FINGERPRINTS",
+    default=[],
+)
 
 # =============================================================================
 # EMBEDDING / RAG

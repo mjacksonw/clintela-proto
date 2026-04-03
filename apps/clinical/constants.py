@@ -81,6 +81,8 @@ SOURCE_MANUAL = "manual"
 SOURCE_EHR = "ehr"
 SOURCE_PATIENT_REPORTED = "patient_reported"
 SOURCE_CALCULATED = "calculated"
+SOURCE_HEALTHKIT = "healthkit"
+SOURCE_HEALTH_CONNECT = "health_connect"
 
 SOURCE_CHOICES = [
     (SOURCE_WEARABLE, "Wearable Device"),
@@ -88,6 +90,8 @@ SOURCE_CHOICES = [
     (SOURCE_EHR, "EHR/OMOP"),
     (SOURCE_PATIENT_REPORTED, "Patient Reported"),
     (SOURCE_CALCULATED, "Calculated"),
+    (SOURCE_HEALTHKIT, "Apple HealthKit"),
+    (SOURCE_HEALTH_CONNECT, "Android Health Connect"),
 ]
 
 # ──────────────────────────────────────────────────────────────────────

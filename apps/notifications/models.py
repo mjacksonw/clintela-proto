@@ -4,12 +4,62 @@ Model hierarchy:
     Notification (intent to notify)
     ├── NotificationDelivery (per-channel delivery attempt)
     │   status: pending → sent → delivered
-    │                  └→ failed
+    │                  └→ failed / bounced
+    ├── DeviceToken (push notification token per device)
+    │   platform: ios / android
+    │   lifecycle: active → deactivated (on 410/gone or logout)
     └── NotificationPreference (patient channel preferences)
         controls which channels + quiet hours
 """
 
 from django.db import models
+
+
+class DeviceToken(models.Model):
+    """Push notification token for a patient's device.
+
+    Each physical device (phone/tablet) registers one token via FCM.
+    A patient can have multiple active tokens (multiple devices).
+    Tokens are deactivated on APNs 410/gone, logout, or uninstall.
+    """
+
+    PLATFORM_CHOICES = [
+        ("ios", "iOS"),
+        ("android", "Android"),
+    ]
+
+    patient = models.ForeignKey(
+        "patients.Patient",
+        on_delete=models.CASCADE,
+        related_name="device_tokens",
+    )
+    platform = models.CharField(max_length=10, choices=PLATFORM_CHOICES)
+    token = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="FCM registration token",
+    )
+    device_name = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="e.g. iPhone 15, Pixel 8",
+    )
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    deactivated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "notifications_device_token"
+        indexes = [
+            models.Index(
+                fields=["patient", "is_active"],
+                name="idx_device_patient_active",
+            ),
+        ]
+
+    def __str__(self):
+        status = "active" if self.is_active else "inactive"
+        return f"{self.patient} - {self.platform} ({status})"
 
 
 class Notification(models.Model):
@@ -74,6 +124,7 @@ class NotificationDelivery(models.Model):
 
     CHANNEL_CHOICES = [
         ("in_app", "In-App"),
+        ("push", "Push"),
         ("sms", "SMS"),
         ("email", "Email"),
     ]
@@ -83,12 +134,21 @@ class NotificationDelivery(models.Model):
         ("sent", "Sent"),
         ("delivered", "Delivered"),
         ("failed", "Failed"),
+        ("bounced", "Bounced"),
     ]
 
     notification = models.ForeignKey(
         Notification,
         on_delete=models.CASCADE,
         related_name="deliveries",
+    )
+    device = models.ForeignKey(
+        DeviceToken,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="deliveries",
+        help_text="Set for push deliveries (one delivery per device token)",
     )
     channel = models.CharField(max_length=10, choices=CHANNEL_CHOICES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
