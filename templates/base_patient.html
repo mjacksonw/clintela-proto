@@ -120,6 +120,8 @@
 
 {% block extra_js %}
 <script src="{% static 'js/chat.js' %}?v=5"></script>
+{# Load before Alpine hydrates x-data on #chat-form — scripts inside x-if-injected HTML do not run. #}
+<script src="{% static 'js/voice-recorder.js' %}?v=2"></script>
 <script src="{% static 'js/notifications.js' %}?v=5"></script>
 {% if ENABLE_SUPPORT_GROUP %}
 <script>
