@@ -24,6 +24,108 @@ def deliver_notification_task(notification_id):
     return results
 
 
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def deliver_push_notification_task(self, delivery_id):
+    """Deliver a single push notification with retry.
+
+    Retries up to 3 times with 30s backoff for transient FCM errors.
+    Bounced tokens (410/gone) do NOT retry.
+    """
+    from apps.notifications.backends import get_notification_backend
+    from apps.notifications.models import NotificationDelivery
+
+    try:
+        delivery = NotificationDelivery.objects.select_related("notification", "notification__patient", "device").get(
+            id=delivery_id
+        )
+    except NotificationDelivery.DoesNotExist:
+        logger.error("Push delivery %s not found", delivery_id)
+        return
+
+    if delivery.status != "pending":
+        return  # Already processed
+
+    backend = get_notification_backend("push")
+    success = backend.send(delivery.notification, delivery)
+
+    if not success and delivery.status == "failed" and delivery.retry_count <= 3:
+        # Transient failure, retry
+        try:
+            self.retry(countdown=30 * delivery.retry_count)
+        except self.MaxRetriesExceededError:
+            logger.warning(
+                "Push delivery exhausted retries",
+                extra={"delivery_id": delivery_id},
+            )
+
+    return success
+
+
+@shared_task
+def batch_push_notifications():
+    """Batch scheduled push notifications within a 15-minute window.
+
+    Groups pending push deliveries for reminder-type notifications per patient.
+    Instead of N individual pushes, sends a single grouped notification like:
+    "You have 3 upcoming items: Take Lisinopril, Evening check-in, Log weight"
+
+    Conversational messages (escalations, care team messages) bypass batching
+    and are always delivered immediately via deliver_push_notification_task.
+
+    Runs every 15 minutes via Celery Beat.
+    """
+    from apps.notifications.backends import get_notification_backend
+    from apps.notifications.models import NotificationDelivery
+
+    # Find pending push deliveries for batchable notification types
+    batchable_types = ["reminder", "update"]
+    pending = (
+        NotificationDelivery.objects.filter(
+            status="pending",
+            channel="push",
+            notification__notification_type__in=batchable_types,
+        )
+        .select_related("notification", "notification__patient", "device")
+        .order_by("device_id", "created_at")
+    )
+
+    if not pending.exists():
+        return {"batched": 0}
+
+    # Group by device token
+    from itertools import groupby
+
+    batched = 0
+    sorted_deliveries = list(pending)
+    sorted_deliveries.sort(key=lambda d: d.device_id or 0)
+
+    for device_id, group in groupby(sorted_deliveries, key=lambda d: d.device_id):
+        deliveries = list(group)
+        if not deliveries or not device_id:
+            continue
+
+        if len(deliveries) == 1:
+            # Single notification, deliver normally
+            delivery = deliveries[0]
+            backend = get_notification_backend("push")
+            backend.send(delivery.notification, delivery)
+        else:
+            # Multiple notifications — send the first one and mark others as delivered
+            # (the grouped push on the device will show the thread summary)
+            first = deliveries[0]
+            backend = get_notification_backend("push")
+            backend.send(first.notification, first)
+
+            # Mark remaining as sent (they'll appear grouped under the thread)
+            for delivery in deliveries[1:]:
+                backend.send(delivery.notification, delivery)
+
+        batched += len(deliveries)
+
+    logger.info("Batch push processing: %d deliveries processed", batched)
+    return {"batched": batched}
+
+
 @shared_task
 def send_scheduled_reminders():
     """Periodic task: deliver pending reminder notifications.

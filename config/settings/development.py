@@ -71,6 +71,7 @@ CACHES = {
 # =============================================================================
 NOTIFICATION_BACKENDS = {
     "in_app": "apps.notifications.backends.InAppBackend",
+    "push": "apps.notifications.backends.ConsoleBackend",
     "sms": "apps.notifications.backends.ConsoleBackend",
     "email": "apps.notifications.backends.ConsoleBackend",
 }

@@ -4,10 +4,22 @@ import factory
 
 from apps.agents.tests.factories import PatientFactory
 from apps.notifications.models import (
+    DeviceToken,
     Notification,
     NotificationDelivery,
     NotificationPreference,
 )
+
+
+class DeviceTokenFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = DeviceToken
+
+    patient = factory.SubFactory(PatientFactory)
+    platform = "ios"
+    token = factory.Sequence(lambda n: f"fcm_token_{n:06d}")
+    device_name = "iPhone 15"
+    is_active = True
 
 
 class NotificationFactory(factory.django.DjangoModelFactory):

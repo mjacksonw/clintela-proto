@@ -21,6 +21,12 @@ class User(AbstractUser):
     )
     phone_number = models.CharField(max_length=20, blank=True, db_index=True)
     email_verified = models.BooleanField(default=False)
+    last_active_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Updated by WS consumer heartbeat (30s interval). Used for push routing.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

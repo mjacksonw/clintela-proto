@@ -100,6 +100,10 @@ class ClinicalObservation(models.Model):
                 condition=~models.Q(value_numeric__isnull=True, value_text=""),
                 name="obs_value_not_empty",
             ),
+            models.UniqueConstraint(
+                fields=["patient", "concept_id", "observed_at", "source"],
+                name="uniq_obs_patient_concept_time_source",
+            ),
         ]
 
     def __str__(self):

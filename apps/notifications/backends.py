@@ -178,6 +178,135 @@ class EmailBackend(BaseNotificationBackend):
             return False
 
 
+class PushBackend(BaseNotificationBackend):
+    """Push notification via FCM (handles both iOS/APNs and Android).
+
+    Requires firebase-admin. Sends to the DeviceToken attached to
+    the delivery record. Deactivates token on 404/410 (gone) and
+    marks delivery as "bounced".
+    """
+
+    def send(self, notification, delivery):
+        if not delivery.device_id:
+            logger.warning(
+                "Push delivery skipped — no device token",
+                extra={"notification_id": notification.id, "delivery_id": delivery.id},
+            )
+            delivery.status = "failed"
+            delivery.error_message = "No device token attached to delivery"
+            delivery.save(update_fields=["status", "error_message"])
+            return False
+
+        from apps.notifications.models import DeviceToken
+
+        try:
+            device = DeviceToken.objects.get(id=delivery.device_id)
+        except DeviceToken.DoesNotExist:
+            delivery.status = "failed"
+            delivery.error_message = "Device token record not found"
+            delivery.save(update_fields=["status", "error_message"])
+            return False
+
+        if not device.is_active:
+            delivery.status = "bounced"
+            delivery.error_message = "Device token is inactive"
+            delivery.save(update_fields=["status", "error_message"])
+            return False
+
+        try:
+            from firebase_admin import messaging
+
+            # Generic lock-screen-safe preview (PHI privacy)
+            push_title = "Clintela"
+            push_body = {
+                "reminder": "Time for a check-in",
+                "alert": "Health update available",
+                "update": "New update from your care team",
+                "escalation": "New message from your care team",
+                "celebration": "New message from your care team",
+            }.get(notification.notification_type, "New message from your care team")
+
+            # Thread grouping for notification center
+            thread_id = {
+                "reminder": "clintela-reminders",
+                "alert": "clintela-health",
+                "update": "clintela-health",
+                "escalation": "clintela-messages",
+                "celebration": "clintela-messages",
+            }.get(notification.notification_type, "clintela-messages")
+
+            message = messaging.Message(
+                token=device.token,
+                notification=messaging.Notification(
+                    title=push_title,
+                    body=push_body,
+                ),
+                data={
+                    "notification_id": str(notification.id),
+                    "type": notification.notification_type,
+                    "patient_id": str(notification.patient_id) if notification.patient_id else "",
+                },
+                apns=messaging.APNSConfig(
+                    payload=messaging.APNSPayload(
+                        aps=messaging.Aps(
+                            thread_id=thread_id,
+                            sound="default",
+                        ),
+                    ),
+                ),
+                android=messaging.AndroidConfig(
+                    notification=messaging.AndroidNotification(
+                        channel_id=thread_id,
+                        tag=thread_id,
+                    ),
+                ),
+            )
+
+            response = messaging.send(message)
+            delivery.status = "sent"
+            delivery.external_id = response  # FCM message ID
+            delivery.save(update_fields=["status", "external_id"])
+            logger.info(
+                "Push notification sent",
+                extra={
+                    "notification_id": notification.id,
+                    "device_id": device.id,
+                    "fcm_id": response,
+                },
+            )
+            return True
+
+        except Exception as exc:
+            exc_str = str(exc)
+            # Check for token-gone errors (APNs 410, FCM unregistered)
+            is_gone = any(
+                marker in exc_str.lower()
+                for marker in ["unregistered", "not-registered", "invalid-registration", "410"]
+            )
+
+            if is_gone:
+                device.is_active = False
+                device.deactivated_at = timezone.now()
+                device.save(update_fields=["is_active", "deactivated_at"])
+                delivery.status = "bounced"
+                delivery.error_message = f"Token gone: {exc_str[:200]}"
+                delivery.save(update_fields=["status", "error_message"])
+                logger.info(
+                    "Push token deactivated (gone)",
+                    extra={"device_id": device.id, "patient_id": device.patient_id},
+                )
+            else:
+                delivery.status = "failed"
+                delivery.retry_count += 1
+                delivery.error_message = f"FCM error: {exc_str[:200]}"
+                delivery.save(update_fields=["status", "retry_count", "error_message"])
+                logger.exception(
+                    "Push notification failed",
+                    extra={"notification_id": notification.id, "device_id": device.id},
+                )
+            return False
+
+
 class LocMemBackend(BaseNotificationBackend):
     """In-memory backend for testing. Stores deliveries in .outbox class var."""
 

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Clintela Android widget layout — days since surgery + next action -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:background="@android:color/white">
+
+    <!-- Left: Day counter -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/text_day_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Day 0"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#1C1917" />
+
+        <TextView
+            android:id="@+id/text_recovery_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="of Recovery"
+            android:textSize="12sp"
+            android:textColor="#78716C" />
+
+    </LinearLayout>
+
+    <!-- Right: Next action -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp">
+
+        <TextView
+            android:id="@+id/text_next_action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Loading..."
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#1C1917"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/text_next_action_due"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="12sp"
+            android:textColor="#78716C"
+            android:layout_marginTop="4dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
