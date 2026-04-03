@@ -72,7 +72,7 @@
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="translate-y-0"
              x-transition:leave-end="translate-y-full"
-             class="lg:hidden fixed inset-0 z-50 flex flex-col"
+             class="lg:hidden fixed inset-0 z-[60] flex flex-col"
              style="background-color: var(--color-surface);"
              role="dialog"
              :aria-modal="mobileOverlay"
@@ -107,9 +107,10 @@
     <button id="chat-fab"
             @click="openMobileChat()"
             x-show="!mobileOverlay"
-            class="lg:hidden fixed bottom-4 right-4 z-40 w-14 h-14 rounded-full bg-primary text-white
+            class="lg:hidden fixed right-4 z-[60] w-14 h-14 rounded-full bg-primary text-white
                    shadow-lg flex items-center justify-center
                    hover:bg-primary-700 active:scale-95 transition-all"
+            style="bottom: calc(1rem + var(--dev-toolbar-h, 0px));"
             aria-label="{% trans "Open chat" %}">
         <i data-lucide="message-circle" class="w-6 h-6"></i>
     </button>
