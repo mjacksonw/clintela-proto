@@ -195,3 +195,16 @@ function voiceRecorder() {
         },
     };
 }
+
+/**
+ * Care team chat composer — one Alpine scope for HTMX message state + voice recorder.
+ * Nested x-data (form + voiceRecorder) broke x-show / :disabled / x-model resolution
+ * so the textarea stayed display:none and looked disabled on load.
+ */
+function patientChatComposer() {
+    return {
+        ...voiceRecorder(),
+        message: '',
+        inflight: false,
+    };
+}
