@@ -436,6 +436,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.clinicians.tasks.notify_upcoming_appointments",
         "schedule": crontab(hour=8, minute=3),  # daily at 8:03 AM
     },
+    "batch-push-notifications": {
+        "task": "apps.notifications.tasks.batch_push_notifications",
+        "schedule": 900,  # every 15 minutes
+    },
+    "compute-clinical-snapshots": {
+        "task": "clinical.compute_all_snapshots",
+        "schedule": crontab(hour=2, minute=15),  # 2:15 AM daily
+    },
+    "check-missing-clinical-data": {
+        "task": "clinical.check_missing_data",
+        "schedule": 21600,  # every 6 hours
+    },
 }
 
 # =============================================================================

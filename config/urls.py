@@ -24,6 +24,7 @@ from django.views.generic import TemplateView
 from ninja import NinjaAPI
 
 # Import API routers
+from apps.accounts.api import router as auth_router
 from apps.accounts.views_dev import demo_login_view, protected_gate_view
 from apps.agents.api import router as agents_router
 from apps.clinical.api import router as health_router
@@ -31,6 +32,7 @@ from apps.notifications.api import router as devices_router
 
 api = NinjaAPI(version="1.0.0")
 api.add_router("/agents/", agents_router)
+api.add_router("/v1/auth/", auth_router)
 api.add_router("/v1/devices/", devices_router)
 api.add_router("/v1/health/", health_router)
 

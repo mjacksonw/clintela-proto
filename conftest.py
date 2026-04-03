@@ -8,7 +8,33 @@ For more information, see:
 https://pytest-django.readthedocs.io/en/latest/
 """
 
+import sys
+
 import pytest
+
+# ---------------------------------------------------------------------------
+# Python 3.14 + Django 5.1 compatibility: fix template context __copy__
+#
+# In Python 3.14, ``copy.copy(super())`` inside BaseContext.__copy__() returns
+# a ``super`` proxy object instead of a shallow copy of the underlying list,
+# which causes ``AttributeError: 'super' object has no attribute 'dicts'``.
+#
+# This monkey-patch replaces __copy__ with a version that builds the duplicate
+# the same way Django intends but without relying on copy(super()).
+# Remove this once Django ships a fix (tracked in Django ticket #36083).
+# ---------------------------------------------------------------------------
+if sys.version_info >= (3, 14):
+    import copy as _copy_module
+
+    from django.template import context as _ctx
+
+    def _basecontext_copy(self):
+        duplicate = _copy_module.copy(self.dicts)  # list copy
+        new = self.__class__.__new__(self.__class__)
+        new.dicts = duplicate
+        return new
+
+    _ctx.BaseContext.__copy__ = _basecontext_copy
 
 
 @pytest.fixture(scope="session")

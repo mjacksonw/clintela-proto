@@ -7,7 +7,7 @@ Endpoints:
 import logging
 from datetime import datetime
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
@@ -65,18 +65,19 @@ def _ingest_single_observation(obs, index, patient, source, service):
         return False, f"[{index}] Invalid observed_at: {obs.observed_at}"
 
     try:
-        service.ingest_observation(
-            patient=patient,
-            concept_id=obs.concept_id,
-            value_numeric=obs.value_numeric,
-            value_text=obs.value_text,
-            observed_at=observed_at,
-            source=source,
-            source_device=obs.source_device,
-            quality="verified",
-            metadata=obs.metadata or {},
-            skip_processing=True,
-        )
+        with transaction.atomic():
+            service.ingest_observation(
+                patient=patient,
+                concept_id=obs.concept_id,
+                value_numeric=obs.value_numeric,
+                value_text=obs.value_text,
+                observed_at=observed_at,
+                source=source,
+                source_device=obs.source_device,
+                quality="verified",
+                metadata=obs.metadata or {},
+                skip_processing=True,
+            )
         return True, None
     except IntegrityError:
         return False, None  # Duplicate, skip silently
