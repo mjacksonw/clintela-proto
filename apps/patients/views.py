@@ -152,7 +152,6 @@ def patient_chat_send_view(request):
         )
 
 
-@require_POST
 def _save_and_transcribe(patient, audio_file):
     """Save an uploaded audio file and return (transcription, audio_url)."""
     from django.urls import reverse
