@@ -121,7 +121,7 @@
 {% block extra_js %}
 <script src="{% static 'js/chat.js' %}?v=5"></script>
 {# Load before Alpine hydrates x-data on #chat-form — scripts inside x-if-injected HTML do not run. #}
-<script src="{% static 'js/voice-recorder.js' %}?v=2"></script>
+<script src="{% static 'js/voice-recorder.js' %}?v=3"></script>
 <script src="{% static 'js/notifications.js' %}?v=5"></script>
 {% if ENABLE_SUPPORT_GROUP %}
 <script>
@@ -129,7 +129,7 @@
     window.__sgOnboarded = {{ sg_onboarded|yesno:"true,false" }};
     window.__sgPatientId = "{{ patient.id }}";
 </script>
-<script src="{% static 'js/support-group.js' %}?v=3"></script>
+<script src="{% static 'js/support-group.js' %}?v=4"></script>
 {% endif %}
 {% if ENABLE_CLINICAL_DATA %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>

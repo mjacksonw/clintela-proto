@@ -20,6 +20,9 @@ const SG_STARTERS = {
 
 function supportGroupChat() {
   return {
+    // Merge voice recorder (shared with care team chat)
+    ...voiceRecorder(),
+
     // Tab state
     activeTab: 'care_team',
     careTeamUnread: 0,
@@ -41,6 +44,13 @@ function supportGroupChat() {
     init() {
       this._patientId = window.__sgPatientId || document.body.dataset.patientId;
       if (!this._patientId) return;
+
+      // Wire voice recorder to send via WebSocket instead of HTML insert
+      this.onVoiceResult = (text, audioUrl) => {
+        if (text && text.trim()) {
+          this.sendVoiceMessage(text, audioUrl);
+        }
+      };
 
       // Check onboarding state (server-side is authoritative, localStorage is fast-path cache)
       this.sgOnboarded = window.__sgOnboarded || localStorage.getItem('sg_onboarded') === 'true';
