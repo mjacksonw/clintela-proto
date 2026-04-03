@@ -29,6 +29,7 @@ function supportGroupChat() {
     supportGroupUnread: 0,
 
     // Support group state
+    sgText: '',
     sgMessages: [],
     sgConnected: false,
     sgConnecting: false,
@@ -138,9 +139,11 @@ function supportGroupChat() {
     // -- Send message --
 
     sendMessage(text) {
-      if (!text || !text.trim() || !this._ws || !this.sgConnected) return;
+      const input = text || this.sgText;
+      if (!input || !input.trim() || !this._ws || !this.sgConnected) return;
 
-      const message = text.trim();
+      const message = input.trim();
+      this.sgText = '';
 
       // Optimistic UI: add patient message immediately
       this.sgMessages.push({
@@ -177,6 +180,9 @@ function supportGroupChat() {
 
     _handleMessage(data) {
       switch (data.type) {
+        case 'history':
+          this._loadHistory(data.messages || []);
+          break;
         case 'support_group_message':
           this._addPersonaMessage(data);
           break;
@@ -192,6 +198,14 @@ function supportGroupChat() {
         case 'error':
           console.warn('Support group error:', data.message);
           break;
+      }
+    },
+
+    _loadHistory(messages) {
+      if (messages.length > 0) {
+        this.sgMessages = messages;
+        this.sgOnboarded = true;
+        this.$nextTick(() => this._scrollToBottom());
       }
     },
 
@@ -222,6 +236,7 @@ function supportGroupChat() {
         msg.reactions.push({
           persona_id: data.persona_id,
           emoji: data.emoji,
+          timestamp: data.timestamp || new Date().toISOString(),
         });
       }
     },
@@ -263,9 +278,11 @@ function supportGroupChat() {
 
     prefillStarter(key) {
       const text = SG_STARTERS[key];
-      if (!text || !this.$refs.sgInput) return;
-      this.$refs.sgInput.value = text;
-      this.$refs.sgInput.focus();
+      if (!text) return;
+      this.sgText = text;
+      this.$nextTick(() => {
+        if (this.$refs.sgInput) this.$refs.sgInput.focus();
+      });
     },
 
     // -- Profile card --
@@ -307,6 +324,26 @@ function supportGroupChat() {
 
     getEmoji(name) {
       return this.emojiMap[name] || name;
+    },
+
+    relativeTime(isoString) {
+      if (!isoString) return '';
+      const diff = Date.now() - new Date(isoString).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs}h ago`;
+      const days = Math.floor(hrs / 24);
+      return `${days}d ago`;
+    },
+
+    reactionTooltip(reaction) {
+      const personas = window.__sgPersonas || {};
+      const persona = personas[reaction.persona_id];
+      const name = persona ? persona.name : reaction.persona_id;
+      const when = this.relativeTime(reaction.timestamp);
+      return when ? `${name} · ${when}` : name;
     },
   };
 }

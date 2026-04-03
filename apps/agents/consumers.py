@@ -383,6 +383,70 @@ class SupportGroupConsumer(PatientWebSocketMixin, AsyncWebsocketConsumer):
         await self.accept()
         logger.info(f"Support group WS connected for patient {self.patient_id}")
 
+        # Send conversation history so page reloads restore the chat
+        await self._send_history()
+
+    async def _send_history(self):
+        """Send existing conversation messages + reactions on connect."""
+        history = await self._load_history()
+        if history:
+            await self.send_json({"type": "history", "messages": history})
+
+    @database_sync_to_async
+    def _load_history(self):
+        """Load existing support group messages with reactions."""
+        from apps.agents.models import AgentConversation, AgentMessage
+
+        try:
+            conversation = AgentConversation.objects.get(
+                patient=self.patient,
+                conversation_type="support_group",
+            )
+        except AgentConversation.DoesNotExist:
+            return []
+
+        messages = (
+            AgentMessage.objects.filter(conversation=conversation)
+            .prefetch_related("reactions")
+            .order_by("created_at")[:100]
+        )
+
+        from apps.agents.personas import PERSONA_REGISTRY
+
+        result = []
+        for msg in messages:
+            if msg.role == "user":
+                entry = {
+                    "type": "user",
+                    "content": msg.content,
+                    "timestamp": msg.created_at.isoformat(),
+                }
+                meta = msg.metadata or {}
+                if meta.get("channel") == "voice":
+                    entry["channel"] = "voice"
+                    if meta.get("audio_url"):
+                        entry["audio_url"] = meta["audio_url"]
+                result.append(entry)
+            elif msg.persona_id:
+                persona = PERSONA_REGISTRY.get(msg.persona_id)
+                entry = {
+                    "type": "persona",
+                    "message_id": str(msg.id),
+                    "persona_id": msg.persona_id,
+                    "persona_name": persona.name if persona else msg.persona_id,
+                    "content": msg.content,
+                    "avatar_color": persona.avatar_color if persona else "#6B7280",
+                    "avatar_color_dark": persona.avatar_color_dark if persona else "#9CA3AF",
+                    "avatar_initials": persona.avatar_initials if persona else "??",
+                    "reactions": [
+                        {"persona_id": r.persona_id, "emoji": r.emoji, "timestamp": r.created_at.isoformat()}
+                        for r in msg.reactions.all().order_by("created_at")
+                    ],
+                    "timestamp": msg.created_at.isoformat(),
+                }
+                result.append(entry)
+        return result
+
     async def disconnect(self, close_code):
         if hasattr(self, "room_group_name"):
             await self.channel_layer.group_discard(
@@ -478,6 +542,7 @@ class SupportGroupConsumer(PatientWebSocketMixin, AsyncWebsocketConsumer):
                 "message_id": event.get("message_id"),
                 "persona_id": event.get("persona_id"),
                 "emoji": event.get("emoji"),
+                "timestamp": event.get("timestamp", ""),
             }
         )
 

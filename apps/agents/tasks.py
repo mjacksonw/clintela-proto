@@ -611,6 +611,10 @@ def deliver_support_group_reaction(
     except IntegrityError:
         return {"skipped": True, "reason": "duplicate"}
 
+    # Get the created reaction's timestamp
+    reaction = SupportGroupReaction.objects.filter(message=message, persona_id=persona_id).first()
+    reaction_ts = reaction.created_at.isoformat() if reaction else ""
+
     # Push via WebSocket
     from asgiref.sync import async_to_sync
     from channels.layers import get_channel_layer
@@ -624,6 +628,7 @@ def deliver_support_group_reaction(
                 "message_id": str(message.id),
                 "persona_id": persona_id,
                 "emoji": emoji,
+                "timestamp": reaction_ts,
             },
         )
 

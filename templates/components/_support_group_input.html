@@ -9,8 +9,9 @@
         <!-- Auto-growing textarea (hidden during recording on mobile) -->
         <textarea id="sg-textarea"
                   x-ref="sgInput"
+                  x-model="sgText"
                   x-show="!recording"
-                  @keydown.enter.prevent="if (!$event.shiftKey && $refs.sgInput.value.trim() && sgConnected) { sendMessage($refs.sgInput.value); $refs.sgInput.value = ''; $refs.sgInput.style.height = 'auto'; }"
+                  @keydown.enter.prevent="if (!$event.shiftKey && sgText.trim() && sgConnected) { sendMessage(); $el.style.height = 'auto'; }"
                   @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 120) + 'px'"
                   :disabled="!sgConnected"
                   placeholder="{% trans 'Message your support group...' %}"
@@ -77,12 +78,12 @@
         <!-- Send button with micro-states -->
         <button type="button"
                 x-show="!recording"
-                @click="if ($refs.sgInput.value.trim() && sgConnected) { sendMessage($refs.sgInput.value); $refs.sgInput.value = ''; $refs.sgInput.style.height = 'auto'; }"
-                :disabled="!$refs.sgInput?.value?.trim() || !sgConnected"
+                @click="if (sgText.trim() && sgConnected) { sendMessage(); $refs.sgInput.style.height = 'auto'; }"
+                :disabled="!sgText.trim() || !sgConnected"
                 class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0
                        transition-all duration-150
                        focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                :class="$refs.sgInput?.value?.trim() && sgConnected
+                :class="sgText.trim() && sgConnected
                     ? 'bg-primary hover:bg-primary-700 text-white cursor-pointer'
                     : processing
                         ? 'bg-primary/50 text-white cursor-wait'

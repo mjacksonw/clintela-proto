@@ -42,24 +42,32 @@
                 <span class="text-sm font-semibold" style="color: var(--color-text);" x-text="msg.persona_name"></span>
             </div>
 
-            <div class="px-4 py-2.5 text-base leading-relaxed ml-11"
-                 style="background-color: var(--color-surface-warm);
-                        color: var(--color-text);
-                        border-radius: 16px 16px 16px 4px;">
-                <span x-text="msg.content"></span>
-            </div>
-
-            <!-- Reactions row -->
-            <template x-if="msg.reactions && msg.reactions.length > 0">
-                <div class="flex items-center gap-1.5 mt-1 ml-11">
-                    <template x-for="reaction in msg.reactions" :key="reaction.persona_id + reaction.emoji">
-                        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs"
-                              style="background: var(--color-border);">
-                            <span x-text="getEmoji(reaction.emoji)"></span>
-                        </span>
-                    </template>
+            <div class="relative ml-11 mb-1">
+                <div class="px-4 py-2.5 text-base leading-relaxed"
+                     style="background-color: var(--color-surface-warm);
+                            color: var(--color-text);
+                            border-radius: 16px 16px 16px 4px;"
+                     :class="msg.reactions && msg.reactions.length > 0 ? 'pb-4' : ''">
+                    <span x-text="msg.content"></span>
                 </div>
-            </template>
+
+                <!-- Reaction pills — overlapping bottom-right of bubble -->
+                <template x-if="msg.reactions && msg.reactions.length > 0">
+                    <div class="flex items-center gap-1 absolute -bottom-2.5 right-3">
+                        <template x-for="reaction in msg.reactions" :key="reaction.persona_id + reaction.emoji">
+                            <span class="inline-flex items-center gap-1 pl-0.5 pr-1.5 py-0.5 rounded-full shadow-sm border cursor-default"
+                                  :title="reactionTooltip(reaction)"
+                                  style="background: var(--color-surface); border-color: var(--color-border);">
+                                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium text-white flex-shrink-0"
+                                      :style="'background-color: ' + ((window.__sgPersonas && window.__sgPersonas[reaction.persona_id]) ? window.__sgPersonas[reaction.persona_id].avatar_color : 'var(--color-text-secondary)')">
+                                    <span x-text="(window.__sgPersonas && window.__sgPersonas[reaction.persona_id]) ? window.__sgPersonas[reaction.persona_id].avatar_initials : ''"></span>
+                                </span>
+                                <span class="text-sm leading-none" x-text="getEmoji(reaction.emoji)"></span>
+                            </span>
+                        </template>
+                    </div>
+                </template>
+            </div>
 
             <div class="text-xs mt-1 ml-11" style="color: var(--color-text-secondary);">
                 <span x-text="new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})"></span>
