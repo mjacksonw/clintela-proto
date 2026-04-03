@@ -16,11 +16,14 @@ from django.db import models
 
 
 class DeviceToken(models.Model):
-    """Push notification token for a patient's device.
+    """Push notification token for a patient's or caregiver's device.
 
     Each physical device (phone/tablet) registers one token via FCM.
-    A patient can have multiple active tokens (multiple devices).
+    A user can have multiple active tokens (multiple devices).
     Tokens are deactivated on APNs 410/gone, logout, or uninstall.
+
+    For patients: `patient` FK is set (used by notification fan-out).
+    For caregivers: `user` FK is set (used by caregiver push relay).
     """
 
     PLATFORM_CHOICES = [
@@ -32,6 +35,16 @@ class DeviceToken(models.Model):
         "patients.Patient",
         on_delete=models.CASCADE,
         related_name="device_tokens",
+        null=True,
+        blank=True,
+    )
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="device_tokens",
+        null=True,
+        blank=True,
+        help_text="Set for caregiver devices (alternative to patient FK)",
     )
     platform = models.CharField(max_length=10, choices=PLATFORM_CHOICES)
     token = models.CharField(

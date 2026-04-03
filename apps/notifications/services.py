@@ -186,6 +186,15 @@ class NotificationService:
         # Push to WebSocket
         _push_notification_to_websocket(notification)
 
+        # Relay to caregivers (if push is enabled and notification is relayable)
+        if getattr(settings, "ENABLE_MOBILE_PUSH", False) and patient:
+            try:
+                from apps.notifications.caregiver_push import relay_to_caregivers
+
+                relay_to_caregivers(notification)
+            except Exception:
+                logger.debug("Caregiver push relay failed (non-critical)", exc_info=True)
+
         return notification
 
     @staticmethod
