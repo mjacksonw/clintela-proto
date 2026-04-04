@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file.
 - TODO-021: Caregiver SMS notifications on adverse check-in responses (deferred)
 
 ### Changed
+- **Django 5.1→5.2.12** — fixes Python 3.14 template rendering crash (`copy(super())` in `BaseContext.__copy__`, Django ticket #35844)
 - Admin dashboard KPI cards now source from CheckinSession instead of PatientMilestoneCheckin
 - `Patient.days_post_op()` uses patient timezone when available instead of server date
 - Clinician timeline events use CheckinSession instead of PatientMilestoneCheckin
