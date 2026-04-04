@@ -12,7 +12,8 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.agents.models import Escalation
 from apps.analytics.models import DailyMetrics
-from apps.pathways.models import ClinicalPathway, PatientMilestoneCheckin, PatientPathway
+from apps.checkins.models import CheckinSession
+from apps.pathways.models import ClinicalPathway, PatientPathway
 from apps.patients.models import Hospital, Patient, PatientStatusTransition
 from apps.surveys.models import SurveyAssignment, SurveyInstance, SurveyInstrument
 
@@ -577,23 +578,23 @@ class Command(BaseCommand):
                         **({"completed_at": pp.completed_at} if "completed_at" in update_fields else {}),
                     )
 
-                # Create milestone check-ins (all completed for historical patients)
+                # Create check-in sessions (all completed for historical patients)
                 for milestone in pathway.milestones.all():
                     milestone_date = surgery_date + timedelta(days=milestone.day)
-                    sent_dt = timezone.make_aware(
-                        timezone.datetime.combine(milestone_date, timezone.datetime.min.time())
-                    ) + timedelta(hours=9)
-                    completed_dt = sent_dt + timedelta(hours=4)
-
-                    PatientMilestoneCheckin.objects.get_or_create(
-                        patient=patient,
-                        milestone=milestone,
-                        defaults={
-                            "sent_at": sent_dt,
-                            "completed_at": completed_dt,
-                            "responses": {"status": "completed"},
-                        },
-                    )
+                    if milestone_date <= date.today():
+                        completed_dt = timezone.make_aware(
+                            timezone.datetime.combine(milestone_date, timezone.datetime.min.time())
+                        ) + timedelta(hours=13)
+                        CheckinSession.objects.get_or_create(
+                            patient=patient,
+                            date=milestone_date,
+                            defaults={
+                                "pathway_day": milestone.day,
+                                "phase": milestone.phase,
+                                "status": "completed",
+                                "completed_at": completed_dt,
+                            },
+                        )
 
             # Discharge transition
             discharge_dt = timezone.make_aware(
@@ -766,52 +767,36 @@ class Command(BaseCommand):
     # -----------------------------------------------------------------------
 
     def _enrich_milestone_checkins(self, hospital):
-        """Mark milestone check-ins as completed to drive follow-up completion rate.
+        """Mark check-in sessions as completed to drive follow-up completion rate."""
+        self.stdout.write("Enriching check-in session completions...")
 
-        The existing check-ins have sent_at but most lack completed_at.
-        We complete ~75% of them on-time (within ±2 days) and ~10% late.
-        Historical patients should have higher completion rates.
-        """
-        self.stdout.write("Enriching milestone check-in completions...")
-
-        checkins = PatientMilestoneCheckin.objects.filter(
+        sessions = CheckinSession.objects.filter(
             patient__hospital=hospital,
-            sent_at__isnull=False,
-            completed_at__isnull=True,
-        ).select_related("milestone", "patient")
+            status="pending",
+        )
 
-        completed_on_time = 0
-        completed_late = 0
-        total = checkins.count()
+        completed = 0
+        total = sessions.count()
 
-        for i, checkin in enumerate(checkins):
-            # Complete ~85% of check-ins (skip every ~7th one to simulate missed)
+        for i, session in enumerate(sessions):
+            # Complete ~85% of sessions
             if i % 7 == 6:
                 continue
 
-            sent = checkin.sent_at
-
-            # Most complete within hours of receiving (on-time)
             if i % 10 < 7:
-                # On-time: completed 2-8 hours after sent
                 hours_later = 2 + (i % 7)
-                checkin.completed_at = sent + timedelta(hours=hours_later)
-                checkin.responses = {"status": "completed", "feeling": "good"}
-                completed_on_time += 1
+                session.completed_at = session.created_at + timedelta(hours=hours_later)
+                session.status = "completed"
+                completed += 1
             elif i % 10 < 9:
-                # Late: completed 2-3 days after sent
                 days_later = 2 + (i % 2)
-                checkin.completed_at = sent + timedelta(days=days_later)
-                checkin.responses = {"status": "completed", "feeling": "okay"}
-                completed_late += 1
-            # else: skip (missed)
+                session.completed_at = session.created_at + timedelta(days=days_later)
+                session.status = "completed"
+                completed += 1
 
-            checkin.save(update_fields=["completed_at", "responses"])
+            session.save(update_fields=["completed_at", "status"])
 
-        self.stdout.write(
-            f"  {completed_on_time} on-time, {completed_late} late, "
-            f"{total - completed_on_time - completed_late} missed (of {total})"
-        )
+        self.stdout.write(f"  {completed}/{total} sessions completed")
 
     # -----------------------------------------------------------------------
     # Pathway completions — drive pathway performance rate

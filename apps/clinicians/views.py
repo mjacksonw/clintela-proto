@@ -201,6 +201,11 @@ def patient_detail_fragment(request, patient_id):
     except ObjectDoesNotExist:
         logger.debug("No patient preferences available for patient %s", patient_id)
 
+    # Check-in summary
+    from apps.checkins.services import checkin_summary_context
+
+    checkin_ctx = checkin_summary_context(patient)
+
     html = render_to_string(
         "clinicians/components/_tab_details.html",
         {
@@ -210,6 +215,7 @@ def patient_detail_fragment(request, patient_id):
             "notes": notes,
             "appointments": appointments,
             "patient_preferences": patient_preferences,
+            **checkin_ctx,
         },
         request=request,
     )
@@ -223,7 +229,8 @@ def patient_care_plan_fragment(request, patient_id):
     patient = request.patient
 
     # Get active pathway + milestones
-    from apps.pathways.models import PatientMilestoneCheckin, PatientPathway
+    from apps.checkins.models import CheckinSession
+    from apps.pathways.models import PatientPathway
 
     active_pathway = (
         PatientPathway.objects.filter(
@@ -243,14 +250,11 @@ def patient_care_plan_fragment(request, patient_id):
         ).order_by("day")
 
         # Annotate with checkin status
-        checkin_map = {
-            c.milestone_id: c
-            for c in PatientMilestoneCheckin.objects.filter(
-                patient=patient,
-                milestone__in=milestones,
-            )
-        }
-        milestones = [{"milestone": m, "checkin": checkin_map.get(m.id)} for m in milestones]
+        recent_sessions = CheckinSession.objects.filter(
+            patient=patient,
+        ).order_by("-date")[:5]
+        checkin_map = {s.pathway_day: s for s in recent_sessions}
+        milestones = [{"milestone": m, "checkin": checkin_map.get(m.day)} for m in milestones]
 
     html = render_to_string(
         "clinicians/components/_tab_care_plan.html",

@@ -1,0 +1,44 @@
+{% comment %}
+Check-in widget partial — rendered inside agent message bubble.
+
+Widget types: yes_no, scale_1_5, scale_1_10, multiple_choice, free_text
+Selection color: teal (#0D9488 light, #14B8A6 dark)
+Touch targets: 44px min-height
+Border radius: 6px (buttons), 8px (container)
+
+Alpine.js manages widget state. HTMX submits responses.
+{% endcomment %}
+
+<div class="mt-3 p-4 rounded-lg border"
+     style="border-color: var(--color-border); border-radius: 8px;"
+     x-data="checkinWidget('{{ widget.session_id }}', '{{ widget.question_code }}', {{ widget.answered|yesno:'true,false' }}, '{{ widget.selected_value|default_if_none:'' }}')"
+     {% if widget.expired %}data-expired="true"{% endif %}>
+
+    {# Question text #}
+    <p class="text-lg leading-relaxed mb-3" style="color: var(--color-text); font-size: 18px;">
+        {{ widget.question_text }}
+    </p>
+
+    {% if widget.expired %}
+    {# Expired state — grayed out, non-interactive #}
+    <div style="opacity: 0.4; pointer-events: none;">
+        {% include "components/_checkin_widget_options.html" with widget=widget %}
+    </div>
+    <p class="text-xs mt-2" style="color: var(--color-text-secondary);">Expired</p>
+
+    {% elif widget.answered %}
+    {# Answered state — show selection, read-only #}
+    <div style="pointer-events: none;">
+        {% include "components/_checkin_widget_options.html" with widget=widget %}
+    </div>
+
+    {% else %}
+    {# Unanswered — interactive #}
+    <div role="radiogroup" :aria-label="'{{ widget.question_text|escapejs }}'">
+        {% include "components/_checkin_widget_options.html" with widget=widget %}
+    </div>
+
+    {# Status region for screen readers #}
+    <div aria-live="polite" class="sr-only" x-text="statusMessage"></div>
+    {% endif %}
+</div>

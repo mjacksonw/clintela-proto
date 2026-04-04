@@ -22,7 +22,7 @@ class DailyMetricsService:
         """
         from apps.agents.models import AgentMessage, Escalation
         from apps.analytics.models import DailyMetrics
-        from apps.pathways.models import PatientMilestoneCheckin
+        from apps.checkins.models import CheckinSession
         from apps.patients.models import Hospital, Patient, PatientStatusTransition
 
         hospitals = list(Hospital.objects.filter(is_active=True))
@@ -97,9 +97,9 @@ class DailyMetricsService:
             avg_response = avg_ack_minutes
 
             # Check-ins
-            checkin_base = PatientMilestoneCheckin.objects.filter(sent_at__date=target_date, **patient_hospital_filter)
+            checkin_base = CheckinSession.objects.filter(date=target_date, **patient_hospital_filter)
             checkin_sent = checkin_base.count()
-            checkin_done = checkin_base.filter(completed_at__isnull=False, skipped=False).count()
+            checkin_done = checkin_base.filter(status="completed").count()
             checkin_rate = round((checkin_done / checkin_sent) * 100, 1) if checkin_sent > 0 else None
 
             DailyMetrics.objects.update_or_create(

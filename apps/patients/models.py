@@ -109,12 +109,30 @@ class Patient(models.Model):
         return f"{self.user.get_full_name()} ({self.leaflet_code})"
 
     def days_post_op(self):
-        """Calculate days since surgery."""
+        """Calculate days since surgery, using patient timezone if available."""
+        if not self.surgery_date:
+            return None
+
+        try:
+            import zoneinfo
+
+            from django.utils import timezone as django_tz
+
+            from apps.notifications.models import NotificationPreference
+
+            pref = NotificationPreference.objects.filter(patient=self).first()
+            if pref and pref.timezone:
+                tz = zoneinfo.ZoneInfo(pref.timezone)
+                today = django_tz.now().astimezone(tz).date()
+                return (today - self.surgery_date).days
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).debug("Timezone lookup failed for patient %s", self.id)
+
         from datetime import date
 
-        if self.surgery_date:
-            return (date.today() - self.surgery_date).days
-        return None
+        return (date.today() - self.surgery_date).days
 
     def transition_lifecycle(
         self, new_status: str, triggered_by: str = "", reason: str = ""

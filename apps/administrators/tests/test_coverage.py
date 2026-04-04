@@ -21,10 +21,10 @@ from apps.administrators.views import _get_filters, _sanitize_csv_value
 from apps.agents.models import AgentConversation, AgentMessage, Escalation
 from apps.analytics.models import DailyMetrics
 from apps.analytics.services import DailyMetricsService
+from apps.checkins.models import CheckinSession
 from apps.pathways.models import (
     ClinicalPathway,
     PathwayMilestone,
-    PatientMilestoneCheckin,
     PatientPathway,
 )
 from apps.patients.models import Hospital, Patient, PatientStatusTransition
@@ -150,55 +150,41 @@ class DischargeToCommunityCoverageTest(TestCase):
 class FollowupCompletionCoverageTest(TestCase):
     def setUp(self):
         self.hospital = Hospital.objects.create(name="Test", code=_code())
-        self.pathway = ClinicalPathway.objects.create(name="Test", surgery_type="cardiac", duration_days=30)
-        self.milestone = PathwayMilestone.objects.create(
-            pathway=self.pathway, day=7, title="Day 7 Check", phase="early"
-        )
 
     def test_on_time_completion(self):
-        """Milestone completed within ±2 days counts as on-time."""
+        """Checkin completed on time."""
         p = _make_patient(self.hospital)
-        PatientPathway.objects.create(
+        CheckinSession.objects.create(
             patient=p,
-            pathway=self.pathway,
-            status="active",
-            started_at=timezone.now() - timedelta(days=10),
-        )
-        PatientMilestoneCheckin.objects.create(
-            patient=p,
-            milestone=self.milestone,
-            sent_at=timezone.now() - timedelta(days=3),
-            completed_at=timezone.now() - timedelta(days=2),  # Day 8 = within ±2 of day 7
+            date=timezone.now().date(),
+            pathway_day=7,
+            status="completed",
+            completed_at=timezone.now() - timedelta(days=2),
         )
         result = OutcomesService.get_followup_completion(days=30)
-        assert result["on_time"] >= 0  # May or may not be on-time depending on exact timing
+        assert result["on_time"] >= 0
         assert result["total"] == 1
 
-    def test_late_completion(self):
-        """Milestone completed > 2 days late does not count as on-time."""
+    def test_missed_not_counted_as_completed(self):
+        """Missed sessions are not counted as completed."""
         p = _make_patient(self.hospital)
-        PatientPathway.objects.create(
+        CheckinSession.objects.create(
             patient=p,
-            pathway=self.pathway,
-            status="active",
-            started_at=timezone.now() - timedelta(days=30),
-        )
-        # Day 7 expected = 23 days ago, but completed now = 23 days late
-        PatientMilestoneCheckin.objects.create(
-            patient=p,
-            milestone=self.milestone,
-            sent_at=timezone.now() - timedelta(days=23),
-            completed_at=timezone.now(),
+            date=timezone.now().date(),
+            pathway_day=7,
+            status="missed",
         )
         result = OutcomesService.get_followup_completion(days=30)
         assert result["on_time"] == 0
+        assert result["total"] == 1
 
     def test_hospital_filter(self):
         p = _make_patient(self.hospital)
-        PatientMilestoneCheckin.objects.create(
+        CheckinSession.objects.create(
             patient=p,
-            milestone=self.milestone,
-            sent_at=timezone.now(),
+            date=timezone.now().date(),
+            pathway_day=7,
+            status="pending",
         )
         other = Hospital.objects.create(name="Other", code=_code())
         result = OutcomesService.get_followup_completion(days=30, hospital_id=other.id)
@@ -228,20 +214,18 @@ class EngagementCoverageTest(TestCase):
 
     def test_checkin_stats_with_data(self):
         p = _make_patient(self.hospital)
-        pathway = ClinicalPathway.objects.create(name="P", surgery_type="c", duration_days=30)
-        milestone1 = PathwayMilestone.objects.create(pathway=pathway, day=3, title="D3", phase="early")
-        milestone2 = PathwayMilestone.objects.create(pathway=pathway, day=7, title="D7", phase="middle")
-        PatientMilestoneCheckin.objects.create(
+        CheckinSession.objects.create(
             patient=p,
-            milestone=milestone1,
-            sent_at=timezone.now(),
+            date=timezone.now().date(),
+            pathway_day=3,
+            status="completed",
             completed_at=timezone.now(),
         )
-        PatientMilestoneCheckin.objects.create(
+        CheckinSession.objects.create(
             patient=p,
-            milestone=milestone2,
-            sent_at=timezone.now(),
-            skipped=True,
+            date=timezone.now().date() - timedelta(days=1),
+            pathway_day=7,
+            status="skipped",
         )
         result = EngagementService.get_checkin_stats(days=30)
         assert result["completed"] == 1
@@ -302,13 +286,14 @@ class PathwayAnalyticsCoverageTest(TestCase):
         self.pathway = ClinicalPathway.objects.create(name="Test", surgery_type="c", duration_days=30)
 
     def test_pathway_effectiveness_with_milestones(self):
-        milestone = PathwayMilestone.objects.create(pathway=self.pathway, day=3, title="Day 3", phase="early")
+        PathwayMilestone.objects.create(pathway=self.pathway, day=3, title="Day 3", phase="early")
         p = _make_patient(self.hospital)
         PatientPathway.objects.create(patient=p, pathway=self.pathway, status="active")
-        PatientMilestoneCheckin.objects.create(
+        CheckinSession.objects.create(
             patient=p,
-            milestone=milestone,
-            sent_at=timezone.now(),
+            date=timezone.now().date(),
+            pathway_day=3,
+            status="completed",
             completed_at=timezone.now(),
         )
 
@@ -428,13 +413,12 @@ class ViewCoverageTest(TestCase):
         assert response.status_code == 200
 
     def test_checkin_completion_with_data(self):
-        pathway = ClinicalPathway.objects.create(name="P", surgery_type="c", duration_days=30)
-        milestone = PathwayMilestone.objects.create(pathway=pathway, day=3, title="D3", phase="early")
         p = _make_patient(self.hospital)
-        PatientMilestoneCheckin.objects.create(
+        CheckinSession.objects.create(
             patient=p,
-            milestone=milestone,
-            sent_at=timezone.now(),
+            date=timezone.now().date(),
+            pathway_day=3,
+            status="completed",
             completed_at=timezone.now(),
         )
         response = self.client.get(reverse("administrators:checkin_completion"))

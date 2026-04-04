@@ -78,6 +78,7 @@ LOCAL_APPS = [
     "apps.surveys",
     "apps.administrators",
     "apps.clinical",
+    "apps.checkins",
 ]
 
 # Daphne must be first so its ASGI-capable runserver replaces Django's WSGI one.
@@ -434,6 +435,14 @@ CELERY_BEAT_SCHEDULE = {
     "notify-upcoming-appointments": {
         "task": "apps.clinicians.tasks.notify_upcoming_appointments",
         "schedule": crontab(hour=8, minute=3),  # daily at 8:03 AM
+    },
+    "send-daily-checkins": {
+        "task": "checkins.send_daily_checkins",
+        "schedule": crontab(hour=8, minute=15),  # daily at 8:15 AM (staggered from surveys)
+    },
+    "expire-missed-checkins": {
+        "task": "checkins.expire_missed_checkins",
+        "schedule": crontab(hour=0, minute=30),  # daily at 12:30 AM
     },
 }
 

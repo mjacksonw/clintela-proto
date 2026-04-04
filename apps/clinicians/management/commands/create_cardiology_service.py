@@ -10,7 +10,7 @@ from apps.accounts.models import User
 from apps.agents.models import AgentConversation, AgentMessage, Escalation
 from apps.caregivers.models import Caregiver, CaregiverInvitation, CaregiverRelationship
 from apps.clinicians.models import Appointment, Clinician, ClinicianNote
-from apps.pathways.models import ClinicalPathway, PatientMilestoneCheckin, PatientPathway
+from apps.pathways.models import ClinicalPathway, PatientPathway
 from apps.patients.models import ConsentRecord, Hospital, Patient
 
 
@@ -87,7 +87,6 @@ class Command(BaseCommand):
         self.stdout.write("Clearing existing patient data...")
 
         # Delete patient-related data (preserves clinicians, hospitals)
-        PatientMilestoneCheckin.objects.all().delete()
         PatientPathway.objects.all().delete()
         CaregiverRelationship.objects.all().delete()
         CaregiverInvitation.objects.all().delete()
@@ -664,44 +663,7 @@ class Command(BaseCommand):
                 },
             )
 
-            # Create milestone check-ins
-            if patient.surgery_date:
-                days_post_op = (date.today() - patient.surgery_date).days
-
-                for milestone in pathway.milestones.all():
-                    # Determine status based on timing
-                    if milestone.day <= days_post_op:
-                        # Milestone day has passed
-                        if milestone.day <= days_post_op - 3:
-                            # Completed if it's been 3+ days
-                            checkin_status = {
-                                "completed": True,
-                                "completed_at": patient.surgery_date + timedelta(days=milestone.day),
-                            }
-                        else:
-                            # Recently passed, might be pending
-                            checkin_status = {
-                                "completed": random.choice([True, False]),  # nosec: B311
-                                "completed_at": patient.surgery_date + timedelta(days=milestone.day)  # nosec: B311
-                                if random.choice([True, False])  # nosec: B311
-                                else None,
-                            }
-                    else:
-                        # Future milestone
-                        checkin_status = {"completed": False, "completed_at": None}
-
-                    PatientMilestoneCheckin.objects.get_or_create(
-                        patient=patient,
-                        milestone=milestone,
-                        defaults={
-                            "sent_at": patient.surgery_date + timedelta(days=milestone.day)
-                            if milestone.day <= days_post_op
-                            else None,
-                            "completed_at": checkin_status["completed_at"],
-                            "skipped": not checkin_status["completed"] and milestone.day < days_post_op - 7,
-                            "responses": {},
-                        },
-                    )
+            # Check-in sessions are now created by apps.checkins (see reset_demo)
 
     def _create_conversations(self, patients: list[Patient]):
         """Create realistic conversations for patients."""

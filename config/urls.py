@@ -40,6 +40,7 @@ urlpatterns = [
     path("patient/surveys/", include("apps.surveys.urls", namespace="surveys")),
     path("admin-dashboard/", include("apps.administrators.urls", namespace="administrators")),
     path("clinical/", include("apps.clinical.urls", namespace="clinical")),
+    path("", include("apps.checkins.urls", namespace="checkins")),
     path("i18n/", include("django.conf.urls.i18n")),
     # path("caregivers/", include("apps.caregivers.urls")),
 ]

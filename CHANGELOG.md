@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.13.0] - 2026-04-04
+
+### Added
+- Adaptive daily check-ins — curated question bank (8 categories, ~30 cardiac recovery questions), pathway-driven frequency floors, LLM-selected daily question set delivered as interactive widgets in chat
+- In-chat check-in widgets — yes/no, 1-5 scale, 1-10 scale, multiple choice, and free text response types rendered inside agent message bubbles with Alpine.js interactivity
+- Check-in selection engine — three-layer architecture: PathwayFloor (frequency enforcement), RelevanceFilter (phase/procedure filtering), LLM selector with deterministic fallback
+- Follow-up rules — batch evaluation after session completion triggers agent follow-up messages for adverse answers (e.g., high pain, poor sleep)
+- Clinical escalation from check-ins — chest pain, shortness of breath at rest, wound issues, and pain ≥8 auto-create ClinicalAlerts
+- Warm contextual greetings — LLM-generated check-in intros using patient name, recovery day, and preferences (with template fallback)
+- Celery tasks for daily check-in dispatch and missed session expiry
+- Clinician check-in summary — accordion view of recent sessions with status badges in patient detail tab
+- Clinician check-in trends — Chart.js sparklines for numeric response trends (pain, energy, sleep) in patient surveys tab
+- Patient timezone support on NotificationPreference for timezone-aware scheduling and date calculations
+- REST JSON API + HTMX endpoints for widget responses (idempotent via get_or_create)
+- Quiet hours enforcement for check-in delivery (configurable per patient)
+- TODO-021: Caregiver SMS notifications on adverse check-in responses (deferred)
+
+### Changed
+- **Django 5.1→5.2.12** — fixes Python 3.14 template rendering crash (`copy(super())` in `BaseContext.__copy__`, Django ticket #35844)
+- Admin dashboard KPI cards now source from CheckinSession instead of PatientMilestoneCheckin
+- `Patient.days_post_op()` uses patient timezone when available instead of server date
+- Clinician timeline events use CheckinSession instead of PatientMilestoneCheckin
+- Demo data seeding creates CheckinSessions instead of PatientMilestoneCheckins
+
+### Removed
+- PatientMilestoneCheckin model and migration (replaced by CheckinSession)
+- Old proactive check-in tasks: `send_proactive_checkin`, `check_missed_checkins`, `schedule_proactive_checkins`
+- `_build_checkin_preamble` function and associated tests (replaced by LLM greetings)
+
+### Fixed
+- CSRF protection on HTMX check-in widget endpoint (was incorrectly csrf_exempt)
+- Patient ownership check added to HTMX widget response endpoint
+
 ## [0.2.12.1] - 2026-03-23
 
 ### Fixed

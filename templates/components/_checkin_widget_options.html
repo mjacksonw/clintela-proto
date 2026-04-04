@@ -1,0 +1,157 @@
+{% comment %}
+Widget option rendering by type. Included by _checkin_widget.html.
+Split out so answered/expired states can reuse without duplication.
+{% endcomment %}
+
+{% if widget.widget_type == "yes_no" %}
+{# Yes/No — two side-by-side buttons #}
+<div class="flex gap-2">
+    {% for opt in widget.options %}
+    <button type="button"
+            role="radio"
+            :aria-checked="selectedValue === '{{ opt.value }}'"
+            @click="submitResponse('{{ opt.value }}')"
+            :disabled="answered || loading"
+            class="flex-1 flex items-center justify-center gap-2 font-medium text-base border transition-all duration-150"
+            style="min-height: 44px; border-radius: 6px; border-color: var(--color-border);"
+            :style="selectedValue === '{{ opt.value }}'
+                ? 'background-color: #0D9488; color: white; border-color: #0D9488;'
+                : (answered
+                    ? 'opacity: 0.4; background-color: var(--color-surface); color: var(--color-text);'
+                    : 'background-color: var(--color-surface); color: var(--color-text);')"
+            :class="{'hover:border-[#0D9488]': !answered && !loading}">
+        <template x-if="loading && pendingValue === '{{ opt.value }}'">
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+        </template>
+        <template x-if="selectedValue === '{{ opt.value }}' && !loading">
+            <i data-lucide="check" class="w-4 h-4"></i>
+        </template>
+        <span x-show="!(loading && pendingValue === '{{ opt.value }}')">{{ opt.label }}</span>
+    </button>
+    {% endfor %}
+</div>
+
+{% elif widget.widget_type == "scale_1_5" %}
+{# Scale 1-5 — single row, always fits #}
+<div class="flex gap-2 justify-center">
+    {% for opt in widget.options %}
+    <button type="button"
+            role="radio"
+            :aria-checked="selectedValue === '{{ opt.value }}'"
+            @click="submitResponse({{ opt.value }})"
+            :disabled="answered || loading"
+            class="flex items-center justify-center font-medium text-base border transition-all duration-150"
+            style="width: 44px; height: 44px; border-radius: 6px; font-variant-numeric: tabular-nums; border-color: var(--color-border);"
+            :style="selectedValue == {{ opt.value }}
+                ? 'background-color: #0D9488; color: white; border-color: #0D9488;'
+                : (answered
+                    ? 'opacity: 0.4; background-color: var(--color-surface); color: var(--color-text);'
+                    : 'background-color: var(--color-surface); color: var(--color-text);')"
+            :class="{'hover:border-[#0D9488]': !answered && !loading}">
+        <template x-if="loading && pendingValue == {{ opt.value }}">
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+        </template>
+        <template x-if="selectedValue == {{ opt.value }} && !loading">
+            <i data-lucide="check" class="w-4 h-4"></i>
+        </template>
+        <span x-show="!(loading && pendingValue == {{ opt.value }})">{{ opt.label }}</span>
+    </button>
+    {% endfor %}
+</div>
+
+{% elif widget.widget_type == "scale_1_10" %}
+{# Scale 1-10 — two rows of 5 on mobile, single row on desktop #}
+<div>
+    <div class="flex flex-wrap gap-2 justify-center sm:flex-nowrap">
+        {% for opt in widget.options %}
+        <button type="button"
+                role="radio"
+                :aria-checked="selectedValue == {{ opt.value }}"
+                @click="submitResponse({{ opt.value }})"
+                :disabled="answered || loading"
+                class="flex items-center justify-center font-medium text-base border transition-all duration-150"
+                style="width: calc((100% - 4 * 8px) / 5); min-width: 36px; height: 44px; border-radius: 6px; font-variant-numeric: tabular-nums; border-color: var(--color-border);"
+                :style="selectedValue == {{ opt.value }}
+                    ? 'background-color: #0D9488; color: white; border-color: #0D9488;'
+                    : (answered
+                        ? 'opacity: 0.4; background-color: var(--color-surface); color: var(--color-text);'
+                        : 'background-color: var(--color-surface); color: var(--color-text);')"
+                :class="{'hover:border-[#0D9488]': !answered && !loading, 'sm:w-auto sm:flex-1': true}">
+            <template x-if="loading && pendingValue == {{ opt.value }}">
+                <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+            </template>
+            <template x-if="selectedValue == {{ opt.value }} && !loading">
+                <i data-lucide="check" class="w-4 h-4"></i>
+            </template>
+            <span x-show="!(loading && pendingValue == {{ opt.value }})">{{ opt.label }}</span>
+        </button>
+        {% endfor %}
+    </div>
+    <div class="flex justify-between mt-1.5 px-1">
+        <span class="text-xs" style="color: var(--color-text-secondary);">No pain</span>
+        <span class="text-xs" style="color: var(--color-text-secondary);">Worst pain</span>
+    </div>
+</div>
+
+{% elif widget.widget_type == "multiple_choice" %}
+{# Multiple choice — stacked full-width options #}
+<div class="flex flex-col gap-2">
+    {% for opt in widget.options %}
+    <button type="button"
+            role="radio"
+            :aria-checked="selectedValue === '{{ opt.value }}'"
+            @click="submitResponse('{{ opt.value }}')"
+            :disabled="answered || loading"
+            class="w-full flex items-center gap-3 px-4 font-medium text-base text-left border transition-all duration-150"
+            style="min-height: 44px; border-radius: 6px; border-color: var(--color-border);"
+            :style="selectedValue === '{{ opt.value }}'
+                ? 'background-color: #0D9488; color: white; border-color: #0D9488;'
+                : (answered
+                    ? 'opacity: 0.4; background-color: var(--color-surface); color: var(--color-text);'
+                    : 'background-color: var(--color-surface); color: var(--color-text);')"
+            :class="{'hover:border-[#0D9488]': !answered && !loading}">
+        <template x-if="loading && pendingValue === '{{ opt.value }}'">
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin flex-shrink-0"></i>
+        </template>
+        <template x-if="selectedValue === '{{ opt.value }}' && !loading">
+            <i data-lucide="check" class="w-4 h-4 flex-shrink-0"></i>
+        </template>
+        <span>{{ opt.label }}</span>
+    </button>
+    {% endfor %}
+</div>
+
+{% elif widget.widget_type == "free_text" %}
+{# Free text — textarea with submit button #}
+<div>
+    <label for="ft-{{ widget.question_code }}" class="sr-only">{{ widget.question_text }}</label>
+    <textarea id="ft-{{ widget.question_code }}"
+              x-model="freeTextValue"
+              :disabled="answered || loading"
+              class="w-full border text-base p-3 resize-none"
+              style="min-height: 120px; border-radius: 6px; border-color: var(--color-border);
+                     background-color: var(--color-surface); color: var(--color-text);"
+              placeholder="Type your answer here..."
+              :style="answered ? 'opacity: 0.7;' : ''"></textarea>
+    <button type="button"
+            @click="submitResponse(freeTextValue)"
+            :disabled="answered || loading || !freeTextValue.trim()"
+            aria-label="Submit answer"
+            class="mt-2 px-4 py-2 text-white font-medium text-base transition-all duration-150"
+            style="border-radius: 6px; min-height: 44px;"
+            :style="answered
+                ? 'background-color: #0D9488; opacity: 0.7;'
+                : 'background-color: #0D9488;'"
+            :class="{'hover:opacity-90': !answered && !loading, 'cursor-not-allowed': answered || loading}">
+        <template x-if="loading">
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin inline"></i>
+        </template>
+        <template x-if="answered">
+            <span class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4"></i> Saved</span>
+        </template>
+        <template x-if="!loading && !answered">
+            <span>Send</span>
+        </template>
+    </button>
+</div>
+{% endif %}

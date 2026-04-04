@@ -34,7 +34,8 @@ class RecoveryTimelineService:
             ...
         ]
         """
-        from apps.pathways.models import PatientMilestoneCheckin, PatientPathway
+        from apps.checkins.models import CheckinSession
+        from apps.pathways.models import PatientPathway
 
         # Find active pathway
         patient_pathway = (
@@ -49,21 +50,21 @@ class RecoveryTimelineService:
             is_active=True,
         ).order_by("day")
 
-        # Get check-ins for these milestones
-        checkins = {
-            ci.milestone_id: ci
-            for ci in PatientMilestoneCheckin.objects.filter(
+        # Get check-in sessions mapped by pathway_day
+        checkin_sessions = {
+            s.pathway_day: s
+            for s in CheckinSession.objects.filter(
                 patient=patient,
-                milestone__in=milestones,
-            ).select_related("milestone")
+            ).exclude(status="pending")
+            if s.pathway_day is not None
         }
 
         days_post_op = patient.days_post_op()
         timeline = []
 
         for milestone in milestones:
-            checkin = checkins.get(milestone.id)
-            is_completed = checkin is not None and checkin.completed_at is not None
+            checkin = checkin_sessions.get(milestone.day)
+            is_completed = checkin is not None and checkin.status == "completed"
 
             # Determine status
             if is_completed:
@@ -83,7 +84,7 @@ class RecoveryTimelineService:
                     "title": milestone.title,
                     "description": milestone.description,
                     "status": status,
-                    "completed_at": checkin.completed_at if checkin else None,
+                    "completed_at": checkin.completed_at if checkin and checkin.status == "completed" else None,
                     "warm_message": str(warm_message) if warm_message else "",
                     "milestone_id": milestone.id,
                 }

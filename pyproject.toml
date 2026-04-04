@@ -11,13 +11,13 @@ authors = [
 keywords = ["healthcare", "ai", "patient-care", "django"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
-    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
     "Programming Language :: Python :: 3.12",
 ]
 
 dependencies = [
     # Django & Core
-    "django>=5.1,<5.2",
+    "django>=5.2,<5.3",
     "django-environ>=0.11.2",
     "django-extensions>=3.2.3",
     # Database
