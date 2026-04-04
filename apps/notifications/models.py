@@ -152,6 +152,12 @@ class NotificationPreference(models.Model):
         blank=True,
         help_text="End of quiet hours",
     )
+    timezone = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        help_text="Patient timezone (e.g. America/New_York) for scheduling and date calculations",
+    )
 
     class Meta:
         db_table = "notifications_preference"

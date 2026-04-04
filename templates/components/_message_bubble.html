@@ -140,7 +140,12 @@
                     color: var(--color-text);
                     border-radius: 16px 16px 16px 4px;"
              data-raw-content="{{ message.content }}">
+            {% if message.metadata.type == "checkin_widget" %}
+            {# Check-in widget — renders inside the agent bubble #}
+            {% include "components/_checkin_widget.html" with widget=message.metadata %}
+            {% else %}
             {{ message.content|linebreaksbr }}
+            {% endif %}
         </div>
 
         <!-- Clinical evidence citations -->

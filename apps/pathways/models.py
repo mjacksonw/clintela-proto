@@ -94,32 +94,6 @@ class PathwayMilestone(models.Model):
         return f"{self.pathway} - Day {self.day}: {self.title}"
 
 
-class PatientMilestoneCheckin(models.Model):
-    """Track patient check-ins for pathway milestones."""
-
-    patient = models.ForeignKey(
-        "patients.Patient",
-        on_delete=models.CASCADE,
-        related_name="milestone_checkins",
-    )
-    milestone = models.ForeignKey(
-        PathwayMilestone,
-        on_delete=models.CASCADE,
-    )
-
-    sent_at = models.DateTimeField(null=True, blank=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    skipped = models.BooleanField(default=False)
-
-    # Responses
-    responses = models.JSONField(default=dict, blank=True)
-    notes = models.TextField(blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = "pathways_patient_milestone_checkin"
-        unique_together = ["patient", "milestone"]
-
-    def __str__(self):
-        return f"{self.patient} - {self.milestone}"
+# PatientMilestoneCheckin has been removed.
+# Replaced by apps.checkins.models.CheckinSession.
+# Migration deletes the pathways_patient_milestone_checkin table.

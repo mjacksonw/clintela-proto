@@ -1,0 +1,79 @@
+<!-- Check-in Summary: accordion list of recent sessions -->
+<div class="mb-4">
+    <div class="flex items-center gap-1.5 mb-2">
+        <i data-lucide="clipboard-check" class="w-3.5 h-3.5" style="color: #0D9488;"></i>
+        <h3 class="text-sm font-semibold" style="color: var(--color-text);">Daily Check-Ins</h3>
+    </div>
+
+    {% if has_data %}
+    <div class="space-y-1.5">
+        {% for session in recent_sessions %}
+        <div x-data="{ open: false }" class="border rounded-lg" style="border-color: var(--color-border);">
+            <button @click="open = !open"
+                    class="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg"
+                    style="min-height: 48px;">
+                <span class="text-sm font-semibold" style="color: var(--color-text);">
+                    {{ session.date|date:"M j, Y" }}
+                </span>
+                <div class="flex items-center gap-2">
+                    {% if session.pathway_day %}
+                    <span class="text-xs" style="color: var(--color-text-secondary);">Day {{ session.pathway_day }}</span>
+                    {% endif %}
+                    {% if session.status == "completed" %}
+                    <span class="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full"
+                          style="background-color: rgba(13, 148, 136, 0.1); color: #0D9488;">
+                        <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+                        Completed
+                    </span>
+                    {% elif session.status == "missed" %}
+                    <span class="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full"
+                          style="background-color: rgba(234, 88, 12, 0.1); color: #EA580C;">
+                        <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                        Missed
+                    </span>
+                    {% elif session.status == "in_progress" %}
+                    <span class="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full"
+                          style="background-color: rgba(37, 99, 235, 0.1); color: #2563EB;">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        In Progress
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full"
+                          style="background-color: rgba(107, 114, 128, 0.1); color: var(--color-text-secondary);">
+                        <span class="w-1.5 h-1.5 rounded-full" style="background: var(--color-text-secondary);"></span>
+                        {{ session.get_status_display }}
+                    </span>
+                    {% endif %}
+                    <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"
+                       :class="open ? 'rotate-180' : ''"
+                       style="color: var(--color-text-secondary);"></i>
+                </div>
+            </button>
+            <div x-show="open" x-collapse class="px-3 pb-3">
+                {% if session.responses.all %}
+                <div class="space-y-1.5">
+                    {% for response in session.responses.all %}
+                    <div class="flex justify-between text-xs py-1" style="border-top: 1px solid var(--color-border);">
+                        <span style="color: var(--color-text-secondary);">{{ response.question.text|truncatechars:60 }}</span>
+                        <span class="font-medium flex-shrink-0 ml-2" style="color: var(--color-text);">{{ response.value }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-xs pt-1" style="color: var(--color-text-secondary); border-top: 1px solid var(--color-border);">
+                    {% if session.status == "missed" %}No responses recorded.{% else %}&mdash;{% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="flex items-start gap-2 p-3 rounded-lg text-xs" style="background-color: var(--color-bg); border: 1px solid var(--color-border);">
+        <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color: #0D9488;"></i>
+        <p style="color: var(--color-text-secondary);">
+            No check-ins yet. Check-ins will appear here once the patient's daily recovery questions begin.
+        </p>
+    </div>
+    {% endif %}
+</div>

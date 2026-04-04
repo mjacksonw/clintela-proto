@@ -1,0 +1,84 @@
+<!-- Check-in Trends: sparklines + filterable history table -->
+{% if has_data and trend_data %}
+<div class="mb-6">
+    <div class="flex items-center gap-1.5 mb-3">
+        <i data-lucide="trending-up" class="w-4 h-4" style="color: #0D9488;"></i>
+        <h3 class="text-sm font-semibold" style="color: var(--color-text);">Check-In Trends</h3>
+    </div>
+
+    <!-- Sparkline charts -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+        {% for category, points in trend_data.items %}
+        <div class="p-3 rounded-lg border" style="border-color: var(--color-border); background-color: var(--color-surface);">
+            <span class="text-xs font-medium capitalize" style="color: var(--color-text-secondary);">{{ category }}</span>
+            <canvas id="trend-{{ category }}" height="80" class="mt-1"></canvas>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Trend chart initialization -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const trendData = {{ trend_data_json|safe }};
+        const chartConfig = {
+            type: 'line',
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        display: true,
+                        ticks: { font: { size: 10 }, color: 'var(--color-text-secondary)', maxTicksLimit: 5 },
+                        grid: { display: false },
+                    },
+                    y: {
+                        display: true,
+                        ticks: { font: { size: 10 }, color: 'var(--color-text-secondary)', stepSize: 1 },
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                    },
+                },
+                elements: {
+                    point: { radius: 3, hoverRadius: 5 },
+                    line: { tension: 0.3, borderWidth: 2 },
+                },
+            },
+        };
+
+        for (const [category, points] of Object.entries(trendData)) {
+            const canvas = document.getElementById('trend-' + category);
+            if (!canvas) continue;
+            new Chart(canvas, {
+                ...chartConfig,
+                data: {
+                    labels: points.map(p => p.date),
+                    datasets: [{
+                        data: points.map(p => p.value),
+                        borderColor: '#0D9488',
+                        backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                        fill: true,
+                    }],
+                },
+            });
+        }
+    });
+    </script>
+</div>
+{% elif not has_data %}
+<div class="mb-6">
+    <div class="flex items-center gap-1.5 mb-3">
+        <i data-lucide="trending-up" class="w-4 h-4" style="color: var(--color-text-secondary);"></i>
+        <h3 class="text-sm font-semibold" style="color: var(--color-text);">Check-In Trends</h3>
+    </div>
+    <div class="flex items-start gap-2 p-3 rounded-lg text-xs" style="background-color: var(--color-bg); border: 1px solid var(--color-border);">
+        <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color: var(--color-text-secondary);"></i>
+        <p style="color: var(--color-text-secondary);">
+            No trend data yet. Trends will populate as the patient completes daily check-ins over time.
+        </p>
+    </div>
+    <!-- Placeholder flat dashed line -->
+    <div class="mt-2 h-16 flex items-center px-3">
+        <div class="w-full border-t-2 border-dashed" style="border-color: var(--color-border);"></div>
+    </div>
+</div>
+{% endif %}

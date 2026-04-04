@@ -242,16 +242,18 @@ class TimelineService:
         for c in conversations:
             c["event_type"] = "conversation"
 
-        from apps.pathways.models import PatientMilestoneCheckin
+        from apps.checkins.models import CheckinSession
 
         checkins = list(
-            PatientMilestoneCheckin.objects.filter(patient=patient, sent_at__gte=cutoff)
-            .select_related("milestone")
-            .values("id", "milestone__title", "completed_at", "skipped", "sent_at")
+            CheckinSession.objects.filter(patient=patient, created_at__gte=cutoff).values(
+                "id", "date", "pathway_day", "status", "created_at"
+            )
         )
         for ck in checkins:
             ck["event_type"] = "checkin"
-            ck["created_at"] = ck["sent_at"]
+            ck["milestone__title"] = f"Day {ck['pathway_day']} Check-in" if ck.get("pathway_day") else "Daily Check-in"
+            ck["completed_at"] = ck["created_at"] if ck["status"] == "completed" else None
+            ck["skipped"] = ck["status"] == "skipped"
 
         from apps.clinicians.models import ClinicianNote
 

@@ -472,6 +472,28 @@ The translation layer (`apps/agents/translation.py`) already translates human-to
 **Priority:** P2
 **Blocked by:** None — i18n infrastructure shipped in v0.2.12.0
 
+### TODO-021: Caregiver SMS Notifications on Adverse Check-In Responses
+**What:** When a daily check-in response triggers a follow-up or escalation (e.g., patient reports severe pain, wound changes, or chest pain), notify the patient's designated caregiver(s) via SMS. Caregivers get a brief, non-alarming summary like "Margaret's daily check-in flagged something her care team is looking into. She may appreciate a call."
+
+**Why:** Caregivers (spouses, adult children) are the patient's real support network at home. When something concerning shows up in a check-in, the caregiver should know, not to diagnose, but to check in, bring soup, or drive to the ER. Right now caregivers only find out if the patient tells them.
+
+**Pros:**
+- Closes the information gap between clinical signals and home support
+- Caregivers feel included and useful (reduces their anxiety too)
+- Non-alarming tone prevents panic while ensuring awareness
+
+**Cons:**
+- Need consent from both patient and caregiver for SMS notifications
+- Message tone is critical (too clinical = panic, too vague = useless)
+- SMS delivery costs scale with active caregivers
+
+**Context:**
+The caregiver model (`apps/caregivers/`) already exists with relationships and invitation flow. The check-in follow-up/escalation hooks in `apps/checkins/services.py` (`_check_escalations`, `complete_session`) are the natural trigger points. SMS infrastructure exists via `apps/notifications/` and Twilio integration.
+
+**Effort:** Medium (human: ~3 days / CC: ~20 min)
+**Priority:** P2
+**Blocked by:** None — caregiver model and SMS infrastructure exist.
+
 ---
 
 ## Deferred Scope (Explicitly Not in Scope)

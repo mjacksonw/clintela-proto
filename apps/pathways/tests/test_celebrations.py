@@ -4,11 +4,11 @@ import pytest
 from django.utils import timezone
 
 from apps.agents.tests.factories import PatientFactory
+from apps.checkins.models import CheckinSession
 from apps.notifications.models import Notification
 from apps.pathways.models import (
     ClinicalPathway,
     PathwayMilestone,
-    PatientMilestoneCheckin,
 )
 from apps.pathways.services import MilestoneCompletionService
 from apps.patients.models import PatientPreferences
@@ -33,7 +33,13 @@ def milestone(pathway):
 
 @pytest.fixture
 def checkin(patient, milestone):
-    return PatientMilestoneCheckin.objects.create(patient=patient, milestone=milestone, completed_at=timezone.now())
+    return CheckinSession.objects.create(
+        patient=patient,
+        date=timezone.now().date(),
+        pathway_day=milestone.day,
+        status="completed",
+        completed_at=timezone.now(),
+    )
 
 
 class TestMilestoneCompletionService:

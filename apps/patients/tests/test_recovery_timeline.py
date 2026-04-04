@@ -6,11 +6,11 @@ import pytest
 from django.utils import timezone
 
 from apps.agents.tests.factories import PatientFactory
+from apps.checkins.models import CheckinSession
 from apps.clinical.models import ClinicalAlert
 from apps.pathways.models import (
     ClinicalPathway,
     PathwayMilestone,
-    PatientMilestoneCheckin,
     PatientPathway,
 )
 from apps.patients.services import RecoveryTimelineService
@@ -66,9 +66,11 @@ class TestRecoveryTimelineService:
         Patient is 10 days post-op, so day 1 and 7 are current, day 14 and 30 are upcoming.
         """
         # Complete day 1
-        PatientMilestoneCheckin.objects.create(
+        CheckinSession.objects.create(
             patient=patient,
-            milestone=milestones[0],
+            date=date.today() - timedelta(days=9),
+            pathway_day=1,
+            status="completed",
             completed_at=timezone.now() - timedelta(days=9),
         )
 

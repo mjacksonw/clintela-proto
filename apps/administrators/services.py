@@ -208,57 +208,26 @@ class OutcomesService:
             return {"error": "Could not load discharge data."}
 
     @staticmethod
-    def _count_on_time_checkins(checkin_list):
-        """Count checkins completed within ±2 days of expected date."""
-        from apps.pathways.models import PatientPathway
-
-        # Pre-fetch PatientPathway start dates to avoid N+1
-        pairs = {(c.patient_id, c.milestone.pathway_id) for c in checkin_list if c.completed_at}
-        pp_lookup = {}
-        if pairs:
-            pp_filter = Q()
-            for pid, pwid in pairs:
-                pp_filter |= Q(patient_id=pid, pathway_id=pwid)
-            for pp in PatientPathway.objects.filter(pp_filter):
-                pp_lookup[(pp.patient_id, pp.pathway_id)] = pp
-
-        on_time = 0
-        for checkin in checkin_list:
-            if not checkin.completed_at:
-                continue
-            try:
-                patient_pathway = pp_lookup.get((checkin.patient_id, checkin.milestone.pathway_id))
-                if patient_pathway and patient_pathway.started_at:
-                    expected = patient_pathway.started_at.date() + timedelta(days=checkin.milestone.day)
-                    if abs((checkin.completed_at.date() - expected).days) <= 2:
-                        on_time += 1
-            except Exception:
-                logger.debug("Skipping checkin %s: could not compute expected date", checkin.id)
-        return on_time
-
-    @staticmethod
     def get_followup_completion(days=30, hospital_id=None):
-        """Milestones completed on time (within ±2 days of expected date)."""
-        from apps.pathways.models import PatientMilestoneCheckin
+        """Check-in session completion rate."""
+        from apps.checkins.models import CheckinSession
 
         try:
             cutoff = timezone.now() - timedelta(days=days)
-            checkins = PatientMilestoneCheckin.objects.filter(
-                sent_at__gte=cutoff,
-            ).select_related("milestone", "patient")
+            sessions = CheckinSession.objects.filter(created_at__gte=cutoff)
             if hospital_id:
-                checkins = checkins.filter(patient__hospital_id=hospital_id)
+                sessions = sessions.filter(patient__hospital_id=hospital_id)
 
-            total_sent = checkins.count()
-            if total_sent == 0:
-                return {"rate": None, "on_time": 0, "total": 0, "display": "N/A"}
+            total = sessions.count()
+            if total == 0:
+                return {"rate": None, "on_time": 0, "total": 0, "display": "No data"}
 
-            on_time = OutcomesService._count_on_time_checkins(list(checkins))
-            rate = round((on_time / total_sent) * 100, 1)
+            completed = sessions.filter(status="completed").count()
+            rate = round((completed / total) * 100, 1)
             return {
                 "rate": rate,
-                "on_time": on_time,
-                "total": total_sent,
+                "on_time": completed,
+                "total": total,
                 "display": f"{rate}%",
             }
         except OperationalError:
@@ -273,7 +242,7 @@ class EngagementService:
     def get_program_engagement(days=30, hospital_id=None):
         """% of active patients with ≥1 patient-initiated message or check-in in window."""
         from apps.agents.models import AgentMessage
-        from apps.pathways.models import PatientMilestoneCheckin
+        from apps.checkins.models import CheckinSession
         from apps.patients.models import Patient
 
         try:
@@ -300,8 +269,9 @@ class EngagementService:
 
             # Patients with completed check-ins
             checkin_patients = set(
-                PatientMilestoneCheckin.objects.filter(
-                    completed_at__gte=cutoff,
+                CheckinSession.objects.filter(
+                    status="completed",
+                    created_at__gte=cutoff,
                     patient__is_active=True,
                     **({"patient__hospital_id": hospital_id} if hospital_id else {}),
                 )
@@ -368,18 +338,18 @@ class EngagementService:
     @staticmethod
     def get_checkin_stats(days=30, hospital_id=None):
         """Check-in completion rate (completed / total, regardless of timing)."""
-        from apps.pathways.models import PatientMilestoneCheckin
+        from apps.checkins.models import CheckinSession
 
         try:
             cutoff = timezone.now() - timedelta(days=days)
 
-            qs = PatientMilestoneCheckin.objects.filter(sent_at__gte=cutoff)
+            qs = CheckinSession.objects.filter(created_at__gte=cutoff)
             if hospital_id:
                 qs = qs.filter(patient__hospital_id=hospital_id)
 
             total = qs.count()
-            completed = qs.filter(completed_at__isnull=False, skipped=False).count()
-            skipped = qs.filter(skipped=True).count()
+            completed = qs.filter(status="completed").count()
+            skipped = qs.filter(status__in=["missed", "skipped"]).count()
 
             rate = round((completed / total) * 100, 1) if total > 0 else None
 
@@ -388,7 +358,7 @@ class EngagementService:
                 "completed": completed,
                 "skipped": skipped,
                 "rate": rate,
-                "display": f"{rate}%" if rate is not None else "N/A",
+                "display": f"{rate}%" if rate is not None else "No data",
             }
         except OperationalError:
             logger.exception("EngagementService.get_checkin_stats failed")
@@ -534,7 +504,8 @@ class PathwayAnalyticsService:
     @staticmethod
     def get_pathway_effectiveness(pathway_id):
         """Detailed effectiveness for a single pathway."""
-        from apps.pathways.models import ClinicalPathway, PatientMilestoneCheckin, PatientPathway
+        from apps.checkins.models import CheckinSession
+        from apps.pathways.models import ClinicalPathway, PatientPathway
 
         try:
             pathway = ClinicalPathway.objects.get(id=pathway_id)
@@ -548,9 +519,9 @@ class PathwayAnalyticsService:
             milestones = pathway.milestones.filter(is_active=True).order_by("day")
             milestone_stats = []
             for m in milestones:
-                checkins = PatientMilestoneCheckin.objects.filter(milestone=m)
-                sent = checkins.count()
-                done = checkins.filter(completed_at__isnull=False, skipped=False).count()
+                sessions = CheckinSession.objects.filter(pathway_day=m.day, patient__pathways__pathway=pathway)
+                sent = sessions.count()
+                done = sessions.filter(status="completed").count()
                 rate = round((done / sent) * 100, 1) if sent > 0 else None
                 milestone_stats.append(
                     {
