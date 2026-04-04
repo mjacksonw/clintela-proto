@@ -323,7 +323,7 @@ def _llm_select(patient, pool_codes, max_count):
 
     # Clinical snapshot
     try:
-        snapshot = PatientClinicalSnapshot.objects.filter(patient=patient).latest("created_at")
+        snapshot = PatientClinicalSnapshot.objects.filter(patient=patient).latest("computed_at")
         if snapshot.summary:
             context_parts.append(f"Clinical summary: {snapshot.summary}")
     except PatientClinicalSnapshot.DoesNotExist:
