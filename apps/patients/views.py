@@ -6,7 +6,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages as django_messages
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
@@ -59,14 +59,16 @@ def patient_dashboard_view(request):
     if not patient:
         return redirect("accounts:start")
 
-    # Load conversation history for chat sidebar
+    # Load care team conversation history for chat sidebar
     messages = []
+    sg_onboarded = False
     try:
         from apps.agents.models import AgentConversation
 
         conversation = (
             AgentConversation.objects.filter(
                 patient=patient,
+                conversation_type="care_team",
                 status__in=("active", "escalated"),
                 clinician__isnull=True,
             )
@@ -78,6 +80,12 @@ def patient_dashboard_view(request):
                 "citations__knowledge_doc__source",
             ).order_by("created_at")[:50]
             messages = list(msg_objects)
+
+        # Support group onboarding: server-side authoritative check
+        sg_onboarded = AgentConversation.objects.filter(
+            patient=patient,
+            conversation_type="support_group",
+        ).exists()
     except Exception:
         logger.exception("Failed to load conversation history")
 
@@ -90,6 +98,7 @@ def patient_dashboard_view(request):
         "chat_messages": messages,
         "days_post_op": days_post_op,
         "suggestion_chips": suggestion_chips,
+        "sg_onboarded": sg_onboarded,
         "debug": settings.DEBUG,
     }
 
@@ -143,12 +152,43 @@ def patient_chat_send_view(request):
         )
 
 
+def _save_and_transcribe(patient, audio_file):
+    """Save an uploaded audio file and return (transcription, audio_url)."""
+    from django.urls import reverse
+
+    from apps.messages_app.transcription import get_transcription_client
+
+    file_id = uuid.uuid4()
+    voice_dir = Path(settings.MEDIA_ROOT) / "voice_memos" / str(patient.id)
+    voice_dir.mkdir(parents=True, exist_ok=True)
+
+    allowed_audio_extensions = {"webm", "wav", "mp3", "ogg", "m4a", "mp4", "aac", "flac"}
+    ext = audio_file.name.rsplit(".", 1)[-1].lower() if "." in audio_file.name else "webm"
+    if ext not in allowed_audio_extensions:
+        ext = "webm"
+    file_path = voice_dir / f"{file_id}.{ext}"
+
+    with open(file_path, "wb") as f:
+        for chunk in audio_file.chunks():
+            f.write(chunk)
+
+    client = get_transcription_client()
+    audio_data = file_path.read_bytes()
+    transcription = client.transcribe(audio_data, format=ext)
+
+    if not transcription:
+        transcription = "(Voice message — transcription unavailable)"
+
+    audio_url = reverse("patients:voice_file", kwargs={"file_id": file_id})
+    return transcription, audio_url
+
+
 @require_POST
 def patient_voice_send_view(request):
-    """Handle voice message submission via HTMX.
+    """Handle voice message submission.
 
-    Accepts audio file upload, transcribes it, and processes through
-    the same AI workflow as text chat.
+    JSON mode (Accept: application/json): returns transcription only (Support Group).
+    HTML mode (default): processes through AI workflow and returns bubble HTML (Care Team).
     """
     patient = _get_authenticated_patient(request)
     if not patient:
@@ -158,50 +198,25 @@ def patient_voice_send_view(request):
     if not audio_file:
         return HttpResponse(status=400)
 
-    # Validate file size
     max_size = getattr(settings, "VOICE_MEMO_MAX_SIZE_MB", 10) * 1024 * 1024
     if audio_file.size > max_size:
         return HttpResponse("File too large", status=413)
 
-    # Validate content type
     if not audio_file.content_type.startswith("audio/"):
         return HttpResponse("Invalid file type", status=415)
 
     try:
-        # Save audio file
-        file_id = uuid.uuid4()
-        voice_dir = Path(settings.MEDIA_ROOT) / "voice_memos" / str(patient.id)
-        voice_dir.mkdir(parents=True, exist_ok=True)
+        transcription, audio_url = _save_and_transcribe(patient, audio_file)
 
-        allowed_audio_extensions = {"webm", "wav", "mp3", "ogg", "m4a", "mp4", "aac", "flac"}
-        ext = audio_file.name.rsplit(".", 1)[-1].lower() if "." in audio_file.name else "webm"
-        if ext not in allowed_audio_extensions:
-            ext = "webm"
-        file_path = voice_dir / f"{file_id}.{ext}"
+        # JSON mode: return transcription only (used by Support Group voice)
+        if "application/json" in request.headers.get("Accept", ""):
+            return JsonResponse({"text": transcription, "audio_url": audio_url})
 
-        with open(file_path, "wb") as f:
-            for chunk in audio_file.chunks():
-                f.write(chunk)
-
-        # Transcribe
-        from apps.messages_app.transcription import get_transcription_client
-
-        client = get_transcription_client()
-        audio_data = file_path.read_bytes()
-        transcription = client.transcribe(audio_data, format=ext)
-
-        if not transcription:
-            transcription = "(Voice message — transcription unavailable)"
-
-        # Process through AI workflow
-        from django.urls import reverse
-
+        # HTML mode: process through AI workflow (used by Care Team voice)
         from apps.agents.services import process_patient_message
 
-        audio_url = reverse("patients:voice_file", kwargs={"file_id": file_id})
         result = process_patient_message(patient, transcription, channel="voice", audio_url=audio_url)
 
-        # Render the message bubble HTML fragment
         html = render_to_string(
             "components/_message_bubble.html",
             {"message": result["agent_message"]},

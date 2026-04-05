@@ -89,6 +89,9 @@ def dashboard_view(request, initial_patient_id=None, tab=None, subview=None):
             if subview:
                 initial_subview = subview
 
+    # True when URL named a patient the clinician cannot open (wrong hospital / missing row)
+    deep_link_patient_unavailable = bool(initial_patient_id and validated_patient_id is None)
+
     # Handoff summary
     last_login = request.user.last_login
     is_first_login = last_login is None
@@ -124,6 +127,7 @@ def dashboard_view(request, initial_patient_id=None, tab=None, subview=None):
             "initial_patient_id": validated_patient_id,
             "initial_tab": initial_tab,
             "initial_subview": initial_subview,
+            "deep_link_patient_unavailable": deep_link_patient_unavailable,
         },
     )
 
@@ -181,10 +185,42 @@ def patient_detail_fragment(request, patient_id):
     timeline = TimelineService.get_timeline(patient)
 
     # Pending escalations
-    escalations = Escalation.objects.filter(
-        patient=patient,
-        status__in=["pending", "acknowledged"],
-    ).order_by("-created_at")
+    escalations = (
+        Escalation.objects.filter(
+            patient=patient,
+            status__in=["pending", "acknowledged"],
+        )
+        .select_related("conversation")
+        .order_by("-created_at")
+    )
+
+    # HIPAA audit: once per clinician per escalation, only for support-group escalations
+    from apps.agents.models import AgentAuditLog
+
+    for esc in escalations:
+        if not esc.conversation_excerpt or esc.conversation_id is None:
+            continue
+        if esc.conversation.conversation_type != "support_group":
+            continue
+        if AgentAuditLog.objects.filter(
+            patient=patient,
+            action="escalation_viewed",
+            agent_type="support_group",
+            details__escalation_id=str(esc.id),
+            details__clinician_id=request.clinician.id,
+        ).exists():
+            continue
+        AgentAuditLog.objects.create(
+            patient=patient,
+            action="escalation_viewed",
+            agent_type="support_group",
+            details={
+                "escalation_id": str(esc.id),
+                "clinician_id": request.clinician.id,
+                "clinician_name": request.user.get_full_name() or "",
+                "has_conversation_excerpt": True,
+            },
+        )
 
     # Notes
     notes = ClinicianNote.objects.filter(patient=patient).order_by("-created_at")[:20]
@@ -201,6 +237,58 @@ def patient_detail_fragment(request, patient_id):
     except ObjectDoesNotExist:
         logger.debug("No patient preferences available for patient %s", patient_id)
 
+    # Peer engagement summary (support group)
+    peer_engagement = None
+    try:
+        from apps.agents.models import AgentConversation, AgentMessage
+
+        sg_conversation = AgentConversation.objects.filter(
+            patient=patient,
+            conversation_type="support_group",
+        ).first()
+        if sg_conversation:
+            from django.db.models import Count
+            from django.utils import timezone
+
+            one_week_ago = timezone.now() - timezone.timedelta(days=7)
+
+            msgs_this_week = AgentMessage.objects.filter(
+                conversation=sg_conversation,
+                created_at__gte=one_week_ago,
+                role="user",
+            ).count()
+
+            top_personas = (
+                AgentMessage.objects.filter(
+                    conversation=sg_conversation,
+                    persona_id__isnull=False,
+                )
+                .values("persona_id")
+                .annotate(count=Count("id"))
+                .order_by("-count")[:3]
+            )
+
+            last_msg = (
+                AgentMessage.objects.filter(
+                    conversation=sg_conversation,
+                    role="user",
+                )
+                .order_by("-created_at")
+                .first()
+            )
+
+            # Engagement summary from background Celery task cache
+            engagement_summary = sg_conversation.context.get("engagement_summary", "")
+
+            peer_engagement = {
+                "msgs_this_week": msgs_this_week,
+                "top_personas": list(top_personas),
+                "last_active": last_msg.created_at if last_msg else None,
+                "engagement_summary": engagement_summary,
+            }
+    except Exception:
+        logger.exception("Failed to load peer engagement for patient %s", patient_id)
+
     html = render_to_string(
         "clinicians/components/_tab_details.html",
         {
@@ -210,6 +298,7 @@ def patient_detail_fragment(request, patient_id):
             "notes": notes,
             "appointments": appointments,
             "patient_preferences": patient_preferences,
+            "peer_engagement": peer_engagement,
         },
         request=request,
     )

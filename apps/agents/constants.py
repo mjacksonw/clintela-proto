@@ -151,6 +151,54 @@ CRITICAL_KEYWORDS: Final[list[str]] = [
 ]
 
 # =============================================================================
+# Support Group Configuration
+# =============================================================================
+
+ENABLE_SUPPORT_GROUP: Final[bool] = True
+
+# Distress keywords for support group (supplement CRITICAL_KEYWORDS)
+SUPPORT_GROUP_DISTRESS_KEYWORDS: Final[list[str]] = [
+    "i don't want to be here anymore",
+    "what's the point",
+    "i give up",
+    "nobody cares",
+    "end it all",
+    "can't do this anymore",
+    "want to die",
+    "no reason to live",
+    "better off without me",
+    "hopeless",
+    "i can't take it",
+    "wish i was dead",
+]
+
+# Timing constants for staggered delivery
+SG_FOLLOWUP_DELAY_MIN: Final[int] = 30  # seconds
+SG_FOLLOWUP_DELAY_MAX: Final[int] = 180
+SG_REACTION_DELAY_MIN: Final[int] = 15
+SG_REACTION_DELAY_MAX: Final[int] = 30
+SG_CELEBRATION_DELAY_MIN: Final[int] = 30
+SG_CELEBRATION_DELAY_MAX: Final[int] = 60
+
+# Persona memory
+SG_MEMORY_SUMMARIZE_EVERY: Final[int] = 10  # messages
+SG_MEMORY_TOKEN_BUDGET: Final[int] = 300  # per persona
+
+# Absence detection
+SG_ABSENCE_THRESHOLD_DAYS: Final[int] = 2
+
+# Rate limiting for support group WS consumer
+SG_RATE_LIMIT_SECONDS: Final[int] = 3  # min seconds between messages
+
+# LLM settings
+LLM_TEMPERATURE_SUPPORT_GROUP: Final[float] = 0.85
+LLM_MAX_TOKENS_SUPPORT_GROUP: Final[int] = 500
+LLM_MAX_TOKENS_ROUTER: Final[int] = 300
+
+# Context window
+SG_CONVERSATION_HISTORY_LIMIT: Final[int] = 10  # last N messages for context
+
+# =============================================================================
 # Recovery Phase Thresholds
 # =============================================================================
 

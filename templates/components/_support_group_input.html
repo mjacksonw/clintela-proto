@@ -1,30 +1,22 @@
-{% load static %}
 {% load i18n %}
-<!-- Chat input — textarea + voice record button + send button with HTMX -->
-<form id="chat-form"
-      hx-post="{% url 'patients:chat_send' %}"
-      hx-target="#messages"
-      hx-swap="beforeend"
-      hx-on::before-request="clintelaChat.onBeforeRequest(event)"
-      hx-on::after-request="clintelaChat.onAfterRequest(event)"
-      hx-on::response-error="clintelaChat.onError(event)"
-      class="px-4 pt-3 border-t flex-shrink-0"
-      style="border-color: var(--color-border); background-color: var(--color-bg); padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px) + var(--dev-toolbar-h, 0px));"
-      x-data="patientChatComposer()">
+<!-- Support group chat input — sends via WebSocket, not HTMX -->
 
-    <label for="chat-textarea" class="sr-only">{% trans "Ask me anything about your recovery" %}</label>
+<div class="px-4 pt-3 border-t flex-shrink-0"
+     style="border-color: var(--color-border); background-color: var(--color-bg); padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px) + var(--dev-toolbar-h, 0px));">
+
+    <label for="sg-textarea" class="sr-only">{% trans "Message your support group" %}</label>
     <div class="flex items-end gap-2">
         <!-- Auto-growing textarea (hidden during recording on mobile) -->
-        <textarea name="message"
-                  id="chat-textarea"
-                  x-model="message"
+        <textarea id="sg-textarea"
+                  x-ref="sgInput"
+                  x-model="sgText"
                   x-show="!recording"
+                  @keydown.enter.prevent="if (!$event.shiftKey && sgText.trim() && sgConnected) { sendMessage(); $el.style.height = 'auto'; }"
                   @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 120) + 'px'"
-                  @keydown.enter.prevent="if (!$event.shiftKey && message.trim() && !inflight) { $el.closest('form').requestSubmit(); }"
-                  placeholder="{% trans "Ask me anything about your recovery..." %}"
+                  :disabled="!sgConnected"
+                  placeholder="{% trans 'Message your support group...' %}"
                   maxlength="2000"
                   rows="1"
-                  :disabled="inflight"
                   class="flex-1 resize-none rounded-xl px-3 py-2.5 text-base leading-6
                          border transition-colors focus:border-primary focus:ring-0 focus:outline-none
                          disabled:opacity-50"
@@ -32,7 +24,8 @@
                          border-color: var(--color-border);
                          color: var(--color-text);
                          min-height: 44px; max-height: 120px;
-                         font-size: 16px;"></textarea>
+                         font-size: 16px;"
+                  aria-label="{% trans 'Support group message' %}"></textarea>
 
         <!-- Recording bar (shown during recording) -->
         <template x-if="recording">
@@ -41,7 +34,7 @@
                 <!-- Cancel button -->
                 <button type="button" @click="cancelRecording()"
                         class="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-warm-200"
-                        aria-label="{% trans "Cancel recording" %}">
+                        aria-label="{% trans 'Cancel recording' %}">
                     <i data-lucide="x" class="w-4 h-4" style="color: var(--color-text-secondary);"></i>
                 </button>
                 <!-- Pulsing dot -->
@@ -59,13 +52,15 @@
 
         <!-- Voice record button -->
         <button type="button"
-                x-show="canRecord && !recording && !inflight"
+                x-show="canRecord && !recording && !processing"
                 @click="startRecording()"
+                :disabled="!sgConnected"
                 class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0
                        transition-all duration-150 bg-warm-200 hover:bg-warm-300
                        [data-theme='dark']:bg-warm-700 [data-theme='dark']:hover:bg-warm-600
+                       disabled:opacity-50
                        focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                aria-label="{% trans "Record voice message" %}">
+                aria-label="{% trans 'Record voice message' %}">
             <i data-lucide="mic" class="w-5 h-5" style="color: var(--color-text);"></i>
         </button>
 
@@ -76,25 +71,27 @@
                 class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0
                        bg-danger text-white animate-pulse transition-all duration-150
                        focus-visible:ring-2 focus-visible:ring-danger focus-visible:ring-offset-2 focus-visible:outline-none"
-                aria-label="{% trans "Stop recording and send" %}">
+                aria-label="{% trans 'Stop recording and send' %}">
             <i data-lucide="circle-stop" class="w-5 h-5"></i>
         </button>
 
-        <!-- Send button with micro-states (x-show, not x-if, to avoid Lucide icon duplication) -->
-        <button type="submit"
+        <!-- Send button with micro-states -->
+        <button type="button"
                 x-show="!recording"
-                :disabled="!message.trim() || inflight"
+                @click="if (sgText.trim() && sgConnected) { sendMessage(); $refs.sgInput.style.height = 'auto'; }"
+                :disabled="!sgText.trim() || !sgConnected"
                 class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0
                        transition-all duration-150
                        focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                :class="message.trim() && !inflight
+                :class="sgText.trim() && sgConnected
                     ? 'bg-primary hover:bg-primary-700 text-white cursor-pointer'
-                    : inflight
+                    : processing
                         ? 'bg-primary/50 text-white cursor-wait'
                         : 'bg-warm-300 text-warm-500 cursor-not-allowed'"
-                aria-label="{% trans "Send message" %}">
-            <i data-lucide="arrow-up" class="w-5 h-5" x-show="!inflight"></i>
-            <i data-lucide="loader-2" class="w-5 h-5 animate-spin" x-show="inflight" x-cloak></i>
+                aria-label="{% trans 'Send message' %}">
+            <!-- Wrap icons in spans so x-show binds to the span, not the Lucide-replaced SVG -->
+            <span x-show="!processing"><i data-lucide="arrow-up" class="w-5 h-5"></i></span>
+            <span x-show="processing" x-cloak><i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i></span>
         </button>
     </div>
-</form>
+</div>

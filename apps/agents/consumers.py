@@ -1,7 +1,8 @@
-"""WebSocket consumer for real-time agent chat."""
+"""WebSocket consumers for real-time agent chat and support group."""
 
 import json
 import logging
+import time
 from typing import Any
 
 from asgiref.sync import sync_to_async
@@ -16,19 +17,55 @@ from apps.patients.models import Patient
 logger = logging.getLogger(__name__)
 
 
-class AgentChatConsumer(AsyncWebsocketConsumer):
+# ---------------------------------------------------------------------------
+# Shared auth mixin for patient-facing consumers.
+# Fixes IDOR gap: verifies session patient_id matches URL patient_id.
+# ---------------------------------------------------------------------------
+
+
+class PatientWebSocketMixin:
+    """Shared authentication for patient-facing WebSocket consumers."""
+
+    async def authenticate_patient(self) -> bool:
+        """Verify the connecting user owns this patient_id.
+
+        Returns True if authenticated, False if rejected.
+        """
+        self.patient_id = self.scope["url_route"]["kwargs"].get("patient_id")
+
+        # Check session has a patient_id and it matches the URL
+        session = self.scope.get("session", {})
+        session_patient_id = session.get("patient_id")
+        if session_patient_id and str(session_patient_id) != str(self.patient_id):
+            logger.warning(
+                "WebSocket IDOR: session patient_id=%s != URL patient_id=%s",
+                session_patient_id,
+                self.patient_id,
+            )
+            return False
+
+        # Verify patient exists
+        self.patient = await self._get_patient(self.patient_id)
+        return bool(self.patient)
+
+    @database_sync_to_async
+    def _get_patient(self, patient_id: str) -> Patient | None:
+        try:
+            return Patient.objects.select_related("user", "preferences").get(id=patient_id)
+        except Patient.DoesNotExist:
+            return None
+
+
+class AgentChatConsumer(PatientWebSocketMixin, AsyncWebsocketConsumer):
     """WebSocket consumer for patient-agent chat."""
 
     async def connect(self):
         """Handle WebSocket connection."""
-        self.patient_id = self.scope["url_route"]["kwargs"].get("patient_id")
-        self.room_group_name = f"patient_{self.patient_id}"
-
-        # Verify patient exists and user has access
-        self.patient = await self.get_patient(self.patient_id)
-        if not self.patient:
+        if not await self.authenticate_patient():
             await self.close()
             return
+
+        self.room_group_name = f"patient_{self.patient_id}"
 
         # Join patient-specific group
         await self.channel_layer.group_add(
@@ -41,12 +78,12 @@ class AgentChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection."""
-        # Leave room group
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name,
-        )
-        logger.info(f"WebSocket disconnected for patient {self.patient_id}")
+        if hasattr(self, "room_group_name"):
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name,
+            )
+            logger.info(f"WebSocket disconnected for patient {self.patient_id}")
 
     async def receive(self, text_data):
         """Handle incoming WebSocket message."""
@@ -204,21 +241,6 @@ class AgentChatConsumer(AsyncWebsocketConsumer):
         )
 
     @database_sync_to_async
-    def get_patient(self, patient_id: str) -> Patient | None:
-        """Get patient by ID.
-
-        Args:
-            patient_id: Patient UUID string
-
-        Returns:
-            Patient instance or None
-        """
-        try:
-            return Patient.objects.get(id=patient_id)
-        except Patient.DoesNotExist:
-            return None
-
-    @database_sync_to_async
     def log_audit_event(
         self,
         action: str,
@@ -335,4 +357,245 @@ class ClinicianDashboardConsumer(AsyncWebsocketConsumer):
                     "message": event["message"],
                 }
             )
+        )
+
+
+# ---------------------------------------------------------------------------
+# Support Group Consumer
+# ---------------------------------------------------------------------------
+
+
+class SupportGroupConsumer(PatientWebSocketMixin, AsyncWebsocketConsumer):
+    """WebSocket consumer for support group chat. Full bidirectional."""
+
+    async def connect(self):
+        if not await self.authenticate_patient():
+            await self.close()
+            return
+
+        self.room_group_name = f"support_group_{self.patient_id}"
+        self._last_message_time = 0
+
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name,
+        )
+        await self.accept()
+        logger.info(f"Support group WS connected for patient {self.patient_id}")
+
+        # Send conversation history so page reloads restore the chat
+        await self._send_history()
+
+    async def _send_history(self):
+        """Send existing conversation messages + reactions on connect."""
+        history = await self._load_history()
+        if history:
+            await self.send_json({"type": "history", "messages": history})
+
+    @database_sync_to_async
+    def _load_history(self):
+        """Load existing support group messages with reactions."""
+        from apps.agents.models import AgentConversation, AgentMessage
+
+        try:
+            conversation = AgentConversation.objects.get(
+                patient=self.patient,
+                conversation_type="support_group",
+            )
+        except AgentConversation.DoesNotExist:
+            return []
+
+        messages = (
+            AgentMessage.objects.filter(conversation=conversation)
+            .prefetch_related("reactions")
+            .order_by("created_at")[:100]
+        )
+
+        from apps.agents.personas import PERSONA_REGISTRY
+
+        result = []
+        for msg in messages:
+            if msg.role == "user":
+                entry = {
+                    "type": "user",
+                    "content": msg.content,
+                    "timestamp": msg.created_at.isoformat(),
+                }
+                meta = msg.metadata or {}
+                if meta.get("channel") == "voice":
+                    entry["channel"] = "voice"
+                    if meta.get("audio_url"):
+                        entry["audio_url"] = meta["audio_url"]
+                result.append(entry)
+            elif msg.persona_id:
+                persona = PERSONA_REGISTRY.get(msg.persona_id)
+                entry = {
+                    "type": "persona",
+                    "message_id": str(msg.id),
+                    "persona_id": msg.persona_id,
+                    "persona_name": persona.name if persona else msg.persona_id,
+                    "content": msg.content,
+                    "avatar_color": persona.avatar_color if persona else "#6B7280",
+                    "avatar_color_dark": persona.avatar_color_dark if persona else "#9CA3AF",
+                    "avatar_initials": persona.avatar_initials if persona else "??",
+                    "reactions": [
+                        {"persona_id": r.persona_id, "emoji": r.emoji, "timestamp": r.created_at.isoformat()}
+                        for r in msg.reactions.all().order_by("created_at")
+                    ],
+                    "timestamp": msg.created_at.isoformat(),
+                }
+                result.append(entry)
+        return result
+
+    async def disconnect(self, close_code):
+        if hasattr(self, "room_group_name"):
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name,
+            )
+
+    async def receive(self, text_data):
+        """Handle incoming patient message."""
+        from apps.agents.constants import SG_RATE_LIMIT_SECONDS
+
+        try:
+            data = json.loads(text_data)
+            message = data.get("message", "").strip()
+
+            if not message:
+                await self.send_json({"type": "error", "message": "Message cannot be empty"})
+                return
+
+            # Rate limiting
+            now = time.monotonic()
+            if now - self._last_message_time < SG_RATE_LIMIT_SECONDS:
+                await self.send_json({"type": "error", "message": "Please wait a moment"})
+                return
+            self._last_message_time = now
+
+            # Get or create support group conversation
+            conversation = await self._get_or_create_conversation()
+
+            # Save patient message
+            await self._save_user_message(conversation, message, data)
+
+            # Send typing indicator
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {"type": "support_group_typing", "persona_id": "", "persona_name": ""},
+            )
+
+            # Process through orchestrator
+            from apps.agents.support_group import SupportGroupOrchestrator
+
+            orchestrator = SupportGroupOrchestrator()
+            result = await orchestrator.process_message(self.patient, conversation, message)
+
+            if result.get("escalate"):
+                # Send escalation banner
+                await self.send_json(
+                    {
+                        "type": "crisis_detected",
+                        "message": "Your care team has been notified and will follow up shortly.",
+                    }
+                )
+                # Notify clinician dashboard
+                await self._broadcast_escalation()
+            else:
+                # Push primary persona response to the group
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "support_group_message",
+                        **result,
+                    },
+                )
+
+        except json.JSONDecodeError:
+            await self.send_json({"type": "error", "message": "Invalid JSON"})
+        except Exception as e:
+            logger.error(f"Support group error: {e}", exc_info=True)
+            await self.send_json({"type": "error", "message": "Something went wrong"})
+
+    # -- Channel layer event handlers --
+
+    async def support_group_message(self, event):
+        """Push a persona message to the client."""
+        await self.send_json(
+            {
+                "type": "support_group_message",
+                "message_id": event.get("message_id"),
+                "persona_id": event.get("persona_id"),
+                "persona_name": event.get("persona_name"),
+                "content": event.get("content"),
+                "avatar_color": event.get("avatar_color"),
+                "avatar_color_dark": event.get("avatar_color_dark"),
+                "avatar_initials": event.get("avatar_initials"),
+            }
+        )
+
+    async def support_group_reaction(self, event):
+        """Push an emoji reaction to the client."""
+        await self.send_json(
+            {
+                "type": "support_group_reaction",
+                "message_id": event.get("message_id"),
+                "persona_id": event.get("persona_id"),
+                "emoji": event.get("emoji"),
+                "timestamp": event.get("timestamp", ""),
+            }
+        )
+
+    async def support_group_typing(self, event):
+        """Push typing indicator to the client."""
+        await self.send_json(
+            {
+                "type": "support_group_typing",
+                "persona_id": event.get("persona_id"),
+                "persona_name": event.get("persona_name"),
+            }
+        )
+
+    # -- Helpers --
+
+    async def send_json(self, data):
+        await self.send(text_data=json.dumps(data))
+
+    @database_sync_to_async
+    def _get_or_create_conversation(self):
+        return ConversationService.get_or_create_conversation(
+            self.patient,
+            conversation_type="support_group",
+        )
+
+    @database_sync_to_async
+    def _save_user_message(self, conversation, message, data):
+        from apps.agents.models import AgentMessage
+
+        metadata = {}
+        if data.get("channel") == "voice":
+            metadata["channel"] = "voice"
+            if data.get("audio_url"):
+                metadata["audio_url"] = data["audio_url"]
+
+        return AgentMessage.objects.create(
+            conversation=conversation,
+            role="user",
+            content=message,
+            metadata=metadata,
+        )
+
+    async def _broadcast_escalation(self):
+        """Notify clinician dashboard of support group escalation."""
+        hospital_group = f"hospital_{self.patient.hospital_id}"
+        await self.channel_layer.group_send(
+            hospital_group,
+            {
+                "type": "escalation_alert",
+                "patient_id": str(self.patient.id),
+                "patient_name": f"{self.patient.user.first_name} {self.patient.user.last_name}",
+                "severity": "critical",
+                "reason": "Support group crisis detected",
+                "timestamp": "",
+            },
         )

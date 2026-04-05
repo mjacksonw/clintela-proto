@@ -13,6 +13,14 @@
                 <span style="color: var(--color-text-secondary);">{{ escalation.get_escalation_type_display }}</span>
             </div>
             <p class="mt-0.5 truncate" style="color: var(--color-text);">{{ escalation.reason }}</p>
+            {% if escalation.conversation_excerpt %}
+            <details class="mt-1">
+                <summary class="cursor-pointer text-[10px] font-medium" style="color: var(--color-primary);">
+                    Support group context
+                </summary>
+                <p class="mt-1 whitespace-pre-line text-[11px] p-1.5 rounded" style="color: var(--color-text); background: var(--color-bg);">{{ escalation.conversation_excerpt }}</p>
+            </details>
+            {% endif %}
             <p class="mt-0.5" style="color: var(--color-text-secondary);">{{ escalation.created_at|timesince }} ago</p>
         </div>
         <div class="flex gap-1 flex-shrink-0">

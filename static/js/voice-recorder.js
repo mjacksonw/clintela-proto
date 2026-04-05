@@ -4,6 +4,12 @@
  * States: idle → recording → processing → idle
  * Max duration: 60s, visual warning at 45s, auto-stop at 60s.
  * Cancel discards audio, stop/send submits for transcription.
+ *
+ * Usage modes:
+ *   Care Team: POSTs audio to /voice/send/, inserts returned HTML into #messages.
+ *   Support Group: POSTs audio to /voice/send/, calls this.onVoiceResult(text, audioUrl).
+ *
+ * Set `this.onVoiceResult` to a callback to override the default Care Team behavior.
  */
 function voiceRecorder() {
     return {
@@ -15,6 +21,9 @@ function voiceRecorder() {
         _chunks: [],
         _timer: null,
         _stream: null,
+
+        /** Override this to handle voice results in non-Care-Team contexts. */
+        onVoiceResult: null,
 
         formatTime(seconds) {
             const m = Math.floor(seconds / 60);
@@ -103,27 +112,35 @@ function voiceRecorder() {
             const formData = new FormData();
             formData.append('audio', blob, 'recording.webm');
 
-            // Set inflight on the parent chat form's Alpine data
-            const chatForm = document.getElementById('chat-form');
+            const useJsonMode = typeof this.onVoiceResult === 'function';
+            const headers = { 'X-CSRFToken': this._getCsrf() };
+            if (useJsonMode) {
+                headers['Accept'] = 'application/json';
+            }
 
             try {
                 const response = await fetch(this._voiceSendUrl(), {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'X-CSRFToken': this._getCsrf(),
-                    },
+                    headers,
                 });
 
                 if (response.ok) {
-                    const html = await response.text();
-                    const messagesContainer = document.getElementById('messages');
-                    if (messagesContainer) {
-                        messagesContainer.insertAdjacentHTML('beforeend', html);
-                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    if (useJsonMode) {
+                        // Support Group mode: get JSON with text + audio URL
+                        const data = await response.json();
+                        this.onVoiceResult(data.text, data.audio_url);
+                    } else {
+                        // Care Team mode: insert returned HTML
+                        const html = await response.text();
+                        const messagesContainer = document.getElementById('messages');
+                        if (messagesContainer) {
+                            messagesContainer.insertAdjacentHTML('beforeend', html);
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }
+                        // Re-render Lucide icons for new content
+                        if (window.lucide) lucide.createIcons();
                     }
-                    // Re-render Lucide icons for new content
-                    if (window.lucide) lucide.createIcons();
                 } else {
                     this._showError("Couldn't process audio");
                 }
@@ -177,9 +194,7 @@ function voiceRecorder() {
         },
 
         _voiceSendUrl() {
-            // Derive from the chat send URL pattern
-            const chatUrl = document.getElementById('chat-form')?.getAttribute('hx-post') || '';
-            return chatUrl.replace('chat/send/', 'voice/send/');
+            return '/patient/voice/send/';
         },
 
         _getCsrf() {

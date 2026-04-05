@@ -1,75 +1,200 @@
 {% load humanize %}
 {% load i18n %}
-<!-- Chat sidebar content — used in both desktop sidebar and mobile overlay -->
+<!-- Chat sidebar with Care Team + Support Group tabs -->
 
-<!-- Chat label + minimize (tablet only) -->
-<div class="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
-     style="border-color: var(--color-border);">
-    <span class="text-sm font-semibold" style="color: var(--color-text-secondary);">
-        {% trans "Chat" %}
-    </span>
-</div>
+<div x-data="supportGroupChat()" class="flex flex-col h-full min-h-0">
 
-<!-- Offline banner -->
-<div id="offline-banner"
-     class="hidden px-4 py-2 text-sm font-medium text-center"
-     style="background-color: #FEF3C7; color: #92400E;"
-     role="alert">
-    <i data-lucide="wifi-off" class="w-4 h-4 inline-block mr-1 align-text-bottom"></i>
-    {% trans "You're offline — messages can't be sent right now" %}
-</div>
-
-<!-- Escalation banner -->
-<div id="escalation-banner"
-     class="hidden px-4 py-2.5 text-sm font-medium border-b"
-     style="background-color: #FEF3C7; color: #92400E; border-color: var(--color-border);"
-     role="alert">
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-            <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
-            <span>{% trans "Your care team has been notified and will follow up shortly." %}</span>
-        </div>
-        <button onclick="document.getElementById('escalation-banner').classList.add('hidden')"
-                class="p-1 rounded hover:bg-yellow-200"
-                aria-label="{% trans "Dismiss" %}">
-            <i data-lucide="x" class="w-3 h-3"></i>
+    <!-- Tab bar -->
+    <div role="tablist" class="flex border-b flex-shrink-0" style="border-color: var(--color-border);">
+        <button role="tab" :aria-selected="activeTab === 'care_team'"
+                :tabindex="activeTab === 'care_team' ? 0 : -1"
+                @click="switchTab('care_team')"
+                @keydown.arrow-right="switchTab('support_group'); $nextTick(() => $refs.sgTab.focus())"
+                x-ref="ctTab"
+                class="flex-1 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors relative"
+                :class="activeTab === 'care_team' ? 'border-primary' : 'border-transparent'"
+                :style="activeTab === 'care_team' ? 'color: var(--color-primary);' : 'color: var(--color-text-secondary);'">
+            {% trans "Care Team" %}
+            <span x-show="careTeamUnread > 0" x-cloak
+                  class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-danger animate-pulse"
+                  aria-label="{% trans 'unread messages' %}"></span>
+        </button>
+        <button role="tab" :aria-selected="activeTab === 'support_group'"
+                :tabindex="activeTab === 'support_group' ? 0 : -1"
+                @click="switchTab('support_group')"
+                @keydown.arrow-left="switchTab('care_team'); $nextTick(() => $refs.ctTab.focus())"
+                x-ref="sgTab"
+                class="flex-1 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors relative"
+                :class="activeTab === 'support_group' ? 'border-primary' : 'border-transparent'"
+                :style="activeTab === 'support_group' ? 'color: var(--color-primary);' : 'color: var(--color-text-secondary);'">
+            {% trans "Support Group" %}
+            <span x-show="supportGroupUnread > 0" x-cloak
+                  class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-danger animate-pulse"
+                  aria-label="{% trans 'unread messages' %}"></span>
         </button>
     </div>
-</div>
 
-<!-- Messages area -->
-<div id="messages"
-     role="log"
-     aria-live="polite"
-     aria-label="{% trans "Chat messages" %}"
-     class="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 custom-scrollbar">
-
-    {% if chat_messages %}
-        {% for msg in chat_messages %}
-            {% include "components/_message_bubble.html" with message=msg %}
-        {% endfor %}
-    {% else %}
-        {% include "components/_empty_chat.html" %}
-    {% endif %}
-</div>
-
-<!-- Typing indicator — OUTSIDE #messages to avoid HTMX swap conflicts -->
-<div id="typing-indicator"
-     x-data="{ visible: false, text: 'Your care team is thinking...' }"
-     x-show="visible"
-     x-cloak
-     role="status"
-     aria-live="assertive"
-     class="px-4 py-2 flex-shrink-0">
-    <div class="flex items-center gap-2 text-sm" style="color: var(--color-text-secondary);">
-        <div class="flex gap-1" aria-hidden="true">
-            <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 0ms;"></span>
-            <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 150ms;"></span>
-            <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 300ms;"></span>
+    <!-- Care Team tab panel -->
+    <div x-show="activeTab === 'care_team'" role="tabpanel" class="flex-1 flex flex-col overflow-hidden min-h-0">
+        <!-- Offline banner -->
+        <div id="offline-banner"
+             class="hidden px-4 py-2 text-sm font-medium text-center"
+             style="background-color: #FEF3C7; color: #92400E;"
+             role="alert">
+            <i data-lucide="wifi-off" class="w-4 h-4 inline-block mr-1 align-text-bottom"></i>
+            {% trans "You're offline — messages can't be sent right now" %}
         </div>
-        <span x-text="text" aria-label="Agent is typing"></span>
-    </div>
-</div>
 
-<!-- Chat input -->
-{% include "components/_chat_input.html" %}
+        <!-- Escalation banner -->
+        <div id="escalation-banner"
+             class="hidden px-4 py-2.5 text-sm font-medium border-b"
+             style="background-color: #FEF3C7; color: #92400E; border-color: var(--color-border);"
+             role="alert">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+                    <span>{% trans "Your care team has been notified and will follow up shortly." %}</span>
+                </div>
+                <button onclick="document.getElementById('escalation-banner').classList.add('hidden')"
+                        class="p-1 rounded hover:bg-yellow-200"
+                        aria-label="{% trans 'Dismiss' %}">
+                    <i data-lucide="x" class="w-3 h-3"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages area -->
+        <div id="messages"
+             role="log"
+             aria-live="polite"
+             aria-label="{% trans 'Chat messages' %}"
+             class="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 custom-scrollbar">
+            {% if chat_messages %}
+                {% for msg in chat_messages %}
+                    {% include "components/_message_bubble.html" with message=msg %}
+                {% endfor %}
+            {% else %}
+                {% include "components/_empty_chat.html" %}
+            {% endif %}
+        </div>
+
+        <!-- Typing indicator -->
+        <div id="typing-indicator"
+             x-data="{ visible: false, text: 'Your care team is thinking...' }"
+             x-show="visible"
+             x-cloak
+             role="status"
+             aria-live="assertive"
+             class="px-4 py-2 flex-shrink-0">
+            <div class="flex items-center gap-2 text-sm" style="color: var(--color-text-secondary);">
+                <div class="flex gap-1" aria-hidden="true">
+                    <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 0ms;"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 150ms;"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 300ms;"></span>
+                </div>
+                <span x-text="text" aria-label="Agent is typing"></span>
+            </div>
+        </div>
+
+        <!-- Chat input -->
+        {% include "components/_chat_input.html" %}
+    </div>
+
+    <!-- Support Group tab panel -->
+    <div x-show="activeTab === 'support_group'" role="tabpanel" class="flex-1 flex flex-col overflow-hidden min-h-0">
+        <!-- Status label (full-width bar — no nested pill) -->
+        <div class="flex items-center justify-center px-4 py-3 border-b flex-shrink-0"
+             style="background: var(--color-bg); border-color: var(--color-border);">
+            <template x-if="sgConnecting">
+                <span class="text-sm font-semibold" style="color: var(--color-text-secondary);">
+                    {% trans "Connecting…" %}
+                </span>
+            </template>
+            <template x-if="!sgConnecting && sgConnected">
+                <span class="text-sm font-semibold" style="color: var(--color-text-secondary);">
+                    {% trans "AI Support Group" %}
+                </span>
+            </template>
+            <template x-if="!sgConnecting && !sgConnected">
+                <span class="text-sm font-semibold" style="color: #92400E;">
+                    {% trans "Reconnecting…" %}
+                </span>
+            </template>
+        </div>
+
+        <!-- Onboarding welcome (first visit) -->
+        <template x-if="!sgOnboarded">
+            <div>{% include "components/_support_group_welcome.html" %}</div>
+        </template>
+
+        <!-- Support group content (post-onboarding) -->
+        <template x-if="sgOnboarded">
+            <div class="flex-1 flex flex-col overflow-hidden min-h-0">
+                <!-- SG offline banner -->
+                <div id="sg-offline-banner"
+                     x-show="!sgConnected && !sgConnecting" x-cloak
+                     class="px-4 py-2 text-sm font-medium text-center"
+                     style="background-color: #FEF3C7; color: #92400E;"
+                     role="alert">
+                    <i data-lucide="wifi-off" class="w-4 h-4 inline-block mr-1 align-text-bottom"></i>
+                    {% trans "Connection lost — reconnecting" %}
+                </div>
+
+                <!-- SG escalation banner -->
+                <template x-for="msg in sgMessages.filter(m => m.type === 'escalation')" :key="msg.timestamp">
+                    <div class="px-4 py-2.5 text-sm font-medium border-b"
+                         style="background-color: #FEF3C7; color: #92400E; border-color: var(--color-border);">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+                            <span x-text="msg.content"></span>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Messages area -->
+                <div id="sg-messages"
+                     role="log"
+                     aria-live="polite"
+                     aria-label="{% trans 'Support group messages' %}"
+                     class="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 custom-scrollbar">
+
+                    <template x-if="sgMessages.filter(m => m.type !== 'escalation').length === 0">
+                        <div>{% include "components/_support_group_empty.html" %}</div>
+                    </template>
+
+                    <template x-for="msg in sgMessages.filter(m => m.type !== 'escalation')" :key="msg.timestamp + (msg.message_id || '')">
+                        <div>
+                            {% include "components/_support_group_bubble.html" %}
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Typing indicator -->
+                <div x-show="sgTyping" x-cloak
+                     class="px-4 py-2 flex-shrink-0"
+                     role="status" aria-live="assertive">
+                    <div class="flex items-center gap-2 text-sm" style="color: var(--color-text-secondary);">
+                        <template x-if="sgTyping && sgTyping.persona_name">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium text-white flex-shrink-0"
+                                 :style="'background-color: ' + (sgTyping.avatar_color || 'var(--color-text-secondary)')">
+                            </div>
+                        </template>
+                        <div class="flex gap-1" aria-hidden="true">
+                            <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 0ms;"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 150ms;"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-warm-400 animate-bounce" style="animation-delay: 300ms;"></span>
+                        </div>
+                        <span x-text="sgTyping && sgTyping.persona_name ? sgTyping.persona_name + ' is typing...' : 'Thinking...'"
+                              aria-label="Persona is typing"></span>
+                    </div>
+                </div>
+
+                <!-- Support group input -->
+                {% include "components/_support_group_input.html" %}
+            </div>
+        </template>
+    </div>
+
+    <!-- Profile card modal -->
+    {% include "components/_persona_profile_card.html" %}
+</div>

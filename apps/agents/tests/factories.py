@@ -11,6 +11,7 @@ from apps.agents.models import (
     AgentMessage,
     ConversationState,
     Escalation,
+    SupportGroupReaction,
 )
 from apps.caregivers.models import Caregiver, CaregiverInvitation, CaregiverRelationship
 from apps.patients.models import ConsentRecord, Hospital, Patient
@@ -171,3 +172,14 @@ class ConsentRecordFactory(factory.django.DjangoModelFactory):
     patient = factory.SubFactory(PatientFactory)
     consent_type = "ai_interaction"
     granted = True
+
+
+class SupportGroupReactionFactory(factory.django.DjangoModelFactory):
+    """Factory for SupportGroupReaction model."""
+
+    class Meta:
+        model = SupportGroupReaction
+
+    message = factory.SubFactory(AgentMessageFactory)
+    persona_id = "maria"
+    emoji = "heart"

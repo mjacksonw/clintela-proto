@@ -783,7 +783,7 @@ class TestAgentChatConsumerSendError:
 @pytest.mark.django_db
 @pytest.mark.asyncio
 class TestAgentChatConsumerGetPatient:
-    """Tests for AgentChatConsumer.get_patient method."""
+    """Tests for PatientWebSocketMixin._get_patient (used by AgentChatConsumer)."""
 
     async def test_get_patient_exists(self, mock_scope_with_patient):
         """Test retrieving existing patient."""
@@ -797,7 +797,7 @@ class TestAgentChatConsumerGetPatient:
         consumer = AgentChatConsumer()
         consumer.scope = scope
 
-        result = await consumer.get_patient(str(patient.id))
+        result = await consumer._get_patient(str(patient.id))
 
         assert result is not None
         assert result.id == patient.id
@@ -813,7 +813,7 @@ class TestAgentChatConsumerGetPatient:
         consumer = AgentChatConsumer()
         consumer.scope = scope
 
-        result = await consumer.get_patient("99999")
+        result = await consumer._get_patient("99999")
 
         assert result is None
 
@@ -830,7 +830,7 @@ class TestAgentChatConsumerGetPatient:
 
         # Should raise ValueError when trying to convert 'invalid' to int
         with pytest.raises((ValueError, Patient.DoesNotExist)):
-            await consumer.get_patient("invalid")
+            await consumer._get_patient("invalid")
 
 
 @pytest.mark.django_db
@@ -1684,7 +1684,7 @@ class TestConsumerSecurity:
         # Malicious patient_id - should be treated as invalid ID
         # Django's ORM prevents SQL injection, but will raise ValueError
         with pytest.raises((ValueError, Patient.DoesNotExist)):
-            await consumer.get_patient("'; DROP TABLE patients; --")
+            await consumer._get_patient("'; DROP TABLE patients; --")
 
     async def test_escalation_alert_sanitizes_input(self, mock_scope_with_hospital):
         """Test that escalation alert handles malicious input."""

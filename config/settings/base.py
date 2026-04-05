@@ -121,6 +121,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.clinical.context_processors.clinical_data_flags",
+                "apps.agents.context_processors.support_group_flags",
                 "apps.accounts.context_processors.demo_bar_context",
             ],
         },
